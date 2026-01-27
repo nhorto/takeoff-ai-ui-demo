@@ -1,0 +1,463 @@
+// Tool implementations for TakeoffAI Electron
+import { app, dialog, BrowserWindow } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
+import type { ToolDefinition, ToolExecutionResult } from './types.js';
+import { extractPdfPages } from './pdf-extractor.js';
+
+// Use Electron app paths instead of hardcoded paths
+function getKnowledgeBasePath(): string {
+  // In development, use resources/ next to src/
+  // In production, use app.getAppPath()/resources/
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'knowledge-base');
+  } else {
+    return path.join(app.getAppPath(), 'resources', 'knowledge-base');
+  }
+}
+
+function getOutputsDir(): string {
+  // Use Electron userData directory for outputs
+  const userDataPath = app.getPath('userData');
+  return path.join(userDataPath, 'outputs');
+}
+
+// Store PDF path globally (set by IPC handler)
+let globalPdfPath: string = '';
+let globalSessionDir: string = '';
+
+export function setGlobalPdfPath(pdfPath: string): void {
+  globalPdfPath = pdfPath;
+}
+
+export function setGlobalSessionDir(sessionDir: string): void {
+  globalSessionDir = sessionDir;
+}
+
+export function getGlobalSessionDir(): string {
+  return globalSessionDir;
+}
+
+/**
+ * Tool definitions for Claude API
+ */
+export const TOOL_DEFINITIONS: ToolDefinition[] = [
+  {
+    name: 'read_skill',
+    description: 'Load a specialized skill. NOTE: The ConstructionTakeoff skill is already included in your system prompt — do not call this tool to load it again. This tool is only needed if additional skills become available in the future.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        skill_name: {
+          type: 'string',
+          enum: ['ConstructionTakeoff'],
+          description: 'The name of the skill to load'
+        }
+      },
+      required: ['skill_name']
+    }
+  },
+  {
+    name: 'read_documentation',
+    description: 'Read a workflow or reference document from the knowledge base. Use this to load detailed step-by-step procedures before starting a task. The ConstructionTakeoff skill in your system prompt tells you which workflow file to load based on the user\'s request.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        doc_path: {
+          type: 'string',
+          description: 'Path to the documentation file relative to knowledge-base/ (e.g., "workflows/QuantityTakeoff.md")'
+        }
+      },
+      required: ['doc_path']
+    }
+  },
+  {
+    name: 'list_available_skills',
+    description: 'List all available skills in the knowledge base.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'write_file',
+    description: 'Write content to a file. Use this to save CSV takeoff results or coordination reports.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        file_path: {
+          type: 'string',
+          description: 'The file path where the file should be written (relative paths will go to outputs/ directory)'
+        },
+        content: {
+          type: 'string',
+          description: 'The content to write to the file'
+        }
+      },
+      required: ['file_path', 'content']
+    }
+  },
+  {
+    name: 'read_file',
+    description: 'Read content from a file.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        file_path: {
+          type: 'string',
+          description: 'The absolute file path to read'
+        }
+      },
+      required: ['file_path']
+    }
+  },
+  {
+    name: 'list_directory',
+    description: 'List contents of a directory.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        directory_path: {
+          type: 'string',
+          description: 'The absolute directory path to list'
+        }
+      },
+      required: ['directory_path']
+    }
+  },
+  {
+    name: 'ask_user',
+    description: 'Ask the user a clarifying question and wait for their response.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        question: {
+          type: 'string',
+          description: 'The question to ask the user'
+        },
+        context: {
+          type: 'string',
+          description: 'Additional context about why you need this information'
+        }
+      },
+      required: ['question']
+    }
+  },
+  {
+    name: 'extract_pdf_pages',
+    description: 'Extract specific pages from the PDF as images. IMPORTANT: Request a maximum of 5 pages per call to avoid exceeding API size limits. If you need more pages, make multiple calls. Document your findings from each batch before requesting the next.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        page_numbers: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Array of page numbers to extract (1-indexed). Maximum 5 pages per call.'
+        }
+      },
+      required: ['page_numbers']
+    }
+  }
+];
+
+/**
+ * Execute a tool and return the result
+ */
+export async function executeTool(
+  toolName: string,
+  toolInput: Record<string, unknown>,
+  toolUseId: string
+): Promise<ToolExecutionResult> {
+
+  console.log(`🔧 Tool called: ${toolName}(${JSON.stringify(toolInput)})`);
+
+  try {
+    let result: string | any[]; // Support both string and array
+
+    switch (toolName) {
+      case 'read_skill':
+        result = await readSkill(toolInput.skill_name as string);
+        break;
+
+      case 'read_documentation':
+        result = await readDocumentation(toolInput.doc_path as string);
+        break;
+
+      case 'list_available_skills':
+        result = await listAvailableSkills();
+        break;
+
+      case 'write_file':
+        result = await writeFile(
+          toolInput.file_path as string,
+          toolInput.content as string
+        );
+        break;
+
+      case 'read_file':
+        result = await readFile(toolInput.file_path as string);
+        break;
+
+      case 'list_directory':
+        result = await listDirectory(toolInput.directory_path as string);
+        break;
+
+      case 'ask_user':
+        result = await askUser(
+          toolInput.question as string,
+          toolInput.context as string | undefined
+        );
+        break;
+
+      case 'extract_pdf_pages':
+        // This returns an array of content blocks (text + images)
+        result = await extractPdfPagesForClaude(toolInput.page_numbers as number[]);
+        break;
+
+      default:
+        throw new Error(`Unknown tool: ${toolName}`);
+    }
+
+    console.log(`   ✅ Tool completed successfully\n`);
+
+    return {
+      tool_use_id: toolUseId,
+      content: result // Can be string or array of content blocks
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`   ❌ Tool failed: ${errorMessage}\n`);
+
+    return {
+      tool_use_id: toolUseId,
+      content: `Error: ${errorMessage}`,
+      is_error: true
+    };
+  }
+}
+
+/**
+ * Read a skill from the knowledge base
+ */
+async function readSkill(skillName: string): Promise<string> {
+  const knowledgeBase = getKnowledgeBasePath();
+  const skillPath = path.join(knowledgeBase, 'skills', `${skillName}.md`);
+
+  if (!fs.existsSync(skillPath)) {
+    throw new Error(`Skill not found: ${skillName}`);
+  }
+
+  const content = fs.readFileSync(skillPath, 'utf-8');
+  return `Skill loaded: ${skillName}\n\n${content}`;
+}
+
+/**
+ * Read documentation from the knowledge base
+ */
+async function readDocumentation(docPath: string): Promise<string> {
+  const knowledgeBase = getKnowledgeBasePath();
+  const fullPath = path.join(knowledgeBase, docPath);
+
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Documentation not found: ${docPath}`);
+  }
+
+  const content = fs.readFileSync(fullPath, 'utf-8');
+  return content;
+}
+
+/**
+ * List available skills
+ */
+async function listAvailableSkills(): Promise<string> {
+  const knowledgeBase = getKnowledgeBasePath();
+  const skillsDir = path.join(knowledgeBase, 'skills');
+
+  if (!fs.existsSync(skillsDir)) {
+    return 'No skills directory found';
+  }
+
+  const files = fs.readdirSync(skillsDir);
+  const skills = files.filter(f => f.endsWith('.md')).map(f => f.replace('.md', ''));
+
+  return `Available skills:\n${skills.map(s => `- ${s}`).join('\n')}`;
+}
+
+/**
+ * Write a file to the filesystem
+ * ELECTRON ADAPTATION: Use userData directory for outputs
+ */
+async function writeFile(filePath: string, content: string): Promise<string> {
+  const outputsDir = getOutputsDir();
+
+  // Ensure outputs directory exists
+  if (!fs.existsSync(outputsDir)) {
+    fs.mkdirSync(outputsDir, { recursive: true });
+  }
+
+  // Resolve file path - if it's relative, put it in outputs/
+  let resolvedPath = filePath;
+  if (!path.isAbsolute(filePath)) {
+    resolvedPath = path.join(outputsDir, filePath);
+  }
+
+  // Ensure parent directory exists
+  const dir = path.dirname(resolvedPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.writeFileSync(resolvedPath, content, 'utf-8');
+  return `File written successfully to: ${resolvedPath}`;
+}
+
+/**
+ * Read a file from the filesystem
+ */
+async function readFile(filePath: string): Promise<string> {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`File not found: ${filePath}`);
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return content;
+}
+
+/**
+ * List directory contents
+ */
+async function listDirectory(directoryPath: string): Promise<string> {
+  if (!fs.existsSync(directoryPath)) {
+    throw new Error(`Directory not found: ${directoryPath}`);
+  }
+
+  const files = fs.readdirSync(directoryPath);
+  return files.join('\n');
+}
+
+/**
+ * Ask the user a question via Electron dialog
+ * ELECTRON ADAPTATION: Replace readline with Electron dialog
+ */
+// Store for pending user questions
+let pendingUserResponse: {
+  resolve: (response: string) => void;
+  reject: (error: Error) => void;
+} | null = null;
+
+export function resolveUserResponse(response: string) {
+  if (pendingUserResponse) {
+    pendingUserResponse.resolve(response);
+    pendingUserResponse = null;
+  }
+}
+
+async function askUser(question: string, context?: string): Promise<string> {
+  console.log('\n❓ Claude is asking you a question:\n');
+
+  if (context) {
+    console.log(`Context: ${context}\n`);
+  }
+
+  console.log(`Question: ${question}\n`);
+
+  const mainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+
+  if (!mainWindow) {
+    throw new Error('No active window to show dialog');
+  }
+
+  // Send question to renderer via IPC
+  mainWindow.webContents.send('agent-question', {
+    question,
+    context: context || ''
+  });
+
+  // Wait for user's response
+  return new Promise<string>((resolve, reject) => {
+    pendingUserResponse = { resolve, reject };
+
+    // Timeout after 5 minutes
+    setTimeout(() => {
+      if (pendingUserResponse) {
+        pendingUserResponse.reject(new Error('User response timeout'));
+        pendingUserResponse = null;
+      }
+    }, 5 * 60 * 1000);
+  });
+}
+
+/**
+ * Extract PDF pages and return them as images in tool result format
+ * This allows Claude to request pages incrementally as needed
+ *
+ * Capped at MAX_PAGES_PER_BATCH to avoid 413 request_too_large errors.
+ * If more pages are requested, only the first batch is returned with
+ * a message telling Claude to request the remaining pages.
+ */
+const MAX_PAGES_PER_BATCH = 5;
+const RENDER_DPI = 150;
+
+async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
+  if (!globalPdfPath) {
+    throw new Error('PDF path not set - cannot extract pages');
+  }
+
+  // Enforce per-call page limit to stay under API request size limits
+  const pagesToExtract = pageNumbers.slice(0, MAX_PAGES_PER_BATCH);
+  const remainingPages = pageNumbers.slice(MAX_PAGES_PER_BATCH);
+
+  console.log(`   📄 Extracting ${pagesToExtract.length} pages at ${RENDER_DPI} DPI...`);
+  if (remainingPages.length > 0) {
+    console.log(`   ⚠️  ${remainingPages.length} additional pages deferred (max ${MAX_PAGES_PER_BATCH} per call)`);
+  }
+
+  const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, RENDER_DPI);
+
+  // Save images to session temp directory so user can view them
+  if (globalSessionDir) {
+    const imagesDir = path.join(globalSessionDir, 'images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    for (const img of extractedImages) {
+      const imgPath = path.join(imagesDir, `page-${img.pageNumber}.jpg`);
+      fs.writeFileSync(imgPath, Buffer.from(img.base64Data, 'base64'));
+    }
+    console.log(`   💾 Saved images to ${imagesDir}`);
+  }
+
+  // Build status message
+  const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
+  let statusText = `Successfully extracted ${pagesToExtract.length} pages: ${pagesToExtract.join(', ')}`;
+  statusText += `\nImages saved to: ${globalSessionDir ? path.join(globalSessionDir, 'images') : 'N/A'}`;
+
+  if (remainingPages.length > 0) {
+    statusText += `\n\nNOTE: ${remainingPages.length} additional pages were requested but not included to stay within API size limits. Document your findings from these pages to your working notes file first, then call extract_pdf_pages again with the remaining pages: [${remainingPages.join(', ')}]`;
+  }
+
+  statusText += `\n\nREMINDER: After analyzing these images, write your findings to your working notes file at: ${notesPath}`;
+
+  // Return tool result with both text AND images
+  const content: any[] = [
+    { type: 'text', text: statusText }
+  ];
+
+  // Add each image
+  for (const img of extractedImages) {
+    content.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: img.mimeType,
+        data: img.base64Data
+      }
+    });
+  }
+
+  console.log(`   ✅ Returning ${extractedImages.length} images to Claude`);
+
+  return content;
+}
