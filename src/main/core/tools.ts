@@ -2,8 +2,8 @@
 import { app, dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ToolDefinition, ToolExecutionResult } from './types.js';
-import { extractPdfPages } from './pdf-extractor.js';
+import type { ToolDefinition, ToolExecutionResult, CropArea, NamedRegion } from './types.js';
+import { extractPdfPages, extractPdfRegion, resolveRegionToCrop, getPdfPageDimensions } from './pdf-extractor.js';
 
 // Use Electron app paths instead of hardcoded paths
 function getKnowledgeBasePath(): string {
@@ -158,6 +158,40 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       },
       required: ['page_numbers']
     }
+  },
+  {
+    name: 'extract_pdf_region',
+    description: 'Extract a cropped region of a PDF page at higher resolution for detailed reading. Use this after viewing the full page overview (via extract_pdf_pages) when you need to read small text, dimensions, or details that are not legible in the overview. Specify a named region (quadrant/half) or exact pixel coordinates. Named regions are recommended — use pixel coordinates only if you need a very specific area.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        page_number: {
+          type: 'number',
+          description: 'The page number to crop from (1-indexed)'
+        },
+        region: {
+          type: 'string',
+          enum: [
+            'top-left', 'top-right', 'bottom-left', 'bottom-right',
+            'top-half', 'bottom-half', 'left-half', 'right-half',
+            'center'
+          ],
+          description: 'Named region to extract. Quadrants are 50% width x 50% height. Halves are 100% x 50% or 50% x 100%. Center is middle 50% x 50%. Content may be split at region boundaries — request adjacent regions if needed.'
+        },
+        crop: {
+          type: 'object',
+          properties: {
+            x: { type: 'number', description: 'X coordinate of crop origin (pixels at 150 DPI, from top-left)' },
+            y: { type: 'number', description: 'Y coordinate of crop origin (pixels at 150 DPI, from top-left)' },
+            width: { type: 'number', description: 'Width of crop area in pixels at 150 DPI' },
+            height: { type: 'number', description: 'Height of crop area in pixels at 150 DPI' }
+          },
+          required: ['x', 'y', 'width', 'height'],
+          description: 'Exact pixel coordinates for the crop area. Coordinates are relative to the page rendered at 150 DPI. The page dimensions are included in the response from extract_pdf_pages and extract_pdf_region calls.'
+        }
+      },
+      required: ['page_number']
+    }
   }
 ];
 
@@ -213,6 +247,14 @@ export async function executeTool(
       case 'extract_pdf_pages':
         // This returns an array of content blocks (text + images)
         result = await extractPdfPagesForClaude(toolInput.page_numbers as number[]);
+        break;
+
+      case 'extract_pdf_region':
+        result = await extractPdfRegionForClaude(
+          toolInput.page_number as number,
+          toolInput.region as NamedRegion | undefined,
+          toolInput.crop as CropArea | undefined
+        );
         break;
 
       default:
@@ -458,6 +500,90 @@ async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
   }
 
   console.log(`   ✅ Returning ${extractedImages.length} images to Claude`);
+
+  return content;
+}
+
+/**
+ * Extract a cropped region of a PDF page for detailed reading
+ * Returns a single higher-resolution image of the specified area
+ */
+async function extractPdfRegionForClaude(
+  pageNumber: number,
+  region?: NamedRegion,
+  crop?: CropArea
+): Promise<any> {
+  if (!globalPdfPath) {
+    throw new Error('PDF path not set - cannot extract region');
+  }
+
+  if (!region && !crop) {
+    throw new Error('Either "region" (named region like "top-left") or "crop" (pixel coordinates {x, y, width, height}) must be provided.');
+  }
+
+  // Get page dimensions for region resolution
+  const { pageWidth, pageHeight } = await getPdfPageDimensions(globalPdfPath, pageNumber, RENDER_DPI);
+
+  // Resolve crop area
+  let cropArea: CropArea;
+  let regionLabel: string;
+
+  if (region) {
+    cropArea = resolveRegionToCrop(region, pageWidth, pageHeight);
+    regionLabel = region;
+  } else {
+    // Clamp user-provided coordinates to page bounds
+    cropArea = {
+      x: Math.max(0, Math.round(crop!.x)),
+      y: Math.max(0, Math.round(crop!.y)),
+      width: Math.round(crop!.width),
+      height: Math.round(crop!.height)
+    };
+    if (cropArea.x + cropArea.width > pageWidth) {
+      cropArea.width = pageWidth - cropArea.x;
+    }
+    if (cropArea.y + cropArea.height > pageHeight) {
+      cropArea.height = pageHeight - cropArea.y;
+    }
+    regionLabel = `crop-${cropArea.x}-${cropArea.y}-${cropArea.width}x${cropArea.height}`;
+  }
+
+  console.log(`   🔍 Extracting ${regionLabel} from page ${pageNumber} (${pageWidth}x${pageHeight} at ${RENDER_DPI} DPI)...`);
+
+  const result = await extractPdfRegion(globalPdfPath, pageNumber, cropArea, RENDER_DPI);
+
+  // Save crop image to session directory
+  if (globalSessionDir) {
+    const imagesDir = path.join(globalSessionDir, 'images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    const imgPath = path.join(imagesDir, `page-${pageNumber}-${regionLabel}.jpg`);
+    fs.writeFileSync(imgPath, Buffer.from(result.base64Data, 'base64'));
+    console.log(`   💾 Saved crop to ${imgPath}`);
+  }
+
+  // Build response with metadata
+  const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
+  let statusText = `Extracted ${region ? `"${region}" region` : 'custom crop'} of page ${pageNumber}.`;
+  statusText += `\nFull page dimensions: ${pageWidth}x${pageHeight} pixels (${RENDER_DPI} DPI).`;
+  statusText += `\nCrop area: x=${cropArea.x}, y=${cropArea.y}, width=${cropArea.width}, height=${cropArea.height}`;
+  statusText += `\n\nThis crop has ~${Math.round(pageWidth / cropArea.width)}x higher effective resolution than the full-page overview.`;
+  statusText += `\n\nREMINDER: After reading details from this crop, update your working notes at: ${notesPath}`;
+
+  const content: any[] = [
+    { type: 'text', text: statusText },
+    {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: result.mimeType,
+        data: result.base64Data
+      }
+    }
+  ];
+
+  console.log(`   ✅ Returning crop image to Claude`);
 
   return content;
 }
