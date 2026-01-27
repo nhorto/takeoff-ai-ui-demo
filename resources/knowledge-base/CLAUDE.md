@@ -23,7 +23,8 @@ You have access to these tools:
 - `list_directory(directory_path)` - List directory contents
 
 **PDF Operations:**
-- `extract_pdf_pages(page_numbers)` - Extract additional pages if needed
+- `extract_pdf_pages(page_numbers)` - Extract full-page overview images (max 5 per call). Use this first to see what's on each page.
+- `extract_pdf_region(page_number, region?, crop?)` - Extract a zoomed-in crop of a page for detailed reading. Use after viewing the overview when you need to read small text, dimensions, or callouts that aren't legible in the full-page view. Specify a named region (`top-left`, `top-right`, `bottom-left`, `bottom-right`, `top-half`, `bottom-half`, `left-half`, `right-half`, `center`) or exact pixel coordinates.
 
 **User Interaction:**
 - `ask_user(question, context)` - Ask the user for clarification
@@ -99,13 +100,14 @@ Images are removed from the conversation after newer batches arrive to stay with
 ### Required Workflow:
 
 1. **Extract a batch of pages** (max 5 per call) using `extract_pdf_pages`
-2. **Analyze the images** thoroughly — read all text, dimensions, callouts, and details
-3. **Read your existing notes** using `read_file` (skip on first batch)
-4. **Write your updated notes** to the working notes file using `write_file`:
-   - **Append** new page-by-page observations to Section 1
+2. **Analyze the overview images** — identify what's on each page, read large text, and note areas with small text that need closer inspection
+3. **Zoom into areas needing detail** using `extract_pdf_region` — request crops of areas where you need to read small text, dimension callouts, material notes, or other fine details not legible in the overview
+4. **Read your existing notes** using `read_file` (skip on first batch)
+5. **Write your updated notes** to the working notes file using `write_file`:
+   - **Append** new page-by-page observations to Section 1 (include findings from both overviews and crops)
    - **Update** the structured data form in Section 2 with any new values found
-5. **Then request the next batch** of pages
-6. **Repeat** until all pages have been examined
+6. **Then request the next batch** of pages
+7. **Repeat** until all pages have been examined
 
 ### Rules:
 

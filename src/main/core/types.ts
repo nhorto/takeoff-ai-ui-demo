@@ -57,6 +57,18 @@ export interface PDFPageImage {
   mimeType: 'image/png' | 'image/jpeg';
 }
 
+export interface CropArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type NamedRegion =
+  | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  | 'top-half' | 'bottom-half' | 'left-half' | 'right-half'
+  | 'center';
+
 export interface AgentLoopStats {
   iterations: number;
   totalTokens: number;

@@ -137,10 +137,12 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 - Understand HOW it's built (materials, connections, rail details)
 - Note specifications (055113 Metal Pan Stairs, 055213 Railings, etc.)
 - Identify material types (bent plate, checker plate, pipe sizes)
+- **Zoom in on details:** Use `extract_pdf_region` to crop areas with small text, dimension strings, or material callouts that aren't legible in the full-page overview
 
 **Step 2: Go to Plan/Section Sheets - READ ACTUAL CALLOUTS**
 - Count FLIGHTS per level
 - **READ the actual riser/tread callouts** (e.g., "13 RISERS @ 7"") - DO NOT estimate
+- **Zoom in to read dimension callouts:** If riser counts, heights, or tread dimensions are too small to read in the overview, use `extract_pdf_region` to crop the relevant area (e.g., `extract_pdf_region(page, region='top-right')`)
 - Count TREADS in each flight ("the heavy lifting")
 - Record the **exact riser height** shown for each flight
 - Measure or note LANDING sizes
