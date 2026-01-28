@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Takeoff session management
   startTakeoff: (params: { pdfPath: string; systemPrompt: string }) =>
     ipcRenderer.invoke('start-takeoff', params),
+  newSession: () => ipcRenderer.invoke('new-session'),
 
   // API key management
   getApiKey: () => ipcRenderer.invoke('get-api-key'),
@@ -41,6 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectPdfFile: () => ipcRenderer.invoke('select-pdf-file'),
   openOutputFile: (filePath: string) => ipcRenderer.invoke('open-output-file', filePath),
   getOutputsDirectory: () => ipcRenderer.invoke('get-outputs-directory'),
+  openOutputsFolder: () => ipcRenderer.invoke('open-outputs-folder'),
 
   // App info
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
@@ -54,6 +56,7 @@ declare global {
   interface Window {
     electronAPI: {
       startTakeoff: (params: { pdfPath: string; systemPrompt: string; userMessage: string }) => Promise<any>;
+      newSession: () => Promise<string>;
       getApiKey: () => Promise<string>;
       setApiKey: (key: string) => Promise<boolean>;
       loadKnowledgeBase: () => Promise<string>;
@@ -65,6 +68,7 @@ declare global {
       selectPdfFile: () => Promise<string | null>;
       openOutputFile: (filePath: string) => Promise<void>;
       getOutputsDirectory: () => Promise<string>;
+      openOutputsFolder: () => Promise<string>;
       getAppVersion: () => Promise<string>;
       getAppPath: () => Promise<string>;
     };
