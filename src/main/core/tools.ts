@@ -359,11 +359,18 @@ async function writeFile(filePath: string, content: string): Promise<string> {
  * Read a file from the filesystem
  */
 async function readFile(filePath: string): Promise<string> {
-  if (!fs.existsSync(filePath)) {
+  let resolvedPath = filePath;
+
+  // Resolve outputs/ paths to userData outputs directory (same as writeFile)
+  if (!path.isAbsolute(filePath) && (filePath.startsWith('outputs/') || filePath.startsWith('outputs\\'))) {
+    resolvedPath = path.join(getOutputsDir(), filePath.replace(/^outputs[/\\]/, ''));
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
     throw new Error(`File not found: ${filePath}`);
   }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const content = fs.readFileSync(resolvedPath, 'utf-8');
   return content;
 }
 
@@ -371,11 +378,18 @@ async function readFile(filePath: string): Promise<string> {
  * List directory contents
  */
 async function listDirectory(directoryPath: string): Promise<string> {
-  if (!fs.existsSync(directoryPath)) {
+  let resolvedPath = directoryPath;
+
+  // Resolve "outputs" to userData outputs directory (same as writeFile)
+  if (directoryPath === 'outputs' || directoryPath === 'outputs/') {
+    resolvedPath = getOutputsDir();
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
     throw new Error(`Directory not found: ${directoryPath}`);
   }
 
-  const files = fs.readdirSync(directoryPath);
+  const files = fs.readdirSync(resolvedPath);
   return files.join('\n');
 }
 

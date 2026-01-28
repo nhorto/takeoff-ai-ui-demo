@@ -29,6 +29,9 @@ function getOutputsDir(): string {
   return path.join(app.getPath('userData'), 'outputs');
 }
 
+// Track the current session directory so follow-up messages reuse it
+let currentSessionDir: string | null = null;
+
 export function setupIPCHandlers() {
   console.log('⚙️  Setting up IPC handlers...');
 
@@ -56,12 +59,17 @@ export function setupIPCHandlers() {
       // Set environment variable for Anthropic SDK
       process.env.ANTHROPIC_API_KEY = apiKey;
 
-      // Create session temp directory for working files
-      const sessionId = Date.now().toString();
-      const sessionDir = path.join(os.tmpdir(), `takeoff-session-${sessionId}`);
-      fs.mkdirSync(sessionDir, { recursive: true });
+      // Reuse existing session directory if one is active, otherwise create new
+      if (!currentSessionDir || !fs.existsSync(currentSessionDir)) {
+        const sessionId = Date.now().toString();
+        currentSessionDir = path.join(os.tmpdir(), `takeoff-session-${sessionId}`);
+        fs.mkdirSync(currentSessionDir, { recursive: true });
+        console.log(`   New session directory: ${currentSessionDir}`);
+      } else {
+        console.log(`   Reusing session directory: ${currentSessionDir}`);
+      }
+      const sessionDir = currentSessionDir;
       setGlobalSessionDir(sessionDir);
-      console.log(`   Session directory: ${sessionDir}`);
 
       // Build initial message with PDF context if provided
       let initialMessage = userMessage;
@@ -86,7 +94,8 @@ IMPORTANT - Working Notes:
 To avoid losing your analysis when older images are removed from the conversation, you MUST maintain a working notes file. After analyzing each batch of images, use write_file to save your findings to: ${notesPath}
 If you need to reference findings from earlier pages, use read_file to read your working notes instead of re-extracting pages you already analyzed.
 
-Save final outputs to the outputs/ directory.`;
+Save final outputs to the outputs/ directory.
+Output files will be saved to: ${getOutputsDir()}`;
       }
 
       // Run agent loop with streaming updates
@@ -120,6 +129,18 @@ Save final outputs to the outputs/ directory.`;
         error: error instanceof Error ? error.message : String(error)
       };
     }
+  });
+
+  /**
+   * Start a new session explicitly (e.g., when uploading a new PDF)
+   */
+  ipcMain.handle('new-session', async () => {
+    const sessionId = Date.now().toString();
+    currentSessionDir = path.join(os.tmpdir(), `takeoff-session-${sessionId}`);
+    fs.mkdirSync(currentSessionDir, { recursive: true });
+    setGlobalSessionDir(currentSessionDir);
+    console.log(`   New session created: ${currentSessionDir}`);
+    return currentSessionDir;
   });
 
   // =============================================================================
@@ -229,6 +250,18 @@ Save final outputs to the outputs/ directory.`;
    */
   ipcMain.handle('get-outputs-directory', async () => {
     return getOutputsDir();
+  });
+
+  /**
+   * Open outputs folder in system file manager
+   */
+  ipcMain.handle('open-outputs-folder', async () => {
+    const outputsDir = getOutputsDir();
+    if (!fs.existsSync(outputsDir)) {
+      fs.mkdirSync(outputsDir, { recursive: true });
+    }
+    await shell.openPath(outputsDir);
+    return outputsDir;
   });
 
   // =============================================================================

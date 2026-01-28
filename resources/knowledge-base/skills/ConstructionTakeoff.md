@@ -50,6 +50,10 @@ For EVERY value in the takeoff:
 3. **ASK** the user if they want you to assume or if they can provide clarification
 4. **DOCUMENT** in assumptions section: "Value not found on sheets [X, Y, Z] - Assumed [value]"
 
+### When to Use `ask_user`:
+
+Use `ask_user` ONLY for genuine ambiguities — unclear dimensions, conflicting information, or missing data you cannot resolve from the drawings. **Do NOT ask about scope or detail level** when the user has already stated their request. If the user says "do a takeoff", proceed with a full detailed takeoff immediately. Do not present options like "A) full, B) sample, C) quick" — this wastes time and causes duplicate work.
+
 ### ⚠️ RISER HEIGHTS - CRITICAL FOR CODE COMPLIANCE
 
 **You MUST read the actual riser callouts from EVERY flight:**
@@ -137,12 +141,12 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 - Understand HOW it's built (materials, connections, rail details)
 - Note specifications (055113 Metal Pan Stairs, 055213 Railings, etc.)
 - Identify material types (bent plate, checker plate, pipe sizes)
-- **Zoom in on details:** Use `extract_pdf_region` to crop areas with small text, dimension strings, or material callouts that aren't legible in the full-page overview
+- **Zoom in on details only when the overview is insufficient:** Use `extract_pdf_region` to crop areas with small text, dimension strings, or material callouts that aren't legible in the full-page overview. Do NOT crop every detail page — only crop when you can identify specific text you need but can't read.
 
 **Step 2: Go to Plan/Section Sheets - READ ACTUAL CALLOUTS**
 - Count FLIGHTS per level
 - **READ the actual riser/tread callouts** (e.g., "13 RISERS @ 7"") - DO NOT estimate
-- **Zoom in to read dimension callouts:** If riser counts, heights, or tread dimensions are too small to read in the overview, use `extract_pdf_region` to crop the relevant area (e.g., `extract_pdf_region(page, region='top-right')`)
+- **Zoom in to read dimension callouts only if you cannot read them from the overview:** If riser counts, heights, or tread dimensions are too small to read in the full-page view, use `extract_pdf_region` to crop the specific area where the callout appears (e.g., `extract_pdf_region(page, region='top-right')`). State in your working notes what value you need before cropping.
 - Count TREADS in each flight ("the heavy lifting")
 - Record the **exact riser height** shown for each flight
 - Measure or note LANDING sizes
