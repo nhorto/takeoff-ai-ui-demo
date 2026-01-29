@@ -146,11 +146,31 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 **Step 2: Go to Plan/Section Sheets - READ ACTUAL CALLOUTS**
 - Count FLIGHTS per level
 - **READ the actual riser/tread callouts** (e.g., "13 RISERS @ 7"") - DO NOT estimate
-- **Zoom in to read dimension callouts only if you cannot read them from the overview:** If riser counts, heights, or tread dimensions are too small to read in the full-page view, use `extract_pdf_region` to crop the specific area where the callout appears (e.g., `extract_pdf_region(page, region='top-right')`). State in your working notes what value you need before cropping.
+- **Zoom in to read dimension callouts only if you cannot read them from the overview:** If riser counts, heights, or tread dimensions are too small to read in the full-page view, use `extract_pdf_region` to crop the specific area where the callout appears.
 - Count TREADS in each flight ("the heavy lifting")
 - Record the **exact riser height** shown for each flight
 - Measure or note LANDING sizes
 - Record stair widths
+
+**⚠️ COUNTING TREADS: Use Pixel Coordinates for Precision**
+
+When counting treads visually from section views, **use pixel coordinates** instead of named regions to zoom into exactly the area you need:
+
+1. **View the full page first** to identify where the stair section is located
+2. **Estimate the pixel coordinates** of the specific flight you need to count (page dimensions are returned in the response)
+3. **Request a tight crop** around just that flight using `extract_pdf_region(page, crop={x, y, width, height})`
+4. **Count the treads** in the zoomed image
+5. **Repeat** for each flight that needs counting
+
+**Example workflow for counting treads in a section view:**
+```
+1. extract_pdf_pages([252]) → See full page, note "section view is on left side, roughly x=0-800, y=0-1500"
+2. extract_pdf_region(252, crop={x: 100, y: 200, width: 600, height: 400}) → Zoom to first flight, count treads
+3. extract_pdf_region(252, crop={x: 100, y: 550, width: 600, height: 400}) → Zoom to second flight, count treads
+4. Continue until all flights are counted
+```
+
+**Why pixel coordinates matter:** Named regions (top-left, bottom-half, etc.) give you fixed portions of the page. Pixel coordinates let you target exactly the stair flight you need, giving you maximum zoom on the specific area. A 400×400 pixel crop of a single flight gives you ~4x better resolution than a quadrant crop.
 
 **Step 3: Verify Code Compliance - COMPARE RISER HEIGHTS**
 - **List all riser heights found** across each stair (e.g., 6 7/8", 7", 7 3/8")
