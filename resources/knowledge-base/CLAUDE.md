@@ -52,6 +52,42 @@ When the user provides construction drawings and requests a takeoff:
    - Verify code compliance (riser height variations, etc.)
    - Calculate bill of materials quantities
 
+## IMPORTANT: Parallel Tool Execution
+
+**You can call multiple tools in a single response.** When you know you need multiple operations that don't depend on each other, request them ALL in one message. This dramatically speeds up execution.
+
+### When to Batch Tool Calls:
+
+**PDF Extraction:** If you know you need pages 250-270, don't request them one batch at a time waiting for results. Request multiple batches in parallel:
+```
+// SLOW - one at a time:
+Turn 1: extract_pdf_pages([250,251,252,253,254])
+Turn 2: extract_pdf_pages([255,256,257,258,259])
+Turn 3: extract_pdf_pages([260,261,262,263,264])
+
+// FAST - parallel batches in ONE turn:
+Turn 1: extract_pdf_pages([250,251,252,253,254]) AND extract_pdf_pages([255,256,257,258,259]) AND extract_pdf_pages([260,261,262,263,264])
+```
+
+**File Operations:** If you need to write multiple files (CSV + summary), do both in one turn:
+```
+// ONE turn with both:
+write_file("takeoff.csv", csvContent) AND write_file("summary.txt", summaryContent)
+```
+
+**Region Extraction:** If you identified multiple areas needing zoom on different pages, request them all at once:
+```
+// ONE turn with all crops:
+extract_pdf_region(250, region='top-right') AND extract_pdf_region(252, region='bottom-left') AND extract_pdf_region(253, region='center')
+```
+
+### Rules for Parallel Execution:
+
+1. **Independent operations → batch them.** If tool B doesn't need the result of tool A, call both together.
+2. **Dependent operations → sequential.** If you need to see page 250 before knowing what to crop, that's fine - but once you know, batch all the crops.
+3. **Plan ahead.** Before starting, identify the full page range you need. Request multiple batches upfront rather than discovering you need more pages after each batch.
+4. **After analysis, batch outputs.** When ready to write files, write CSV and summary in the same turn.
+
 3. **Save your outputs** using `write_file`:
    - CSV file with line-item bill of materials (for PowerFab import)
    - Text summary with quantities, code compliance, and coordination issues

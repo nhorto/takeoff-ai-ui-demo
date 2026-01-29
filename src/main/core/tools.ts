@@ -16,15 +16,43 @@ function getKnowledgeBasePath(): string {
   }
 }
 
+// Configured output directory (set by IPC handler from user preferences)
+let configuredOutputsDir: string = '';
+
+export function setConfiguredOutputsDir(dir: string): void {
+  configuredOutputsDir = dir;
+}
+
+// Image quality settings (configurable via settings panel)
+let configuredMaxImageDimension: number = 1568;
+let configuredRenderDpi: number = 150;
+
+export function setImageSettings(maxDim: number, dpi: number): void {
+  configuredMaxImageDimension = maxDim;
+  configuredRenderDpi = dpi;
+  console.log(`🖼️  Image settings updated: ${maxDim}px max, ${dpi} DPI`);
+}
+
+export function getImageSettings(): { maxImageDimension: number; renderDpi: number } {
+  return {
+    maxImageDimension: configuredMaxImageDimension,
+    renderDpi: configuredRenderDpi
+  };
+}
+
 function getOutputsDir(): string {
-  // Use Electron userData directory for outputs
+  // Use configured directory if set, otherwise use Electron userData directory
+  if (configuredOutputsDir && configuredOutputsDir.length > 0) {
+    return configuredOutputsDir;
+  }
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'outputs');
 }
 
-// Store PDF path globally (set by IPC handler)
+// Store PDF path and session info globally (set by IPC handler)
 let globalPdfPath: string = '';
 let globalSessionDir: string = '';
+let globalSessionId: string = '';
 
 export function setGlobalPdfPath(pdfPath: string): void {
   globalPdfPath = pdfPath;
@@ -36,6 +64,45 @@ export function setGlobalSessionDir(sessionDir: string): void {
 
 export function getGlobalSessionDir(): string {
   return globalSessionDir;
+}
+
+export function setGlobalSessionId(sessionId: string): void {
+  globalSessionId = sessionId;
+}
+
+export function getGlobalSessionId(): string {
+  return globalSessionId;
+}
+
+/**
+ * Generate a timestamp-based session ID
+ * Format: YYYY-MM-DD-HHmmss
+ */
+export function generateSessionId(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+}
+
+/**
+ * Get the session-specific output directory
+ * Creates it if it doesn't exist
+ */
+function getSessionOutputDir(): string {
+  const baseOutputsDir = getOutputsDir();
+  const sessionId = globalSessionId || 'default';
+  const sessionOutputDir = path.join(baseOutputsDir, sessionId);
+
+  if (!fs.existsSync(sessionOutputDir)) {
+    fs.mkdirSync(sessionOutputDir, { recursive: true });
+  }
+
+  return sessionOutputDir;
 }
 
 /**
@@ -329,20 +396,28 @@ async function listAvailableSkills(): Promise<string> {
 
 /**
  * Write a file to the filesystem
- * ELECTRON ADAPTATION: Use userData directory for outputs
+ * ELECTRON ADAPTATION: Use session-specific directory under userData/outputs/
  */
 async function writeFile(filePath: string, content: string): Promise<string> {
-  const outputsDir = getOutputsDir();
+  let resolvedPath: string;
 
-  // Ensure outputs directory exists
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir, { recursive: true });
-  }
+  if (path.isAbsolute(filePath)) {
+    // For absolute paths, validate they're within allowed directories
+    const outputsDir = getOutputsDir();
+    const sessionDir = globalSessionDir;
 
-  // Resolve file path - if it's relative, put it in outputs/
-  let resolvedPath = filePath;
-  if (!path.isAbsolute(filePath)) {
-    resolvedPath = path.join(outputsDir, filePath);
+    // Allow writes to outputs directory or session temp directory
+    if (!filePath.startsWith(outputsDir) && !filePath.startsWith(sessionDir)) {
+      throw new Error(`Cannot write to path outside of outputs or session directory: ${filePath}`);
+    }
+    resolvedPath = filePath;
+  } else {
+    // For relative paths, use session-specific output directory
+    const sessionOutputDir = getSessionOutputDir();
+
+    // Strip "outputs/" prefix if present (Claude sometimes includes it)
+    const cleanPath = filePath.replace(/^outputs[/\\]/, '');
+    resolvedPath = path.join(sessionOutputDir, cleanPath);
   }
 
   // Ensure parent directory exists
@@ -352,6 +427,7 @@ async function writeFile(filePath: string, content: string): Promise<string> {
   }
 
   fs.writeFileSync(resolvedPath, content, 'utf-8');
+  console.log(`   📁 Output saved: ${resolvedPath}`);
   return `File written successfully to: ${resolvedPath}`;
 }
 
@@ -361,9 +437,13 @@ async function writeFile(filePath: string, content: string): Promise<string> {
 async function readFile(filePath: string): Promise<string> {
   let resolvedPath = filePath;
 
-  // Resolve outputs/ paths to userData outputs directory (same as writeFile)
-  if (!path.isAbsolute(filePath) && (filePath.startsWith('outputs/') || filePath.startsWith('outputs\\'))) {
-    resolvedPath = path.join(getOutputsDir(), filePath.replace(/^outputs[/\\]/, ''));
+  if (!path.isAbsolute(filePath)) {
+    // For relative paths starting with outputs/, use session output directory
+    if (filePath.startsWith('outputs/') || filePath.startsWith('outputs\\')) {
+      const cleanPath = filePath.replace(/^outputs[/\\]/, '');
+      resolvedPath = path.join(getSessionOutputDir(), cleanPath);
+    }
+    // Otherwise, path is relative to session temp dir (for working-notes.md etc.)
   }
 
   if (!fs.existsSync(resolvedPath)) {
@@ -380,9 +460,9 @@ async function readFile(filePath: string): Promise<string> {
 async function listDirectory(directoryPath: string): Promise<string> {
   let resolvedPath = directoryPath;
 
-  // Resolve "outputs" to userData outputs directory (same as writeFile)
+  // Resolve "outputs" to session-specific output directory
   if (directoryPath === 'outputs' || directoryPath === 'outputs/') {
-    resolvedPath = getOutputsDir();
+    resolvedPath = getSessionOutputDir();
   }
 
   if (!fs.existsSync(resolvedPath)) {
@@ -390,7 +470,8 @@ async function listDirectory(directoryPath: string): Promise<string> {
   }
 
   const files = fs.readdirSync(resolvedPath);
-  return files.join('\n');
+  const fullPath = resolvedPath;
+  return `Contents of ${fullPath}:\n${files.join('\n')}`;
 }
 
 /**
@@ -431,17 +512,9 @@ async function askUser(question: string, context?: string): Promise<string> {
     context: context || ''
   });
 
-  // Wait for user's response
+  // Wait for user's response (no timeout - wait indefinitely)
   return new Promise<string>((resolve, reject) => {
     pendingUserResponse = { resolve, reject };
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pendingUserResponse) {
-        pendingUserResponse.reject(new Error('User response timeout'));
-        pendingUserResponse = null;
-      }
-    }, 5 * 60 * 1000);
   });
 }
 
@@ -454,23 +527,24 @@ async function askUser(question: string, context?: string): Promise<string> {
  * a message telling Claude to request the remaining pages.
  */
 const MAX_PAGES_PER_BATCH = 5;
-const RENDER_DPI = 150;
 
 async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
   if (!globalPdfPath) {
     throw new Error('PDF path not set - cannot extract pages');
   }
 
+  const { maxImageDimension, renderDpi } = getImageSettings();
+
   // Enforce per-call page limit to stay under API request size limits
   const pagesToExtract = pageNumbers.slice(0, MAX_PAGES_PER_BATCH);
   const remainingPages = pageNumbers.slice(MAX_PAGES_PER_BATCH);
 
-  console.log(`   📄 Extracting ${pagesToExtract.length} pages at ${RENDER_DPI} DPI...`);
+  console.log(`   📄 Extracting ${pagesToExtract.length} pages at ${renderDpi} DPI (max ${maxImageDimension}px)...`);
   if (remainingPages.length > 0) {
     console.log(`   ⚠️  ${remainingPages.length} additional pages deferred (max ${MAX_PAGES_PER_BATCH} per call)`);
   }
 
-  const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, RENDER_DPI);
+  const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, renderDpi, maxImageDimension);
 
   // Save images to session temp directory so user can view them
   if (globalSessionDir) {
@@ -535,8 +609,10 @@ async function extractPdfRegionForClaude(
     throw new Error('Either "region" (named region like "top-left") or "crop" (pixel coordinates {x, y, width, height}) must be provided.');
   }
 
+  const { maxImageDimension, renderDpi } = getImageSettings();
+
   // Get page dimensions for region resolution
-  const { pageWidth, pageHeight } = await getPdfPageDimensions(globalPdfPath, pageNumber, RENDER_DPI);
+  const { pageWidth, pageHeight } = await getPdfPageDimensions(globalPdfPath, pageNumber, renderDpi);
 
   // Resolve crop area
   let cropArea: CropArea;
@@ -562,9 +638,9 @@ async function extractPdfRegionForClaude(
     regionLabel = `crop-${cropArea.x}-${cropArea.y}-${cropArea.width}x${cropArea.height}`;
   }
 
-  console.log(`   🔍 Extracting ${regionLabel} from page ${pageNumber} (${pageWidth}x${pageHeight} at ${RENDER_DPI} DPI)...`);
+  console.log(`   🔍 Extracting ${regionLabel} from page ${pageNumber} (${pageWidth}x${pageHeight} at ${renderDpi} DPI, max ${maxImageDimension}px)...`);
 
-  const result = await extractPdfRegion(globalPdfPath, pageNumber, cropArea, RENDER_DPI);
+  const result = await extractPdfRegion(globalPdfPath, pageNumber, cropArea, renderDpi, maxImageDimension);
 
   // Save crop image to session directory
   if (globalSessionDir) {
@@ -580,7 +656,7 @@ async function extractPdfRegionForClaude(
   // Build response with metadata
   const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
   let statusText = `Extracted ${region ? `"${region}" region` : 'custom crop'} of page ${pageNumber}.`;
-  statusText += `\nFull page dimensions: ${pageWidth}x${pageHeight} pixels (${RENDER_DPI} DPI).`;
+  statusText += `\nFull page dimensions: ${pageWidth}x${pageHeight} pixels (${renderDpi} DPI).`;
   statusText += `\nCrop area: x=${cropArea.x}, y=${cropArea.y}, width=${cropArea.width}, height=${cropArea.height}`;
   statusText += `\n\nThis crop has ~${Math.round(pageWidth / cropArea.width)}x higher effective resolution than the full-page overview.`;
   statusText += `\n\nREMINDER: After reading details from this crop, update your working notes at: ${notesPath}`;

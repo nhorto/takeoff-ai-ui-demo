@@ -50,31 +50,31 @@ export default function ChatInterface({ messages, isProcessing, onSendMessage }:
       {/* Thinking indicator */}
       {isProcessing && <ThinkingPanel />}
 
-      {/* Chat input */}
-      {isProcessing && (
-        <div className="border-t border-gray-700 p-4 bg-gray-800">
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your response to Claude..."
-              className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={!isProcessing}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || !isProcessing}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Send
-            </button>
-          </form>
-          <p className="text-xs text-gray-500 mt-2">
-            Respond to Claude's questions or provide additional instructions
-          </p>
-        </div>
-      )}
+      {/* Chat input - always visible for conversation continuity */}
+      <div className="border-t border-gray-700 p-4 bg-gray-800">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={isProcessing ? "Type your response to Claude..." : "Ask a follow-up question..."}
+            className="flex-1 px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {isProcessing ? 'Send' : 'Ask'}
+          </button>
+        </form>
+        <p className="text-xs text-gray-500 mt-2">
+          {isProcessing
+            ? "Respond to Claude's questions or provide additional instructions"
+            : "Continue the conversation - Claude still has access to the PDF and previous context"
+          }
+        </p>
+      </div>
     </div>
   );
 }

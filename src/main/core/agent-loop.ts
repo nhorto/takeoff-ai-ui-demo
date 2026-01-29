@@ -20,6 +20,15 @@ const PRICING = {
 };
 
 /**
+ * Result of running the agent loop, including conversation history for continuation
+ */
+export interface AgentLoopResult {
+  result: string;
+  stats: AgentLoopStats;
+  messages: Message[];  // Full conversation history for continuation
+}
+
+/**
  * Run the agent loop with Claude
  *
  * @param initialMessage - The user's initial message/request
@@ -27,15 +36,17 @@ const PRICING = {
  * @param systemPrompt - System prompt defining Claude's role and capabilities
  * @param tools - Tool definitions available to Claude
  * @param onUpdate - Optional callback for streaming updates
- * @returns The final text response from Claude
+ * @param existingMessages - Optional existing conversation to continue from
+ * @returns The final text response, stats, and full conversation history
  */
 export async function runAgentLoop(
   initialMessage: string,
   images: ImageData[],
   systemPrompt: string,
   tools: ToolDefinition[],
-  onUpdate?: (update: any) => void
-): Promise<{ result: string; stats: AgentLoopStats }> {
+  onUpdate?: (update: any) => void,
+  existingMessages?: Message[]
+): Promise<AgentLoopResult> {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -44,10 +55,17 @@ export async function runAgentLoop(
 
   const anthropic = new Anthropic({ apiKey });
 
-  // Initialize conversation with user message + images
-  const messages: Message[] = [
-    buildInitialMessage(initialMessage, images)
-  ];
+  // Use existing messages or start fresh
+  let messages: Message[];
+  if (existingMessages && existingMessages.length > 0) {
+    // Continue existing conversation - add new user message
+    messages = [...existingMessages];
+    messages.push(buildInitialMessage(initialMessage, images));
+    console.log(`   Continuing conversation with ${existingMessages.length} existing messages`);
+  } else {
+    // Start new conversation
+    messages = [buildInitialMessage(initialMessage, images)];
+  }
 
   const stats: AgentLoopStats = {
     iterations: 0,
@@ -108,13 +126,13 @@ export async function runAgentLoop(
       if (response.stop_reason === 'end_turn') {
         console.log('✅ Claude finished - extracting final response...\n');
         const finalText = extractTextContent(response.content as ContentBlock[]);
-        return { result: finalText, stats };
+        return { result: finalText, stats, messages };
       }
 
       if (response.stop_reason === 'max_tokens') {
         console.log('⚠️  Warning: Hit max tokens limit\n');
         const finalText = extractTextContent(response.content as ContentBlock[]);
-        return { result: finalText + '\n\n[Response truncated - hit max tokens]', stats };
+        return { result: finalText + '\n\n[Response truncated - hit max tokens]', stats, messages };
       }
 
       if (response.stop_reason === 'tool_use') {
@@ -140,7 +158,7 @@ export async function runAgentLoop(
       // Unexpected stop reason
       console.log(`⚠️  Unexpected stop reason: ${response.stop_reason}\n`);
       const finalText = extractTextContent(response.content as ContentBlock[]);
-      return { result: finalText, stats };
+      return { result: finalText, stats, messages };
 
     } catch (error) {
       // Handle API errors with retry logic
@@ -196,8 +214,11 @@ function extractTextContent(content: ContentBlock[]): string {
 }
 
 /**
- * Execute all tool calls from Claude's response
+ * Execute all tool calls from Claude's response in parallel
+ * Uses a concurrency limit to avoid overwhelming the system
  */
+const MAX_PARALLEL_TOOLS = 5;
+
 async function executeToolCalls(content: ContentBlock[]): Promise<ContentBlock[]> {
   const toolUses = content.filter(
     block => block.type === 'tool_use'
@@ -207,11 +228,11 @@ async function executeToolCalls(content: ContentBlock[]): Promise<ContentBlock[]
     return [];
   }
 
-  console.log(`   Executing ${toolUses.length} tool call(s)...\n`);
+  const isParallel = toolUses.length > 1;
+  console.log(`   Executing ${toolUses.length} tool call(s)${isParallel ? ' in parallel' : ''}...\n`);
 
-  const results: ContentBlock[] = [];
-
-  for (const toolUse of toolUses) {
+  // Execute tools in parallel with concurrency limit
+  const executeOne = async (toolUse: ToolUseContent): Promise<ContentBlock> => {
     const result = await executeTool(
       toolUse.name,
       toolUse.input,
@@ -225,21 +246,34 @@ async function executeToolCalls(content: ContentBlock[]): Promise<ContentBlock[]
       // markers to 4 per request. The system prompt already uses one, and
       // each image batch would add another, causing a 400 error after 4 batches.
       // System prompt caching is the main win; images change every turn anyway.
-      results.push({
+      return {
         type: 'tool_result',
         tool_use_id: result.tool_use_id,
         content: result.content,
         is_error: result.is_error
-      } as any);
+      } as any;
     } else {
       // Simple string result
-      results.push({
+      return {
         type: 'tool_result',
         tool_use_id: result.tool_use_id,
         content: result.content,
         is_error: result.is_error
-      });
+      };
     }
+  };
+
+  // If only a few tools, just run them all in parallel
+  if (toolUses.length <= MAX_PARALLEL_TOOLS) {
+    return Promise.all(toolUses.map(executeOne));
+  }
+
+  // For many tools, batch them to limit concurrency
+  const results: ContentBlock[] = [];
+  for (let i = 0; i < toolUses.length; i += MAX_PARALLEL_TOOLS) {
+    const batch = toolUses.slice(i, i + MAX_PARALLEL_TOOLS);
+    const batchResults = await Promise.all(batch.map(executeOne));
+    results.push(...batchResults);
   }
 
   return results;
