@@ -152,7 +152,7 @@ export async function runAgentLoop(
         );
 
         // Clean up old images before adding new ones to prevent request size limit
-        cleanupOldImages(messages, 2); // Keep 2 most recent image groups (overview + current crop)
+        cleanupOldImages(messages, 0); // Remove ALL images after processing - notes are the memory
 
         // Add tool results to conversation
         messages.push({

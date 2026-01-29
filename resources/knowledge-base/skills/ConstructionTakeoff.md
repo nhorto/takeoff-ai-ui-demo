@@ -152,25 +152,53 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 - Measure or note LANDING sizes
 - Record stair widths
 
-**⚠️ COUNTING TREADS: Use Pixel Coordinates for Precision**
+**⚠️ COUNTING TREADS: Plan First, Crop in Parallel**
 
-When counting treads visually from section views, **use pixel coordinates** instead of named regions to zoom into exactly the area you need:
+When counting treads visually from section views, **plan ALL crops first, then execute them in parallel**:
 
-1. **View the full page first** to identify where the stair section is located
-2. **Estimate the pixel coordinates** of the specific flight you need to count (page dimensions are returned in the response)
-3. **Request a tight crop** around just that flight using `extract_pdf_region(page, crop={x, y, width, height})`
-4. **Count the treads** in the zoomed image
-5. **Repeat** for each flight that needs counting
+**Step 1: View and Plan**
+1. Extract the overview page: `extract_pdf_pages([252])`
+2. Identify ALL flight locations that need counting
+3. **Write your crop plan to working notes BEFORE cropping:**
+   ```
+   Page 252 crop plan:
+   - Flight 1: pixels (100, 200, 600, 400) — count treads
+   - Flight 2: pixels (100, 650, 600, 400) — count treads
+   - Flight 3: pixels (100, 1100, 600, 400) — count treads
+   ```
 
-**Example workflow for counting treads in a section view:**
+**Step 2: Execute ALL Crops in ONE Turn**
 ```
-1. extract_pdf_pages([252]) → See full page, note "section view is on left side, roughly x=0-800, y=0-1500"
-2. extract_pdf_region(252, crop={x: 100, y: 200, width: 600, height: 400}) → Zoom to first flight, count treads
-3. extract_pdf_region(252, crop={x: 100, y: 550, width: 600, height: 400}) → Zoom to second flight, count treads
-4. Continue until all flights are counted
+// ONE turn with ALL crops (parallel execution):
+extract_pdf_region(252, crop={x: 100, y: 200, width: 600, height: 400}) AND
+extract_pdf_region(252, crop={x: 100, y: 650, width: 600, height: 400}) AND
+extract_pdf_region(252, crop={x: 100, y: 1100, width: 600, height: 400})
+```
+
+**Step 3: Analyze and Record**
+- Count treads in each crop result
+- Write findings to working notes
+- Move to next page
+
+**WRONG (slow, expensive):**
+```
+Turn 1: extract_pdf_region(252, crop=flight1) → count →
+Turn 2: extract_pdf_region(252, crop=flight2) → count →
+Turn 3: extract_pdf_region(252, crop=flight3) → count
+= 3 API round trips, no notes written
+```
+
+**RIGHT (fast, efficient):**
+```
+Turn 1: PLAN all crops, WRITE plan to notes
+Turn 2: EXECUTE all 3 crops in parallel
+Turn 3: ANALYZE results, WRITE findings to notes
+= 3 API round trips, but with discipline and parallel execution
 ```
 
 **Why pixel coordinates matter:** Named regions (top-left, bottom-half, etc.) give you fixed portions of the page. Pixel coordinates let you target exactly the stair flight you need, giving you maximum zoom on the specific area. A 400×400 pixel crop of a single flight gives you ~4x better resolution than a quadrant crop.
+
+**Cost Reality:** Each sequential crop = one API round trip. 20 sequential crops = 20 round trips. 20 parallel crops = 1 round trip. Plan first, batch always.
 
 **Step 3: Verify Code Compliance - COMPARE RISER HEIGHTS**
 - **List all riser heights found** across each stair (e.g., 6 7/8", 7", 7 3/8")

@@ -40,6 +40,36 @@ Each image sent to the API costs tokens. Unnecessary crops compound costs across
 - **Never systematically crop every page.** Review the overview first, record what you CAN read, then crop only the areas where specific values are illegible.
 - **State what you're looking for before cropping.** In your working notes, write what specific value you need (e.g., "need to count treads in Flight 3 of Stair 2 section — treads too small in overview, will crop pixels 100-500 x 400-800") before requesting the crop.
 
+### Cropping Protocol (MANDATORY)
+
+**Before making ANY crop requests, follow this sequence:**
+
+1. **VIEW** — Extract the overview page(s) using `extract_pdf_pages`
+2. **PLAN** — Identify ALL areas that need cropping and their pixel coordinates
+3. **WRITE** — Record your crop plan in working notes BEFORE cropping:
+   ```
+   Page 250 crop plan:
+   - Crop 1: pixels (100, 200, 600, 400) — need tread count for Flight 1
+   - Crop 2: pixels (100, 650, 600, 400) — need tread count for Flight 2
+   - Crop 3: pixels (1200, 300, 400, 300) — need to read riser callout
+   ```
+4. **EXECUTE** — Request ALL planned crops in ONE turn (parallel execution)
+5. **ANALYZE** — Review all crop results together
+6. **RECORD** — Write findings to working notes
+7. **PROCEED** — Move to next page/stair
+
+**WRONG (slow, expensive):**
+```
+crop → analyze → crop → analyze → crop → analyze → (eventually) write notes
+```
+
+**RIGHT (fast, efficient):**
+```
+plan → write plan → crop ALL at once → analyze all → write findings
+```
+
+**Cost Reality:** Each crop costs ~$0.01-0.02 in tokens. 50 unnecessary sequential crops = $0.50-1.00 wasted + 50 extra API round trips. Plan first, batch crops, write notes.
+
 ## How to Get Started
 
 When the user provides construction drawings and requests a takeoff:
@@ -144,21 +174,34 @@ All drawing sheets referenced
 
 Images are removed from the conversation after newer batches arrive to stay within API size limits. **You MUST maintain working notes** so you do not lose your analysis.
 
-### Required Workflow:
+### Required Workflow (TWO writes per page batch):
 
-1. **Extract a batch of pages** (max 5 per call) using `extract_pdf_pages`
-2. **Analyze the overview images** — identify what's on each page, read large text, and note areas with small text that need closer inspection
-3. **Zoom into areas needing detail** using `extract_pdf_region` — request crops of areas where you need to read small text, dimension callouts, material notes, or other fine details not legible in the overview
-4. **Read your existing notes** using `read_file` (skip on first batch)
-5. **Write your updated notes** to the working notes file using `write_file`:
-   - **Append** new page-by-page observations to Section 1 (include findings from both overviews and crops)
-   - **Update** the structured data form in Section 2 with any new values found
-6. **Then request the next batch** of pages
-7. **Repeat** until all pages have been examined
+**For each batch of pages, write to notes TWICE:**
+
+1. **Extract overview pages** (max 5 per call) using `extract_pdf_pages`
+2. **Analyze overviews** — identify what's on each page, read large text, note areas needing crops
+3. **Read your existing notes** using `read_file` (skip on first batch)
+4. **WRITE #1: Your crop plan** — Before any cropping, write to notes:
+   - What you observed on each page
+   - What specific crops you need and why (with pixel coordinates)
+   - What values you're looking for in each crop
+5. **Execute ALL crops in ONE turn** using parallel `extract_pdf_region` calls
+6. **Analyze crop results** — count treads, read dimensions, extract values
+7. **WRITE #2: Your findings** — After analyzing crops, update notes with:
+   - Values extracted from each crop
+   - Updated structured data (Section 2)
+   - Any remaining gaps or questions
+8. **Then request the next batch** of pages
+9. **Repeat** until all pages have been examined
+
+**Why two writes?** The first write (crop plan) forces you to think before cropping. The second write (findings) ensures you don't lose your analysis when images are cleaned up. Together they create a disciplined rhythm that prevents wasted crops and lost work.
 
 ### Rules:
 
-- **ALWAYS write notes before requesting the next batch.** If you skip this step, your analysis of earlier pages will be lost.
+- **Write notes TWICE per batch** — once before cropping (plan), once after (findings). This is mandatory, not optional.
+- **Never crop without a written plan.** If you haven't written your crop plan to notes, you haven't thought it through.
+- **Execute all planned crops in ONE turn.** Don't crop → analyze → crop → analyze. Plan → write → crop ALL → analyze → write.
+- **ALWAYS write findings before requesting the next batch.** If you skip this step, your analysis will be lost.
 - **Do NOT re-extract pages you already analyzed.** Read your working notes file instead using `read_file`.
 - **Only re-extract a page** if your notes are genuinely insufficient and you need to re-examine a specific visual detail.
 - **Append to the notes file** — do not overwrite earlier findings. Read the file first, then write the updated content with new findings added.

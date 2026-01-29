@@ -186,24 +186,40 @@ bun run tsc --noEmit
 
 ## Development Roadmap
 
-### Current (MVP)
+### Phase 1: MVP (Complete)
 - ✅ Basic UI with file upload
 - ✅ Agent loop integration
-- ✅ Tool execution
-- ✅ Results display
+- ✅ Tool execution with parallel batching
+- ✅ Results display with token tracking
+- ✅ Prompt caching (90% cost reduction on system prompt)
+- ✅ Hybrid image strategy (overview + pixel-coordinate crops)
+- ✅ Working notes as external memory (images removed after processing)
 
-### Phase 2 (Future)
+### Phase 2: Agent Improvements (Current)
+- ✅ Cropping protocol (VIEW → PLAN → WRITE → EXECUTE → RECORD)
+- ✅ Two-writes-per-batch discipline for working notes
+- ⬜ System reminders after key tool calls
+- ⬜ Structured JSON state files alongside markdown notes
+- ⬜ Incremental CSV output (rows added as stairs complete)
+- ⬜ Progress tracking UI
+
+### Phase 3: Sub-Agent Architecture (Next)
+- ⬜ Phase-based workflow with checkpoints
+- ⬜ Discovery agent (scan PDF, identify sheets)
+- ⬜ Detail agent (extract construction specs)
+- ⬜ Parallel counting agents (one per stair)
+- ⬜ Compilation agent (generate final outputs)
+- ⬜ Failure recovery and retry from checkpoints
+
+### Phase 4: Production Features
+- ⬜ Context trimming and compression
 - ⬜ Streaming responses (show thinking in real-time)
 - ⬜ Session history (resume previous takeoffs)
 - ⬜ Multiple PDFs at once
-- ⬜ Inline CSV editing
-- ⬜ Export to Excel
-
-### Phase 3 (Production)
 - ⬜ Backend server for auth and usage tracking
-- ⬜ Subscription management
-- ⬜ Auto-updates
-- ⬜ Windows installer with code signing
+- ⬜ Auto-updates and code signing
+
+See [docs/agent-improvements-roadmap.md](docs/agent-improvements-roadmap.md) for detailed technical plans.
 
 ## Known Limitations (MVP Scope)
 
