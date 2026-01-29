@@ -20,12 +20,14 @@ import type { PDFPageImage, CropArea, NamedRegion } from './types.js';
  * @param pdfPath - Absolute path to the PDF file
  * @param pageNumbers - Array of page numbers to extract (1-indexed)
  * @param dpi - Resolution for rendering (default: 150)
+ * @param maxDimension - Maximum dimension for output images (default: 1568)
  * @returns Array of extracted page images with base64 data
  */
 export async function extractPdfPages(
   pdfPath: string,
   pageNumbers: number[],
-  dpi: number = 150
+  dpi: number = 150,
+  maxDimension: number = 1568
 ): Promise<PDFPageImage[]> {
 
   if (!fs.existsSync(pdfPath)) {
@@ -60,6 +62,7 @@ export async function extractPdfPages(
         const pdfBase64 = '${pdfBase64}';
         const pageNumbers = ${JSON.stringify(pageNumbers)};
         const dpi = ${dpi};
+        const MAX_DIM = ${maxDimension};
 
         // Convert base64 to Uint8Array
         const binaryString = atob(pdfBase64);
@@ -98,10 +101,8 @@ export async function extractPdfPages(
             viewport: viewport
           }).promise;
 
-          // Resize to fit within Anthropic's optimal dimensions (1568px max)
-          // This avoids the 5MB per-image limit and matches what Anthropic
-          // would resize to internally, so Claude sees the same quality.
-          const MAX_DIM = 1568;
+          // Resize to fit within configured max dimension
+          // Higher values = better quality but larger payload / fewer images per batch
           let outputCanvas = canvas;
           if (canvas.width > MAX_DIM || canvas.height > MAX_DIM) {
             const scaleFactor = Math.min(MAX_DIM / canvas.width, MAX_DIM / canvas.height);
@@ -167,19 +168,21 @@ export function resolveRegionToCrop(region: NamedRegion, pageWidth: number, page
  * Extract a cropped region of a single PDF page at higher resolution
  *
  * Renders the full page at the given DPI, crops to the specified area,
- * resizes the crop to fit within 1568px max dimension, and returns as JPEG.
+ * resizes the crop to fit within max dimension, and returns as JPEG.
  *
  * @param pdfPath - Absolute path to the PDF file
  * @param pageNumber - Page number to extract (1-indexed)
  * @param cropArea - Pixel coordinates for the crop (at render DPI)
  * @param dpi - Resolution for rendering (default: 150)
+ * @param maxDimension - Maximum dimension for output images (default: 1568)
  * @returns Extracted cropped image with page dimension metadata
  */
 export async function extractPdfRegion(
   pdfPath: string,
   pageNumber: number,
   cropArea: CropArea,
-  dpi: number = 150
+  dpi: number = 150,
+  maxDimension: number = 1568
 ): Promise<PDFPageImage & { pageWidth: number; pageHeight: number }> {
 
   if (!fs.existsSync(pdfPath)) {
@@ -210,6 +213,7 @@ export async function extractPdfRegion(
         const pdfBase64 = '${pdfBase64}';
         const pageNum = ${pageNumber};
         const dpi = ${dpi};
+        const MAX_DIM = ${maxDimension};
         const cropX = ${cropArea.x};
         const cropY = ${cropArea.y};
         const cropW = ${cropArea.width};
@@ -251,8 +255,7 @@ export async function extractPdfRegion(
         const cropCtx = cropCanvas.getContext('2d');
         cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-        // Resize crop to fit within 1568px max dimension
-        const MAX_DIM = 1568;
+        // Resize crop to fit within configured max dimension
         let outputCanvas = cropCanvas;
         if (cropCanvas.width > MAX_DIM || cropCanvas.height > MAX_DIM) {
           const scaleFactor = Math.min(MAX_DIM / cropCanvas.width, MAX_DIM / cropCanvas.height);
