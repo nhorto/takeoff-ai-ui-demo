@@ -228,7 +228,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
   },
   {
     name: 'extract_pdf_region',
-    description: 'Extract a cropped region of a PDF page at higher resolution for detailed reading. Use this after viewing the full page overview (via extract_pdf_pages) when you need to read small text, dimensions, or details that are not legible in the overview. Specify a named region (quadrant/half) or exact pixel coordinates. Named regions are recommended — use pixel coordinates only if you need a very specific area.',
+    description: 'Extract a cropped region of a PDF page at higher resolution for detailed reading. Use this after viewing the full page overview (via extract_pdf_pages) when you need to read small text, dimensions, or count individual elements like treads. You can specify either a named region OR exact pixel coordinates. **For counting tasks (treads, risers, items), use pixel coordinates to zoom into exactly the area you need** — this gives you surgical precision to target a single stair flight or detail area. Named regions (quadrants/halves) are convenient for general exploration but pixel coordinates let you zoom tighter.',
     input_schema: {
       type: 'object',
       properties: {
@@ -243,7 +243,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
             'top-half', 'bottom-half', 'left-half', 'right-half',
             'center'
           ],
-          description: 'Named region to extract. Quadrants are 50% width x 50% height. Halves are 100% x 50% or 50% x 100%. Center is middle 50% x 50%. Content may be split at region boundaries — request adjacent regions if needed.'
+          description: 'Named region to extract. Quadrants are 50% width x 50% height. Halves are 100% x 50% or 50% x 100%. Center is middle 50% x 50%. Good for general exploration, but use pixel coordinates when you need tighter zoom.'
         },
         crop: {
           type: 'object',
@@ -254,7 +254,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
             height: { type: 'number', description: 'Height of crop area in pixels at 150 DPI' }
           },
           required: ['x', 'y', 'width', 'height'],
-          description: 'Exact pixel coordinates for the crop area. Coordinates are relative to the page rendered at 150 DPI. The page dimensions are included in the response from extract_pdf_pages and extract_pdf_region calls.'
+          description: 'Exact pixel coordinates for the crop area. **USE THIS for counting tasks** — target exactly the stair flight, detail, or text you need. Coordinates are relative to the page rendered at 150 DPI. Page dimensions are returned in extract_pdf_pages and extract_pdf_region responses. Example: To zoom into a single stair flight, estimate its position from the overview and request a tight crop like {x: 200, y: 400, width: 400, height: 600}.'
         }
       },
       required: ['page_number']

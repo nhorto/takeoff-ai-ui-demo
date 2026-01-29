@@ -86,6 +86,14 @@ export async function runAgentLoop(
     console.log(`${'='.repeat(80)}\n`);
 
     try {
+      // Add cache_control to the last tool to cache all tool definitions
+      const toolsWithCache = tools.map((tool, index) => {
+        if (index === tools.length - 1) {
+          return { ...tool, cache_control: { type: "ephemeral" } };
+        }
+        return tool;
+      });
+
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 64000,
@@ -97,7 +105,7 @@ export async function runAgentLoop(
           } as any
         ],
         messages: messages as Anthropic.MessageCreateParams['messages'],
-        tools: tools as Anthropic.Tool[]
+        tools: toolsWithCache as Anthropic.Tool[]
       });
 
       // Update token stats
