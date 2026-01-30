@@ -7,8 +7,11 @@ console.log('🔌 Preload script executing...');
 // ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   // Takeoff session management
-  startTakeoff: (params: { pdfPath: string; systemPrompt: string }) =>
+  startTakeoff: (params: { pdfPath: string; systemPrompt: string; userMessage: string }) =>
     ipcRenderer.invoke('start-takeoff', params),
+  continueConversation: (params: { userMessage: string }) =>
+    ipcRenderer.invoke('continue-conversation', params),
+  newSession: () => ipcRenderer.invoke('new-session'),
 
   // API key management
   getApiKey: () => ipcRenderer.invoke('get-api-key'),
@@ -41,10 +44,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectPdfFile: () => ipcRenderer.invoke('select-pdf-file'),
   openOutputFile: (filePath: string) => ipcRenderer.invoke('open-output-file', filePath),
   getOutputsDirectory: () => ipcRenderer.invoke('get-outputs-directory'),
+  openOutputsFolder: () => ipcRenderer.invoke('open-outputs-folder'),
 
   // App info
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-  getAppPath: () => ipcRenderer.invoke('get-app-path')
+  getAppPath: () => ipcRenderer.invoke('get-app-path'),
+
+  // Settings
+  getOutputDirectory: () => ipcRenderer.invoke('get-output-directory'),
+  setOutputDirectory: (directory: string) => ipcRenderer.invoke('set-output-directory', directory),
+  browseOutputDirectory: () => ipcRenderer.invoke('browse-output-directory'),
+  getDefaultOutputDirectory: () => ipcRenderer.invoke('get-default-output-directory'),
+  getImageSettings: () => ipcRenderer.invoke('get-image-settings'),
+  setImageSettings: (settings: { maxImageDimension: number; renderDpi: number }) =>
+    ipcRenderer.invoke('set-image-settings', settings),
+  openSessionImages: () => ipcRenderer.invoke('open-session-images'),
+  getSessionDir: () => ipcRenderer.invoke('get-session-dir')
 });
 
 console.log('✅ Preload script: electronAPI exposed to window');
@@ -54,6 +69,8 @@ declare global {
   interface Window {
     electronAPI: {
       startTakeoff: (params: { pdfPath: string; systemPrompt: string; userMessage: string }) => Promise<any>;
+      continueConversation: (params: { userMessage: string }) => Promise<any>;
+      newSession: () => Promise<{ sessionId: string; sessionDir: string }>;
       getApiKey: () => Promise<string>;
       setApiKey: (key: string) => Promise<boolean>;
       loadKnowledgeBase: () => Promise<string>;
@@ -65,8 +82,18 @@ declare global {
       selectPdfFile: () => Promise<string | null>;
       openOutputFile: (filePath: string) => Promise<void>;
       getOutputsDirectory: () => Promise<string>;
+      openOutputsFolder: () => Promise<string>;
       getAppVersion: () => Promise<string>;
       getAppPath: () => Promise<string>;
+      // Settings
+      getOutputDirectory: () => Promise<string>;
+      setOutputDirectory: (directory: string) => Promise<boolean>;
+      browseOutputDirectory: () => Promise<string | null>;
+      getDefaultOutputDirectory: () => Promise<string>;
+      getImageSettings: () => Promise<{ maxImageDimension: number; renderDpi: number }>;
+      setImageSettings: (settings: { maxImageDimension: number; renderDpi: number }) => Promise<boolean>;
+      openSessionImages: () => Promise<string>;
+      getSessionDir: () => Promise<string | null>;
     };
   }
 }
