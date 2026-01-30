@@ -37,3 +37,8 @@ out/
 
 # Temp / session files
 tmp/
+
+# Local test outputs (not committed)
+images/
+outputs/
+first_output/

@@ -50,6 +50,10 @@ For EVERY value in the takeoff:
 3. **ASK** the user if they want you to assume or if they can provide clarification
 4. **DOCUMENT** in assumptions section: "Value not found on sheets [X, Y, Z] - Assumed [value]"
 
+### When to Use `ask_user`:
+
+Use `ask_user` ONLY for genuine ambiguities — unclear dimensions, conflicting information, or missing data you cannot resolve from the drawings. **Do NOT ask about scope or detail level** when the user has already stated their request. If the user says "do a takeoff", proceed with a full detailed takeoff immediately. Do not present options like "A) full, B) sample, C) quick" — this wastes time and causes duplicate work.
+
 ### ⚠️ RISER HEIGHTS - CRITICAL FOR CODE COMPLIANCE
 
 **You MUST read the actual riser callouts from EVERY flight:**
@@ -137,14 +141,64 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 - Understand HOW it's built (materials, connections, rail details)
 - Note specifications (055113 Metal Pan Stairs, 055213 Railings, etc.)
 - Identify material types (bent plate, checker plate, pipe sizes)
+- **Zoom in on details only when the overview is insufficient:** Use `extract_pdf_region` to crop areas with small text, dimension strings, or material callouts that aren't legible in the full-page overview. Do NOT crop every detail page — only crop when you can identify specific text you need but can't read.
 
 **Step 2: Go to Plan/Section Sheets - READ ACTUAL CALLOUTS**
 - Count FLIGHTS per level
 - **READ the actual riser/tread callouts** (e.g., "13 RISERS @ 7"") - DO NOT estimate
+- **Zoom in to read dimension callouts only if you cannot read them from the overview:** If riser counts, heights, or tread dimensions are too small to read in the full-page view, use `extract_pdf_region` to crop the specific area where the callout appears.
 - Count TREADS in each flight ("the heavy lifting")
 - Record the **exact riser height** shown for each flight
 - Measure or note LANDING sizes
 - Record stair widths
+
+**⚠️ COUNTING TREADS: Plan First, Crop in Parallel**
+
+When counting treads visually from section views, **plan ALL crops first, then execute them in parallel**:
+
+**Step 1: View and Plan**
+1. Extract the overview page: `extract_pdf_pages([252])`
+2. Identify ALL flight locations that need counting
+3. **Write your crop plan to working notes BEFORE cropping:**
+   ```
+   Page 252 crop plan:
+   - Flight 1: pixels (100, 200, 600, 400) — count treads
+   - Flight 2: pixels (100, 650, 600, 400) — count treads
+   - Flight 3: pixels (100, 1100, 600, 400) — count treads
+   ```
+
+**Step 2: Execute ALL Crops in ONE Turn**
+```
+// ONE turn with ALL crops (parallel execution):
+extract_pdf_region(252, crop={x: 100, y: 200, width: 600, height: 400}) AND
+extract_pdf_region(252, crop={x: 100, y: 650, width: 600, height: 400}) AND
+extract_pdf_region(252, crop={x: 100, y: 1100, width: 600, height: 400})
+```
+
+**Step 3: Analyze and Record**
+- Count treads in each crop result
+- Write findings to working notes
+- Move to next page
+
+**WRONG (slow, expensive):**
+```
+Turn 1: extract_pdf_region(252, crop=flight1) → count →
+Turn 2: extract_pdf_region(252, crop=flight2) → count →
+Turn 3: extract_pdf_region(252, crop=flight3) → count
+= 3 API round trips, no notes written
+```
+
+**RIGHT (fast, efficient):**
+```
+Turn 1: PLAN all crops, WRITE plan to notes
+Turn 2: EXECUTE all 3 crops in parallel
+Turn 3: ANALYZE results, WRITE findings to notes
+= 3 API round trips, but with discipline and parallel execution
+```
+
+**Why pixel coordinates matter:** Named regions (top-left, bottom-half, etc.) give you fixed portions of the page. Pixel coordinates let you target exactly the stair flight you need, giving you maximum zoom on the specific area. A 400×400 pixel crop of a single flight gives you ~4x better resolution than a quadrant crop.
+
+**Cost Reality:** Each sequential crop = one API round trip. 20 sequential crops = 20 round trips. 20 parallel crops = 1 round trip. Plan first, batch always.
 
 **Step 3: Verify Code Compliance - COMPARE RISER HEIGHTS**
 - **List all riser heights found** across each stair (e.g., 6 7/8", 7", 7 3/8")

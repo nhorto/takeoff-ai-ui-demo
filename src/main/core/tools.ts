@@ -2,8 +2,8 @@
 import { app, dialog, BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ToolDefinition, ToolExecutionResult } from './types.js';
-import { extractPdfPages } from './pdf-extractor.js';
+import type { ToolDefinition, ToolExecutionResult, CropArea, NamedRegion } from './types.js';
+import { extractPdfPages, extractPdfRegion, resolveRegionToCrop, getPdfPageDimensions } from './pdf-extractor.js';
 
 // Use Electron app paths instead of hardcoded paths
 function getKnowledgeBasePath(): string {
@@ -16,15 +16,43 @@ function getKnowledgeBasePath(): string {
   }
 }
 
+// Configured output directory (set by IPC handler from user preferences)
+let configuredOutputsDir: string = '';
+
+export function setConfiguredOutputsDir(dir: string): void {
+  configuredOutputsDir = dir;
+}
+
+// Image quality settings (configurable via settings panel)
+let configuredMaxImageDimension: number = 1568;
+let configuredRenderDpi: number = 150;
+
+export function setImageSettings(maxDim: number, dpi: number): void {
+  configuredMaxImageDimension = maxDim;
+  configuredRenderDpi = dpi;
+  console.log(`🖼️  Image settings updated: ${maxDim}px max, ${dpi} DPI`);
+}
+
+export function getImageSettings(): { maxImageDimension: number; renderDpi: number } {
+  return {
+    maxImageDimension: configuredMaxImageDimension,
+    renderDpi: configuredRenderDpi
+  };
+}
+
 function getOutputsDir(): string {
-  // Use Electron userData directory for outputs
+  // Use configured directory if set, otherwise use Electron userData directory
+  if (configuredOutputsDir && configuredOutputsDir.length > 0) {
+    return configuredOutputsDir;
+  }
   const userDataPath = app.getPath('userData');
   return path.join(userDataPath, 'outputs');
 }
 
-// Store PDF path globally (set by IPC handler)
+// Store PDF path and session info globally (set by IPC handler)
 let globalPdfPath: string = '';
 let globalSessionDir: string = '';
+let globalSessionId: string = '';
 
 export function setGlobalPdfPath(pdfPath: string): void {
   globalPdfPath = pdfPath;
@@ -36,6 +64,45 @@ export function setGlobalSessionDir(sessionDir: string): void {
 
 export function getGlobalSessionDir(): string {
   return globalSessionDir;
+}
+
+export function setGlobalSessionId(sessionId: string): void {
+  globalSessionId = sessionId;
+}
+
+export function getGlobalSessionId(): string {
+  return globalSessionId;
+}
+
+/**
+ * Generate a timestamp-based session ID
+ * Format: YYYY-MM-DD-HHmmss
+ */
+export function generateSessionId(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  return `${year}-${month}-${day}-${hours}${minutes}${seconds}`;
+}
+
+/**
+ * Get the session-specific output directory
+ * Creates it if it doesn't exist
+ */
+function getSessionOutputDir(): string {
+  const baseOutputsDir = getOutputsDir();
+  const sessionId = globalSessionId || 'default';
+  const sessionOutputDir = path.join(baseOutputsDir, sessionId);
+
+  if (!fs.existsSync(sessionOutputDir)) {
+    fs.mkdirSync(sessionOutputDir, { recursive: true });
+  }
+
+  return sessionOutputDir;
 }
 
 /**
@@ -158,6 +225,40 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       },
       required: ['page_numbers']
     }
+  },
+  {
+    name: 'extract_pdf_region',
+    description: 'Extract a cropped region of a PDF page at higher resolution for detailed reading. Use this after viewing the full page overview (via extract_pdf_pages) when you need to read small text, dimensions, or count individual elements like treads. You can specify either a named region OR exact pixel coordinates. **For counting tasks (treads, risers, items), use pixel coordinates to zoom into exactly the area you need** — this gives you surgical precision to target a single stair flight or detail area. Named regions (quadrants/halves) are convenient for general exploration but pixel coordinates let you zoom tighter.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        page_number: {
+          type: 'number',
+          description: 'The page number to crop from (1-indexed)'
+        },
+        region: {
+          type: 'string',
+          enum: [
+            'top-left', 'top-right', 'bottom-left', 'bottom-right',
+            'top-half', 'bottom-half', 'left-half', 'right-half',
+            'center'
+          ],
+          description: 'Named region to extract. Quadrants are 50% width x 50% height. Halves are 100% x 50% or 50% x 100%. Center is middle 50% x 50%. Good for general exploration, but use pixel coordinates when you need tighter zoom.'
+        },
+        crop: {
+          type: 'object',
+          properties: {
+            x: { type: 'number', description: 'X coordinate of crop origin (pixels at 150 DPI, from top-left)' },
+            y: { type: 'number', description: 'Y coordinate of crop origin (pixels at 150 DPI, from top-left)' },
+            width: { type: 'number', description: 'Width of crop area in pixels at 150 DPI' },
+            height: { type: 'number', description: 'Height of crop area in pixels at 150 DPI' }
+          },
+          required: ['x', 'y', 'width', 'height'],
+          description: 'Exact pixel coordinates for the crop area. **USE THIS for counting tasks** — target exactly the stair flight, detail, or text you need. Coordinates are relative to the page rendered at 150 DPI. Page dimensions are returned in extract_pdf_pages and extract_pdf_region responses. Example: To zoom into a single stair flight, estimate its position from the overview and request a tight crop like {x: 200, y: 400, width: 400, height: 600}.'
+        }
+      },
+      required: ['page_number']
+    }
   }
 ];
 
@@ -213,6 +314,14 @@ export async function executeTool(
       case 'extract_pdf_pages':
         // This returns an array of content blocks (text + images)
         result = await extractPdfPagesForClaude(toolInput.page_numbers as number[]);
+        break;
+
+      case 'extract_pdf_region':
+        result = await extractPdfRegionForClaude(
+          toolInput.page_number as number,
+          toolInput.region as NamedRegion | undefined,
+          toolInput.crop as CropArea | undefined
+        );
         break;
 
       default:
@@ -287,20 +396,28 @@ async function listAvailableSkills(): Promise<string> {
 
 /**
  * Write a file to the filesystem
- * ELECTRON ADAPTATION: Use userData directory for outputs
+ * ELECTRON ADAPTATION: Use session-specific directory under userData/outputs/
  */
 async function writeFile(filePath: string, content: string): Promise<string> {
-  const outputsDir = getOutputsDir();
+  let resolvedPath: string;
 
-  // Ensure outputs directory exists
-  if (!fs.existsSync(outputsDir)) {
-    fs.mkdirSync(outputsDir, { recursive: true });
-  }
+  if (path.isAbsolute(filePath)) {
+    // For absolute paths, validate they're within allowed directories
+    const outputsDir = getOutputsDir();
+    const sessionDir = globalSessionDir;
 
-  // Resolve file path - if it's relative, put it in outputs/
-  let resolvedPath = filePath;
-  if (!path.isAbsolute(filePath)) {
-    resolvedPath = path.join(outputsDir, filePath);
+    // Allow writes to outputs directory or session temp directory
+    if (!filePath.startsWith(outputsDir) && !filePath.startsWith(sessionDir)) {
+      throw new Error(`Cannot write to path outside of outputs or session directory: ${filePath}`);
+    }
+    resolvedPath = filePath;
+  } else {
+    // For relative paths, use session-specific output directory
+    const sessionOutputDir = getSessionOutputDir();
+
+    // Strip "outputs/" prefix if present (Claude sometimes includes it)
+    const cleanPath = filePath.replace(/^outputs[/\\]/, '');
+    resolvedPath = path.join(sessionOutputDir, cleanPath);
   }
 
   // Ensure parent directory exists
@@ -310,6 +427,7 @@ async function writeFile(filePath: string, content: string): Promise<string> {
   }
 
   fs.writeFileSync(resolvedPath, content, 'utf-8');
+  console.log(`   📁 Output saved: ${resolvedPath}`);
   return `File written successfully to: ${resolvedPath}`;
 }
 
@@ -317,11 +435,22 @@ async function writeFile(filePath: string, content: string): Promise<string> {
  * Read a file from the filesystem
  */
 async function readFile(filePath: string): Promise<string> {
-  if (!fs.existsSync(filePath)) {
+  let resolvedPath = filePath;
+
+  if (!path.isAbsolute(filePath)) {
+    // For relative paths starting with outputs/, use session output directory
+    if (filePath.startsWith('outputs/') || filePath.startsWith('outputs\\')) {
+      const cleanPath = filePath.replace(/^outputs[/\\]/, '');
+      resolvedPath = path.join(getSessionOutputDir(), cleanPath);
+    }
+    // Otherwise, path is relative to session temp dir (for working-notes.md etc.)
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
     throw new Error(`File not found: ${filePath}`);
   }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const content = fs.readFileSync(resolvedPath, 'utf-8');
   return content;
 }
 
@@ -329,12 +458,20 @@ async function readFile(filePath: string): Promise<string> {
  * List directory contents
  */
 async function listDirectory(directoryPath: string): Promise<string> {
-  if (!fs.existsSync(directoryPath)) {
+  let resolvedPath = directoryPath;
+
+  // Resolve "outputs" to session-specific output directory
+  if (directoryPath === 'outputs' || directoryPath === 'outputs/') {
+    resolvedPath = getSessionOutputDir();
+  }
+
+  if (!fs.existsSync(resolvedPath)) {
     throw new Error(`Directory not found: ${directoryPath}`);
   }
 
-  const files = fs.readdirSync(directoryPath);
-  return files.join('\n');
+  const files = fs.readdirSync(resolvedPath);
+  const fullPath = resolvedPath;
+  return `Contents of ${fullPath}:\n${files.join('\n')}`;
 }
 
 /**
@@ -375,17 +512,9 @@ async function askUser(question: string, context?: string): Promise<string> {
     context: context || ''
   });
 
-  // Wait for user's response
+  // Wait for user's response (no timeout - wait indefinitely)
   return new Promise<string>((resolve, reject) => {
     pendingUserResponse = { resolve, reject };
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pendingUserResponse) {
-        pendingUserResponse.reject(new Error('User response timeout'));
-        pendingUserResponse = null;
-      }
-    }, 5 * 60 * 1000);
   });
 }
 
@@ -398,23 +527,24 @@ async function askUser(question: string, context?: string): Promise<string> {
  * a message telling Claude to request the remaining pages.
  */
 const MAX_PAGES_PER_BATCH = 5;
-const RENDER_DPI = 150;
 
 async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
   if (!globalPdfPath) {
     throw new Error('PDF path not set - cannot extract pages');
   }
 
+  const { maxImageDimension, renderDpi } = getImageSettings();
+
   // Enforce per-call page limit to stay under API request size limits
   const pagesToExtract = pageNumbers.slice(0, MAX_PAGES_PER_BATCH);
   const remainingPages = pageNumbers.slice(MAX_PAGES_PER_BATCH);
 
-  console.log(`   📄 Extracting ${pagesToExtract.length} pages at ${RENDER_DPI} DPI...`);
+  console.log(`   📄 Extracting ${pagesToExtract.length} pages at ${renderDpi} DPI (max ${maxImageDimension}px)...`);
   if (remainingPages.length > 0) {
     console.log(`   ⚠️  ${remainingPages.length} additional pages deferred (max ${MAX_PAGES_PER_BATCH} per call)`);
   }
 
-  const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, RENDER_DPI);
+  const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, renderDpi, maxImageDimension);
 
   // Save images to session temp directory so user can view them
   if (globalSessionDir) {
@@ -458,6 +588,92 @@ async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
   }
 
   console.log(`   ✅ Returning ${extractedImages.length} images to Claude`);
+
+  return content;
+}
+
+/**
+ * Extract a cropped region of a PDF page for detailed reading
+ * Returns a single higher-resolution image of the specified area
+ */
+async function extractPdfRegionForClaude(
+  pageNumber: number,
+  region?: NamedRegion,
+  crop?: CropArea
+): Promise<any> {
+  if (!globalPdfPath) {
+    throw new Error('PDF path not set - cannot extract region');
+  }
+
+  if (!region && !crop) {
+    throw new Error('Either "region" (named region like "top-left") or "crop" (pixel coordinates {x, y, width, height}) must be provided.');
+  }
+
+  const { maxImageDimension, renderDpi } = getImageSettings();
+
+  // Get page dimensions for region resolution
+  const { pageWidth, pageHeight } = await getPdfPageDimensions(globalPdfPath, pageNumber, renderDpi);
+
+  // Resolve crop area
+  let cropArea: CropArea;
+  let regionLabel: string;
+
+  if (region) {
+    cropArea = resolveRegionToCrop(region, pageWidth, pageHeight);
+    regionLabel = region;
+  } else {
+    // Clamp user-provided coordinates to page bounds
+    cropArea = {
+      x: Math.max(0, Math.round(crop!.x)),
+      y: Math.max(0, Math.round(crop!.y)),
+      width: Math.round(crop!.width),
+      height: Math.round(crop!.height)
+    };
+    if (cropArea.x + cropArea.width > pageWidth) {
+      cropArea.width = pageWidth - cropArea.x;
+    }
+    if (cropArea.y + cropArea.height > pageHeight) {
+      cropArea.height = pageHeight - cropArea.y;
+    }
+    regionLabel = `crop-${cropArea.x}-${cropArea.y}-${cropArea.width}x${cropArea.height}`;
+  }
+
+  console.log(`   🔍 Extracting ${regionLabel} from page ${pageNumber} (${pageWidth}x${pageHeight} at ${renderDpi} DPI, max ${maxImageDimension}px)...`);
+
+  const result = await extractPdfRegion(globalPdfPath, pageNumber, cropArea, renderDpi, maxImageDimension);
+
+  // Save crop image to session directory
+  if (globalSessionDir) {
+    const imagesDir = path.join(globalSessionDir, 'images');
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    const imgPath = path.join(imagesDir, `page-${pageNumber}-${regionLabel}.jpg`);
+    fs.writeFileSync(imgPath, Buffer.from(result.base64Data, 'base64'));
+    console.log(`   💾 Saved crop to ${imgPath}`);
+  }
+
+  // Build response with metadata
+  const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
+  let statusText = `Extracted ${region ? `"${region}" region` : 'custom crop'} of page ${pageNumber}.`;
+  statusText += `\nFull page dimensions: ${pageWidth}x${pageHeight} pixels (${renderDpi} DPI).`;
+  statusText += `\nCrop area: x=${cropArea.x}, y=${cropArea.y}, width=${cropArea.width}, height=${cropArea.height}`;
+  statusText += `\n\nThis crop has ~${Math.round(pageWidth / cropArea.width)}x higher effective resolution than the full-page overview.`;
+  statusText += `\n\nREMINDER: After reading details from this crop, update your working notes at: ${notesPath}`;
+
+  const content: any[] = [
+    { type: 'text', text: statusText },
+    {
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: result.mimeType,
+        data: result.base64Data
+      }
+    }
+  ];
+
+  console.log(`   ✅ Returning crop image to Claude`);
 
   return content;
 }

@@ -28,6 +28,7 @@ interface AgentStore {
   error: string | null;
   attachedPdf: { name: string; path: string } | null;
   waitingForUserResponse: boolean;
+  hasActiveConversation: boolean;  // True after first successful takeoff, enables follow-ups
 
   // Actions
   attachPdf: (name: string, path: string) => void;
@@ -46,18 +47,30 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   error: null,
   attachedPdf: null,
   waitingForUserResponse: false,
+  hasActiveConversation: false,
 
-  // Attach a PDF (doesn't start processing)
+  // Attach a PDF (doesn't start processing, but resets conversation for new takeoff)
   attachPdf: (name: string, path: string) => {
     console.log(`📎 Attached PDF: ${name}`);
-    set({ attachedPdf: { name, path }, error: null });
+    // Reset conversation state when attaching a new PDF - this ensures
+    // the next message starts a fresh takeoff rather than continuing
+    set({
+      attachedPdf: { name, path },
+      error: null,
+      hasActiveConversation: false,
+      messages: [],
+      results: null
+    });
+    // Also tell the main process to create a new session
+    window.electronAPI.newSession();
   },
 
-  // Send a user message and start the agent
+  // Send a user message - either starts a new takeoff or continues existing conversation
   sendMessage: async (userMessage: string) => {
-    const { attachedPdf } = get();
+    const { attachedPdf, hasActiveConversation } = get();
 
     console.log(`💬 User message: ${userMessage}`);
+    console.log(`   Has active conversation: ${hasActiveConversation}`);
 
     // Add user message to chat
     const userMsg: Message = {
@@ -65,7 +78,9 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       role: 'user',
       content: userMessage,
       timestamp: new Date(),
-      attachments: attachedPdf ? [{ type: 'pdf', name: attachedPdf.name, path: attachedPdf.path }] : undefined
+      attachments: attachedPdf && !hasActiveConversation
+        ? [{ type: 'pdf', name: attachedPdf.name, path: attachedPdf.path }]
+        : undefined
     };
 
     get().addMessage(userMsg);
@@ -73,9 +88,6 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     set({ isProcessing: true, error: null });
 
     try {
-      // Load system prompt from knowledge base
-      const systemPrompt = await window.electronAPI.loadKnowledgeBase();
-
       // Set up listener for agent updates
       window.electronAPI.onAgentUpdate((update) => {
         console.log('📨 Agent update:', update);
@@ -117,12 +129,24 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         set({ waitingForUserResponse: true });
       });
 
-      // Start the agent with PDF context if attached
-      const result = await window.electronAPI.startTakeoff({
-        pdfPath: attachedPdf?.path || '',
-        systemPrompt,
-        userMessage
-      });
+      let result;
+
+      if (hasActiveConversation) {
+        // Continue existing conversation
+        console.log('📝 Continuing existing conversation...');
+        result = await window.electronAPI.continueConversation({
+          userMessage
+        });
+      } else {
+        // Start new takeoff with PDF
+        console.log('🚀 Starting new takeoff...');
+        const systemPrompt = await window.electronAPI.loadKnowledgeBase();
+        result = await window.electronAPI.startTakeoff({
+          pdfPath: attachedPdf?.path || '',
+          systemPrompt,
+          userMessage
+        });
+      }
 
       if (result.success) {
         console.log('✅ Agent completed successfully');
@@ -139,6 +163,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 
         set({
           isProcessing: false,
+          hasActiveConversation: true,  // Mark conversation as active for follow-ups
           results: {
             stats: result.stats
           }
@@ -201,7 +226,8 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       results: null,
       error: null,
       attachedPdf: null,
-      waitingForUserResponse: false
+      waitingForUserResponse: false,
+      hasActiveConversation: false
     });
   }
 }));
