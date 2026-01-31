@@ -2,6 +2,7 @@
 import { ipcMain, dialog, shell, app } from 'electron';
 import { getMainWindow } from './window.js';
 import { runAgentLoop, AgentLoopResult } from './core/agent-loop.js';
+import { runOrchestratedTakeoff } from './core/orchestrator.js';
 import type { Message } from './core/types.js';
 import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, resolveUserResponse, setConfiguredOutputsDir, setImageSettings } from './core/tools.js';
 import * as os from 'os';
@@ -169,6 +170,99 @@ Files will be saved to session directory: ${sessionOutputDir}`;
     } catch (error) {
       console.error('\n❌ Takeoff failed:', error);
 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  /**
+   * Start an orchestrated takeoff (multi-phase with parallel counting)
+   */
+  ipcMain.handle('start-orchestrated-takeoff', async (_event, { pdfPath, userMessage }) => {
+    console.log(`\n🎭 Starting orchestrated takeoff...`);
+    console.log(`   PDF: ${path.basename(pdfPath)}`);
+    console.log(`   User: ${userMessage}`);
+
+    try {
+      // Get API key from store
+      const apiKey = store.get('apiKey') as string;
+      if (!apiKey) {
+        throw new Error('API key not set. Please configure your Anthropic API key.');
+      }
+      process.env.ANTHROPIC_API_KEY = apiKey;
+
+      // Load base system prompt
+      const knowledgeBasePath = getKnowledgeBasePath();
+      const claudeMdPath = path.join(knowledgeBasePath, 'CLAUDE.md');
+      const baseSystemPrompt = fs.readFileSync(claudeMdPath, 'utf-8');
+
+      const result = await runOrchestratedTakeoff({
+        pdfPath,
+        userMessage: userMessage || 'Do a quantity takeoff for all stairs',
+        baseSystemPrompt,
+        outputsDir: getOutputsDir(),
+        knowledgeBasePath,
+        onSessionCreated: (sessionId, sessionDir) => {
+          // Update session tracking immediately so UI buttons work during takeoff
+          currentSessionId = sessionId;
+          currentSessionDir = sessionDir;
+          console.log(`   📂 Session tracking updated: ${sessionId}`);
+        },
+        onPhaseStart: (phase, detail) => {
+          const mainWindow = getMainWindow();
+          if (mainWindow) {
+            mainWindow.webContents.send('orchestrator-phase', {
+              type: 'start',
+              phase,
+              detail
+            });
+          }
+        },
+        onPhaseComplete: (phase, data) => {
+          const mainWindow = getMainWindow();
+          if (mainWindow) {
+            mainWindow.webContents.send('orchestrator-phase', {
+              type: 'complete',
+              phase,
+              data
+            });
+          }
+        },
+        onError: (phase, error) => {
+          const mainWindow = getMainWindow();
+          if (mainWindow) {
+            mainWindow.webContents.send('orchestrator-phase', {
+              type: 'error',
+              phase,
+              error: error.message
+            });
+          }
+        }
+      });
+
+      console.log('\n✅ Orchestrated takeoff complete!');
+
+      // Update current session tracking so UI buttons work
+      if (result.sessionId && result.sessionDir) {
+        currentSessionId = result.sessionId;
+        currentSessionDir = result.sessionDir;
+        setGlobalSessionDir(result.sessionDir);
+        setGlobalSessionId(result.sessionId);
+      }
+
+      return {
+        success: result.success,
+        csvPath: result.csvPath,
+        summaryPath: result.summaryPath,
+        sessionDir: result.sessionDir,
+        error: result.error,
+        stats: result.stats
+      };
+
+    } catch (error) {
+      console.error('\n❌ Orchestrated takeoff failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)

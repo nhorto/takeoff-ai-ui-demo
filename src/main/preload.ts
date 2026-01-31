@@ -9,9 +9,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Takeoff session management
   startTakeoff: (params: { pdfPath: string; systemPrompt: string; userMessage: string }) =>
     ipcRenderer.invoke('start-takeoff', params),
+  startOrchestratedTakeoff: (params: { pdfPath: string; userMessage: string }) =>
+    ipcRenderer.invoke('start-orchestrated-takeoff', params),
   continueConversation: (params: { userMessage: string }) =>
     ipcRenderer.invoke('continue-conversation', params),
   newSession: () => ipcRenderer.invoke('new-session'),
+
+  // Orchestrator phase updates
+  onOrchestratorPhase: (callback: (phase: { type: string; phase: string; detail?: string; data?: any; error?: string }) => void) => {
+    ipcRenderer.on('orchestrator-phase', (_event, phase) => callback(phase));
+  },
+
+  removeOrchestratorPhaseListener: () => {
+    ipcRenderer.removeAllListeners('orchestrator-phase');
+  },
 
   // API key management
   getApiKey: () => ipcRenderer.invoke('get-api-key'),
@@ -69,8 +80,11 @@ declare global {
   interface Window {
     electronAPI: {
       startTakeoff: (params: { pdfPath: string; systemPrompt: string; userMessage: string }) => Promise<any>;
+      startOrchestratedTakeoff: (params: { pdfPath: string; userMessage: string }) => Promise<any>;
       continueConversation: (params: { userMessage: string }) => Promise<any>;
       newSession: () => Promise<{ sessionId: string; sessionDir: string }>;
+      onOrchestratorPhase: (callback: (phase: { type: string; phase: string; detail?: string; data?: any; error?: string }) => void) => void;
+      removeOrchestratorPhaseListener: () => void;
       getApiKey: () => Promise<string>;
       setApiKey: (key: string) => Promise<boolean>;
       loadKnowledgeBase: () => Promise<string>;

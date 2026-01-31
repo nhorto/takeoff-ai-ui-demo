@@ -91,15 +91,15 @@ When the user provides construction drawings and requests a takeoff:
 
 ### When to Batch Tool Calls:
 
-**PDF Extraction:** If you know you need pages 250-270, don't request them one batch at a time waiting for results. Request multiple batches in parallel:
+**PDF Extraction:** Extract pages in batches, but **limit to 2 parallel calls max** to avoid memory issues:
 ```
-// SLOW - one at a time:
-Turn 1: extract_pdf_pages([250,251,252,253,254])
-Turn 2: extract_pdf_pages([255,256,257,258,259])
-Turn 3: extract_pdf_pages([260,261,262,263,264])
+// BAD - too many parallel calls, will crash:
+Turn 1: extract_pdf_pages([250-254]) AND extract_pdf_pages([255-259]) AND extract_pdf_pages([260-264]) AND extract_pdf_pages([265-269])
 
-// FAST - parallel batches in ONE turn:
-Turn 1: extract_pdf_pages([250,251,252,253,254]) AND extract_pdf_pages([255,256,257,258,259]) AND extract_pdf_pages([260,261,262,263,264])
+// GOOD - 2 parallel batches at a time:
+Turn 1: extract_pdf_pages([250,251,252,253,254]) AND extract_pdf_pages([255,256,257,258,259])
+// Wait for results, analyze, write notes
+Turn 2: extract_pdf_pages([260,261,262,263,264]) AND extract_pdf_pages([265,266,267,268,269])
 ```
 
 **File Operations:** If you need to write multiple files (CSV + summary), do both in one turn:

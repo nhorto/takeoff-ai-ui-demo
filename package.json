@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently \"bun run dev:renderer\" \"bun run dev:electron\"",
     "dev:renderer": "vite",
-    "dev:electron": "bun run build:main && electron .",
+    "dev:electron": "bun run build:main && electron . --js-flags='--max-old-space-size=8192'",
     "build": "bun run build:renderer && bun run build:main",
     "build:renderer": "vite build",
     "build:main": "tsc && tsc --project tsconfig.preload.json && mv dist/main/preload.js dist/main/preload.cjs",

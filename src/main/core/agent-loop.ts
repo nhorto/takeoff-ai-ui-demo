@@ -11,7 +11,7 @@ import type {
 import { executeTool, getGlobalSessionDir } from './tools.js';
 import * as path from 'path';
 
-const MAX_ITERATIONS = 100;
+const DEFAULT_MAX_ITERATIONS = 100;
 
 // Token pricing for Claude Sonnet
 const PRICING = {
@@ -28,6 +28,16 @@ export interface AgentLoopResult {
   messages: Message[];  // Full conversation history for continuation
 }
 
+export interface AgentLoopOptions {
+  initialMessage: string;
+  images?: ImageData[];
+  systemPrompt: string;
+  tools: ToolDefinition[];
+  onUpdate?: (update: any) => void;
+  existingMessages?: Message[];
+  maxTurns?: number;  // Phase-specific iteration limit
+}
+
 /**
  * Run the agent loop with Claude
  *
@@ -37,6 +47,7 @@ export interface AgentLoopResult {
  * @param tools - Tool definitions available to Claude
  * @param onUpdate - Optional callback for streaming updates
  * @param existingMessages - Optional existing conversation to continue from
+ * @param maxTurns - Optional max iterations for phase-specific limits
  * @returns The final text response, stats, and full conversation history
  */
 export async function runAgentLoop(
@@ -45,7 +56,8 @@ export async function runAgentLoop(
   systemPrompt: string,
   tools: ToolDefinition[],
   onUpdate?: (update: any) => void,
-  existingMessages?: Message[]
+  existingMessages?: Message[],
+  maxTurns?: number
 ): Promise<AgentLoopResult> {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -76,13 +88,14 @@ export async function runAgentLoop(
   };
 
   let iterationCount = 0;
+  const maxIterations = maxTurns || DEFAULT_MAX_ITERATIONS;
 
-  while (iterationCount < MAX_ITERATIONS) {
+  while (iterationCount < maxIterations) {
     iterationCount++;
     stats.iterations = iterationCount;
 
     console.log(`\n${'='.repeat(80)}`);
-    console.log(`📤 Turn ${iterationCount}: Calling Claude API...`);
+    console.log(`📤 Turn ${iterationCount}/${maxIterations}: Calling Claude API...`);
     console.log(`${'='.repeat(80)}\n`);
 
     try {
@@ -120,7 +133,7 @@ export async function runAgentLoop(
       console.log(`💰 Running cost: $${stats.estimatedCost.toFixed(4)}\n`);
 
       // Pace requests to avoid rate limits (2 second delay between calls)
-      if (iterationCount < MAX_ITERATIONS) {
+      if (iterationCount < maxIterations) {
         await sleep(2000);
       }
 
@@ -189,7 +202,7 @@ export async function runAgentLoop(
     }
   }
 
-  throw new Error(`Maximum iterations (${MAX_ITERATIONS}) reached without completion`);
+  throw new Error(`Maximum iterations (${maxIterations}) reached without completion`);
 }
 
 /**

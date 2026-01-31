@@ -112,8 +112,9 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       });
 
       // Set up listener for agent questions
+      console.log('📡 Setting up agent question listener...');
       window.electronAPI.onAgentQuestion((questionData) => {
-        console.log('❓ Agent question:', questionData);
+        console.log('❓ Agent question received in renderer:', questionData);
 
         // Add question as assistant message
         get().addMessage({
@@ -129,6 +130,29 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         set({ waitingForUserResponse: true });
       });
 
+      // Set up listener for orchestrator phase updates
+      window.electronAPI.onOrchestratorPhase((phase) => {
+        console.log('🎭 Orchestrator phase:', phase);
+
+        if (phase.type === 'start') {
+          get().addMessage({
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `**Phase: ${phase.phase.toUpperCase()}** ${phase.detail || ''}`,
+            timestamp: new Date()
+          });
+        } else if (phase.type === 'complete') {
+          console.log(`   Phase ${phase.phase} complete`);
+        } else if (phase.type === 'error') {
+          get().addMessage({
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `**Error in ${phase.phase}:** ${phase.error}`,
+            timestamp: new Date()
+          });
+        }
+      });
+
       let result;
 
       if (hasActiveConversation) {
@@ -138,12 +162,10 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
           userMessage
         });
       } else {
-        // Start new takeoff with PDF
-        console.log('🚀 Starting new takeoff...');
-        const systemPrompt = await window.electronAPI.loadKnowledgeBase();
-        result = await window.electronAPI.startTakeoff({
+        // Start new orchestrated takeoff with PDF
+        console.log('🎭 Starting orchestrated takeoff...');
+        result = await window.electronAPI.startOrchestratedTakeoff({
           pdfPath: attachedPdf?.path || '',
-          systemPrompt,
           userMessage
         });
       }
@@ -184,6 +206,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       // Clean up listeners
       window.electronAPI.removeAgentUpdateListener();
       window.electronAPI.removeAgentQuestionListener();
+      window.electronAPI.removeOrchestratorPhaseListener();
     }
   },
 

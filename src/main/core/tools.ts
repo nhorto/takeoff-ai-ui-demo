@@ -500,17 +500,25 @@ async function askUser(question: string, context?: string): Promise<string> {
 
   console.log(`Question: ${question}\n`);
 
-  const mainWindow = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  const allWindows = BrowserWindow.getAllWindows();
+  console.log(`   🪟 Found ${allWindows.length} windows`);
+
+  const mainWindow = BrowserWindow.getFocusedWindow() || allWindows[0];
 
   if (!mainWindow) {
+    console.error('   ❌ No active window to show dialog');
     throw new Error('No active window to show dialog');
   }
+
+  console.log(`   📤 Sending agent-question to renderer...`);
 
   // Send question to renderer via IPC
   mainWindow.webContents.send('agent-question', {
     question,
     context: context || ''
   });
+
+  console.log(`   ✅ Question sent to renderer`);
 
   // Wait for user's response (no timeout - wait indefinitely)
   return new Promise<string>((resolve, reject) => {
