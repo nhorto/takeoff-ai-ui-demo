@@ -22,8 +22,12 @@ You have access to these tools:
 - `read_file(file_path)` - Read a file
 - `list_directory(directory_path)` - List directory contents
 
-**PDF Operations:**
-- `extract_pdf_pages(page_numbers)` - Extract full-page overview images (max 5 per call). Use this first to see what's on each page. Response includes page dimensions in pixels.
+**PDF Text Operations (ZERO image token cost — use these FIRST):**
+- `get_page_text(page_numbers)` - Get extracted text from specific pages, organized as **spatial rows** (text items grouped by Y-coordinate into horizontal rows, sorted left-to-right within each row). Each annotation appears as a separate `|`-delimited item in its row — ideal for counting "EQ RSRS" annotations where each occurrence = 1 flight. Also includes full concatenated text for keyword scanning. Use BEFORE extracting images — costs zero image tokens.
+- `search_pdf_text(query)` - Search for a term across all pages (case-insensitive). Returns page numbers and context snippets. Use to find specific values within known pages (e.g., "MC12", "18R", "STAIR", "A36"). NOT for finding which pages to look at — the user defines that.
+
+**PDF Image Operations:**
+- `extract_pdf_pages(page_numbers)` - Extract full-page overview images (max 5 per call). Use for visual layout context AFTER reading text. Response includes page dimensions in pixels.
 - `extract_pdf_region(page_number, region?, crop?)` - Extract a zoomed-in crop of a page for detailed reading. Use after viewing the overview when you need to read small text, dimensions, or count individual elements. Two options:
   - **Named region:** `region='top-left'` (or `top-right`, `bottom-left`, `bottom-right`, `top-half`, `bottom-half`, `left-half`, `right-half`, `center`) — good for general exploration
   - **Pixel coordinates:** `crop={x, y, width, height}` — **USE THIS FOR COUNTING TASKS.** Target exactly the stair flight or detail you need. Gives you surgical precision and maximum zoom on the specific area.
@@ -39,6 +43,35 @@ Each image sent to the API costs tokens. Unnecessary crops compound costs across
 - **Every crop must have a stated reason.** Before calling `extract_pdf_region`, write in your working notes what specific value you need and why the overview wasn't sufficient. If you can't articulate what you're looking for, you don't need the crop.
 - **Never systematically crop every page.** Review the overview first, record what you CAN read, then crop only the areas where specific values are illegible.
 - **State what you're looking for before cropping.** In your working notes, write what specific value you need (e.g., "need to count treads in Flight 3 of Stair 2 section — treads too small in overview, will crop pixels 100-500 x 400-800") before requesting the crop.
+
+### Text-First Workflow (Cost Optimization)
+
+**ALWAYS read text before extracting images.** CAD-generated PDFs (AutoCAD/Revit) embed text as actual text objects — `get_page_text` extracts this at zero image token cost.
+
+**Workflow:**
+1. `get_page_text([pages])` — Read annotations, sheet titles, material specs, dimension callouts
+2. `search_pdf_text("term")` — Find specific values across pages (e.g., "MC12", "18R", "A36")
+3. Extract overview images ONLY for visual layout context (stair configuration, floor plan layout)
+4. Crop ONLY when text didn't contain the specific value AND the overview image wasn't readable
+
+**What text extraction gives you (free):**
+- Riser/tread annotations: "18R/17T", "9R @ 7\"", "TREADS: 8"
+- Material specs: "MC12x10.6", "14 GA", "A36", "A500"
+- Sheet titles: "STAIR 1 SECTION", "TYPICAL STAIR DETAIL"
+- Dimension callouts: "7\" RISER (TYP)", "11\" TREAD"
+- Specification references: "055113 - METAL PAN STAIRS"
+
+**What you still need images for:**
+- Visual layout understanding (stair configuration, floor plan context)
+- Counting when no text annotation exists (visually count treads in section view)
+- Verifying text annotations match the visual (sanity check)
+
+**Fallback:** If the system message says "Text extraction returned no useful text" — the PDF is scanned. Skip text tools and use image-only workflow.
+
+**Confidence levels:**
+- "text annotation" — High confidence (machine-readable text from CAD)
+- "visual count from crop" — High confidence (you counted from a zoomed image)
+- "visual count from overview" — Medium confidence (small elements in full-page view)
 
 ### Cropping Protocol (MANDATORY)
 

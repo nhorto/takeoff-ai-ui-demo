@@ -69,48 +69,157 @@ Item,Sequence,Stair,Category,Component,Qty,Shape,Size,Length,Grade,Notes
 
 ---
 
-## Summary Format
+## Summary Format (summary.md)
 
-```markdown
-# Stair Takeoff Summary
+A brief markdown summary with a stair table, specs, and totals. See the CSV format above for the detailed line-item breakdown.
 
-## Project
-- **Name**: OhioHealth Women's Center
-- **Architect**: CANNONDESIGN
-- **Date**: 2024-06-14
+## Detailed Text Summary (takeoff_summary.txt) — REQUIRED
 
-## Construction Specifications
-- **Tread**: 14ga bent plate, 11" depth
-- **Stringer**: MC12 x 10.6, A36
-- **Handrail**: 1-1/2" dia Sch 40 pipe, A500
+**This is the most important deliverable for the user.** It is a comprehensive, professional-grade takeoff summary in plain text with ASCII formatting. Users rely on this document for estimating and coordination.
 
-## Stair Summary
+**You MUST produce this file.** It should include ALL of the following sections:
 
-### Stair 1 (Sequence 1)
-- Levels: 00 IP → 01 IP → 02 IP
-- Flights: 4
-- Total Risers: 36
-- Total Treads: 32
-- Landings: 3
-
-### Stair 2 (Sequence 2)
-- Levels: 00 IP → 01 IP → 02 IP → 03 IP
-- Flights: 6
-- Total Risers: 54
-- Total Treads: 48
-- Landings: 5
-
-## Totals
-- Total Risers: 90
-- Total Treads: 80
-- Total Landings: 8
-- Total Stringers: 4 (2 per stair)
-- Total Handrails: 4 (2 per stair)
-
-## Notes
-- All stairs use switchback configuration
-- Code compliance verified: 7" rise, 11" run
 ```
+═══════════════════════════════════════════════════════════════════════════════
+[PROJECT NAME]
+DIVISION 5500 - METAL STAIR TAKEOFF SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+PROJECT INFORMATION
+───────────────────────────────────────────────────────────────────────────────
+Project:              [name]
+Drawing Set:          [set info]
+Date:                 [drawing date]
+Pages Analyzed:       [page range]
+Takeoff Date:         [today's date]
+Prepared by:          TakeoffAI
+
+
+PROJECT SCOPE
+───────────────────────────────────────────────────────────────────────────────
+[Brief description of building, height, stair types, configurations]
+
+
+SPECIFICATIONS (Verified from drawings)
+───────────────────────────────────────────────────────────────────────────────
+[Spec sections, material types, any exceptions]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+STAIR SUMMARY TABLE
+═══════════════════════════════════════════════════════════════════════════════
+
+Seq  Stair ID    Levels Served          Flights  Treads  Width   Config
+───  ──────────  ─────────────────────  ───────  ──────  ──────  ───────────
+ A   [id]        [levels]                   [n]    [n]   [w]     [type]
+ ...
+                                         ────   ─────
+                                 TOTAL:  [n]   [n]
+
+
+STAIR DETAILS
+───────────────────────────────────────────────────────────────────────────────
+[For each stair: levels, configuration, flights, treads, width, landings, notes]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+QUANTITY TOTALS
+═══════════════════════════════════════════════════════════════════════════════
+
+FLIGHTS:                     [n] flights total
+TREADS:                      [n] treads total
+STRINGERS:                   [n] pcs (flights × 2)
+LANDINGS:                    [n] intermediate landings
+
+LINEAR FOOTAGE ESTIMATES:
+───────────────────────────────────────────────────────────────────────────────
+Stringers:                   ~[n] LF total
+Landing channels:            ~[n] LF total
+Top rails:                   ~[n] LF total
+
+SQUARE FOOTAGE ESTIMATES:
+───────────────────────────────────────────────────────────────────────────────
+Treads (metal pan):          ~[n] SF
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CODE COMPLIANCE STATUS
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CLEAN / CODE COMPLIANT
+[Items that pass]
+
+🔴 CRITICAL ISSUES
+[Any code violations found — riser height exceedances, etc.]
+
+⚠️ ITEMS REQUIRING VERIFICATION
+[Coordination notes, unusual configurations]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ASSUMPTIONS MADE
+═══════════════════════════════════════════════════════════════════════════════
+[All material assumptions with reasoning and "verify from" notes]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+ITEMS EXCLUDED FROM TAKEOFF
+═══════════════════════════════════════════════════════════════════════════════
+[Any stairs or items identified but excluded, with reasons]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+COMPONENTS NOT INCLUDED IN CSV (PowerFab to Calculate)
+═══════════════════════════════════════════════════════════════════════════════
+[Landing hardware, railing components, hardware/connections, finishes]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+SHEET REFERENCES
+═══════════════════════════════════════════════════════════════════════════════
+[All sheets referenced with descriptions]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+METHODOLOGY & ESTIMATION APPROACH
+═══════════════════════════════════════════════════════════════════════════════
+[Verified data, sampled data, calculated data, assumed data]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+RECOMMENDED NEXT STEPS
+═══════════════════════════════════════════════════════════════════════════════
+
+FOR ESTIMATOR:
+[Import, verify, adjust steps]
+
+FOR PROJECT COORDINATION:
+[Spec clarifications, exclusions]
+
+FOR FABRICATOR:
+[Shop vs field, gauge, details]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+DELIVERABLES SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+✅ CSV FILE:  takeoff.csv
+✅ SUMMARY:   takeoff_summary.txt (this file)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+DISCLAIMER
+═══════════════════════════════════════════════════════════════════════════════
+[Standard disclaimer about verification needs]
+```
+
+**Key rules for the text summary:**
+- Use ASCII box-drawing characters for section headers (═, ─, │)
+- Include EVERY section listed above — do not skip any
+- Calculate linear footage and square footage estimates from the count data
+- Flag any riser heights outside IBC limits (max 7-3/4" = 7.75")
+- List all assumptions explicitly
+- Include a Deliverables Summary section listing all output files
 
 ---
 
@@ -138,7 +247,10 @@ Build CSV row by row:
 ```
 write_file("takeoff.csv", csvContent)
 write_file("summary.md", summaryContent)
+write_file("takeoff_summary.txt", detailedSummaryContent)
 ```
+
+**All three files are required.** The text summary is the most important deliverable for the user.
 
 ---
 
@@ -164,8 +276,9 @@ If a stair file is missing expected data:
 ## Output Locations
 
 Write files to the session output directory:
-- `takeoff.csv` - The main deliverable
-- `summary.md` - Human-readable summary
+- `takeoff.csv` - Line-item bill of materials (for PowerFab import)
+- `summary.md` - Brief markdown summary with stair table
+- `takeoff_summary.txt` - **Detailed professional takeoff summary** (most important for users)
 
 ---
 

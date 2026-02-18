@@ -76,3 +76,32 @@ export interface AgentLoopStats {
   outputTokens: number;
   estimatedCost: number;
 }
+
+// PDF Text Extraction types
+export interface TextItem {
+  text: string;
+  x: number;
+  y: number;
+  fontSize: number;
+}
+
+export interface SpatialZone {
+  zone: string;
+  text: string;
+}
+
+export interface PageTextData {
+  pageNumber: number;
+  zones: SpatialZone[];
+  fullText: string;
+  textItemCount: number;
+  textItems: TextItem[];  // Raw items with coordinates for row grouping
+  pageWidth: number;
+  pageHeight: number;
+}
+
+export interface PDFTextData {
+  pageCount: number;
+  pages: PageTextData[];
+  isEmpty: boolean; // true if avg < 50 chars/page (likely scanned)
+}

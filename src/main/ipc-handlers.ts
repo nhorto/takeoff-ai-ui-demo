@@ -4,7 +4,8 @@ import { getMainWindow } from './window.js';
 import { runAgentLoop, AgentLoopResult } from './core/agent-loop.js';
 import { runOrchestratedTakeoff } from './core/orchestrator.js';
 import type { Message } from './core/types.js';
-import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, resolveUserResponse, setConfiguredOutputsDir, setImageSettings } from './core/tools.js';
+import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, resolveUserResponse, setConfiguredOutputsDir, setImageSettings, setGlobalTextData } from './core/tools.js';
+import { extractAllPagesText } from './core/pdf-text-extractor.js';
 import * as os from 'os';
 import { getPdfPageCount } from './core/pdf-extractor.js';
 import Store from 'electron-store';
@@ -118,6 +119,26 @@ export function setupIPCHandlers() {
         const pageCount = await getPdfPageCount(pdfPath);
         console.log(`   Total pages: ${pageCount}`);
 
+        // Extract text from all PDF pages
+        let textAvailableMsg = '';
+        try {
+          const textData = await extractAllPagesText(pdfPath);
+          setGlobalTextData(textData);
+          // Save text data to session directory
+          const textDataPath = path.join(sessionDir, 'pdf-text-data.json');
+          fs.writeFileSync(textDataPath, JSON.stringify(textData, null, 2));
+          console.log(`   📝 Text data saved to: ${textDataPath}`);
+
+          if (textData.isEmpty) {
+            textAvailableMsg = '\nNote: Text extraction returned very little text — this PDF appears to be scanned. Use image-based workflow.';
+          } else {
+            textAvailableMsg = `\nText extraction is available for all ${textData.pageCount} pages. Use get_page_text([page_numbers]) to read text (zero image token cost) and search_pdf_text("term") to search across pages. Read text BEFORE extracting images — many values (annotations, specs, sheet titles) can be read from text alone.`;
+          }
+        } catch (textErr) {
+          console.error(`   ⚠️ Text extraction failed (non-fatal):`, textErr);
+          textAvailableMsg = '\nNote: Text extraction was not available for this PDF. Use image-based workflow.';
+        }
+
         // Session output directory
         const sessionOutputDir = path.join(getOutputsDir(), currentSessionId!);
 
@@ -127,6 +148,7 @@ export function setupIPCHandlers() {
 The user asks: "${userMessage}"
 
 You can use the extract_pdf_pages([page_numbers]) tool to view specific pages (max 5 per call).
+${textAvailableMsg}
 
 IMPORTANT - Working Notes:
 To avoid losing your analysis when older images are removed from the conversation, you MUST maintain a working notes file. After analyzing each batch of images, use write_file to save your findings to: ${notesPath}

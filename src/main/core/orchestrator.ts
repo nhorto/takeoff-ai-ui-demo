@@ -10,12 +10,13 @@
  */
 
 import { runAgentLoop, AgentLoopResult } from './agent-loop.js';
-import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId } from './tools.js';
+import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, setGlobalTextData } from './tools.js';
 import type { AgentLoopStats } from './types.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { getPdfPageCount } from './pdf-extractor.js';
+import { extractAllPagesText } from './pdf-text-extractor.js';
 
 // Phase-specific skill subdirectory
 const SKILLS_SUBDIR = 'skills';
@@ -163,6 +164,25 @@ export async function runOrchestratedTakeoff(options: OrchestratorOptions): Prom
   console.log(`   Output: ${sessionOutputDir}`);
   console.log(`${'='.repeat(80)}\n`);
 
+  // Extract text from PDF at session start
+  let textAvailableMsg = '';
+  try {
+    const textData = await extractAllPagesText(pdfPath);
+    setGlobalTextData(textData);
+    const textDataPath = path.join(sessionDir, 'pdf-text-data.json');
+    fs.writeFileSync(textDataPath, JSON.stringify(textData, null, 2));
+    console.log(`   📝 Text data saved to: ${textDataPath}`);
+
+    if (textData.isEmpty) {
+      textAvailableMsg = '\nText extraction returned no useful text — this PDF appears scanned. Use image-based workflow.';
+    } else {
+      textAvailableMsg = `\nText extraction data is available. Use get_page_text([page_numbers]) to read sheet titles, annotations, and material specs BEFORE extracting images. Use search_pdf_text("term") to find values across pages. Text reading costs zero image tokens.`;
+    }
+  } catch (textErr) {
+    console.error(`   ⚠️ Text extraction failed (non-fatal):`, textErr);
+    textAvailableMsg = '\nText extraction was not available for this PDF. Use image-based workflow.';
+  }
+
   // knowledgeBasePath is passed in from ipc-handlers
 
   // Initialize stats
@@ -194,6 +214,7 @@ export async function runOrchestratedTakeoff(options: OrchestratorOptions): Prom
     const discoveryMessage = `Analyze this construction PDF (${pageCount} pages) and find all stairs.
 
 USER REQUEST: ${userMessage}
+${textAvailableMsg}
 
 Your output file should be: ${path.join(sessionDir, 'discovery.json')}
 
@@ -221,10 +242,18 @@ Remember:
     console.log(`   Tokens: ${discoveryResult.stats.totalTokens.toLocaleString()}`);
     console.log(`   Cost: $${discoveryResult.stats.estimatedCost.toFixed(4)}`);
 
-    // Read discovery output
-    const discoveryPath = path.join(sessionDir, 'discovery.json');
+    // Read discovery output — check session dir first, then outputs dir
+    // (agent may use relative path which routes to outputs dir)
+    let discoveryPath = path.join(sessionDir, 'discovery.json');
     if (!fs.existsSync(discoveryPath)) {
-      throw new Error('Discovery phase did not produce discovery.json');
+      const altPath = path.join(sessionOutputDir, 'discovery.json');
+      if (fs.existsSync(altPath)) {
+        // Copy to session dir so counting agents can find it
+        fs.copyFileSync(altPath, discoveryPath);
+        console.log(`   📋 Found discovery.json in outputs dir, copied to session dir`);
+      } else {
+        throw new Error('Discovery phase did not produce discovery.json');
+      }
     }
 
     const discovery: DiscoveryOutput = JSON.parse(fs.readFileSync(discoveryPath, 'utf-8'));
@@ -260,6 +289,7 @@ Pages: ${stair.pages.join(', ')}
 Sheets: ${stair.sheets.join(', ')}
 Levels Served: ${stair.levelsServed.join(' → ')}
 Configuration: ${stair.configuration}
+${textAvailableMsg}
 
 Construction Specs:
 ${JSON.stringify(discovery.constructionSpecs, null, 2)}
@@ -335,10 +365,22 @@ Count all flights, risers, treads, and landings. Be precise.`;
     const compilationSkill = loadPhaseSkill('CompilationPhase', knowledgeBasePath);
     const compilationPrompt = buildPhasePrompt(baseSystemPrompt, compilationSkill, 'Compilation');
 
-    // List all JSON files in session directory
-    const jsonFiles = fs.readdirSync(sessionDir)
-      .filter(f => f.endsWith('.json'))
+    // List all JSON files in session directory AND outputs directory
+    // (agents may write to either location depending on path handling)
+    const sessionJsonFiles = fs.readdirSync(sessionDir)
+      .filter(f => f.endsWith('.json') && f !== 'pdf-text-data.json')
       .map(f => path.join(sessionDir, f));
+    const outputJsonFiles = fs.existsSync(sessionOutputDir)
+      ? fs.readdirSync(sessionOutputDir)
+          .filter(f => f.endsWith('.json'))
+          .map(f => path.join(sessionOutputDir, f))
+      : [];
+    // Merge, preferring session dir if same filename exists in both
+    const sessionNames = new Set(sessionJsonFiles.map(f => path.basename(f)));
+    const jsonFiles = [
+      ...sessionJsonFiles,
+      ...outputJsonFiles.filter(f => !sessionNames.has(path.basename(f)))
+    ];
 
     const compilationMessage = `Compile the takeoff from these files:
 
@@ -349,7 +391,8 @@ ${jsonFiles.filter(f => !f.includes('discovery')).map(f => `- ${f}`).join('\n')}
 
 Generate final outputs:
 - CSV: ${path.join(sessionOutputDir, 'takeoff.csv')}
-- Summary: ${path.join(sessionOutputDir, 'summary.md')}`;
+- Summary: ${path.join(sessionOutputDir, 'summary.md')}
+- Detailed Text Summary: ${path.join(sessionOutputDir, 'takeoff_summary.txt')}`;
 
     const compilationResult = await runAgentLoop(
       compilationMessage,
