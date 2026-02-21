@@ -1,5 +1,7 @@
 # Sub-Agent Architecture Options
 
+> **STATUS: DECIDED — Implemented Option 1 (TypeScript orchestrator) with parallel counting. See `src/main/core/orchestrator.ts`.** Discovery and Detail agents were merged into a single Discovery phase. The 3-phase flow (Discovery → Counting → Compilation) is now the production architecture.
+
 This document explores different approaches to implementing a multi-agent architecture for TakeoffAI. The goal is to reduce API costs, enable parallel execution, and improve reliability through failure recovery.
 
 ---

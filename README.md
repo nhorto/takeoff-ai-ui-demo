@@ -195,7 +195,7 @@ bun run tsc --noEmit
 - ✅ Hybrid image strategy (overview + pixel-coordinate crops)
 - ✅ Working notes as external memory (images removed after processing)
 
-### Phase 2: Agent Improvements (Current)
+### Phase 2: Agent Improvements
 - ✅ Cropping protocol (VIEW → PLAN → WRITE → EXECUTE → RECORD)
 - ✅ Two-writes-per-batch discipline for working notes
 - ⬜ System reminders after key tool calls
@@ -203,12 +203,12 @@ bun run tsc --noEmit
 - ⬜ Incremental CSV output (rows added as stairs complete)
 - ⬜ Progress tracking UI
 
-### Phase 3: Sub-Agent Architecture (Next)
-- ⬜ Phase-based workflow with checkpoints
-- ⬜ Discovery agent (scan PDF, identify sheets)
-- ⬜ Detail agent (extract construction specs)
-- ⬜ Parallel counting agents (one per stair)
-- ⬜ Compilation agent (generate final outputs)
+### Phase 3: Sub-Agent Architecture (Complete)
+- ✅ Phase-based workflow with checkpoints
+- ✅ Discovery agent (scan PDF, identify sheets and specs)
+- ✅ Parallel counting agents (one per stair)
+- ✅ Compilation agent (generate final outputs)
+- ⬜ Detail agent (merged into Discovery phase)
 - ⬜ Failure recovery and retry from checkpoints
 
 ### Phase 4: Production Features
