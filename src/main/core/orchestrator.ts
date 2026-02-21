@@ -216,7 +216,7 @@ export async function runOrchestratedTakeoff(options: OrchestratorOptions): Prom
 USER REQUEST: ${userMessage}
 ${textAvailableMsg}
 
-Your output file should be: ${path.join(sessionDir, 'discovery.json')}
+Your output file should be: discovery.json
 
 Remember:
 - Find all stair-related sheets (use page hints from user request if provided)
@@ -294,7 +294,7 @@ ${textAvailableMsg}
 Construction Specs:
 ${JSON.stringify(discovery.constructionSpecs, null, 2)}
 
-Your output file should be: ${path.join(sessionDir, `${stair.stairId.replace(/\s+/g, '_').toLowerCase()}.json`)}
+Your output file should be: ${stair.stairId.replace(/\s+/g, '_').toLowerCase()}.json
 
 Count all flights, risers, treads, and landings. Be precise.`;
 

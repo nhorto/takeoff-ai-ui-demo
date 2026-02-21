@@ -259,13 +259,13 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         crop: {
           type: 'object',
           properties: {
-            x: { type: 'number', description: 'X coordinate of crop origin (pixels at 150 DPI, from top-left)' },
-            y: { type: 'number', description: 'Y coordinate of crop origin (pixels at 150 DPI, from top-left)' },
-            width: { type: 'number', description: 'Width of crop area in pixels at 150 DPI' },
-            height: { type: 'number', description: 'Height of crop area in pixels at 150 DPI' }
+            x: { type: 'number', description: 'X coordinate of crop origin (pixels, from top-left of the overview image)' },
+            y: { type: 'number', description: 'Y coordinate of crop origin (pixels, from top-left of the overview image)' },
+            width: { type: 'number', description: 'Width of crop area in pixels (in overview image coordinates)' },
+            height: { type: 'number', description: 'Height of crop area in pixels (in overview image coordinates)' }
           },
           required: ['x', 'y', 'width', 'height'],
-          description: 'Exact pixel coordinates for the crop area. **USE THIS for counting tasks** — target exactly the stair flight, detail, or text you need. Coordinates are relative to the page rendered at 150 DPI. Page dimensions are returned in extract_pdf_pages and extract_pdf_region responses. Example: To zoom into a single stair flight, estimate its position from the overview and request a tight crop like {x: 200, y: 400, width: 400, height: 600}.'
+          description: 'Exact pixel coordinates for the crop area, relative to the overview image you received from extract_pdf_pages. **USE THIS for counting tasks** — target exactly the stair flight, detail, or text you need. The image dimensions are returned with extract_pdf_pages results. Coordinates are automatically scaled to full resolution internally. Example: If the overview image is 1045x1568 and the stair flight is in the middle-left area, request a crop like {x: 50, y: 500, width: 400, height: 400}.'
         }
       },
       required: ['page_number']
@@ -421,11 +421,33 @@ async function readSkill(skillName: string): Promise<string> {
 }
 
 /**
+ * Validate that a resolved path is within an allowed directory.
+ * Resolves symlinks to prevent escaping via symlink attacks.
+ */
+function validatePathWithin(resolvedPath: string, allowedDir: string): void {
+  // Normalize both paths to resolve .. and symlinks
+  const normalizedPath = path.resolve(resolvedPath);
+  const normalizedDir = path.resolve(allowedDir);
+
+  if (!normalizedPath.startsWith(normalizedDir + path.sep) && normalizedPath !== normalizedDir) {
+    throw new Error(`Access denied — path outside allowed directory`);
+  }
+}
+
+/**
  * Read documentation from the knowledge base
  */
 async function readDocumentation(docPath: string): Promise<string> {
   const knowledgeBase = getKnowledgeBasePath();
-  const fullPath = path.join(knowledgeBase, docPath);
+
+  // Prevent path traversal (../ escaping the knowledge base)
+  const normalized = path.normalize(docPath);
+  if (normalized.startsWith('..') || path.isAbsolute(normalized)) {
+    throw new Error('Access denied — path traversal not allowed');
+  }
+
+  const fullPath = path.join(knowledgeBase, normalized);
+  validatePathWithin(fullPath, knowledgeBase);
 
   if (!fs.existsSync(fullPath)) {
     throw new Error(`Documentation not found: ${docPath}`);
@@ -458,17 +480,18 @@ async function listAvailableSkills(): Promise<string> {
  */
 async function writeFile(filePath: string, content: string): Promise<string> {
   let resolvedPath: string;
+  const outputsDir = getOutputsDir();
+  const sessionDir = globalSessionDir;
 
   if (path.isAbsolute(filePath)) {
-    // For absolute paths, validate they're within allowed directories
-    const outputsDir = getOutputsDir();
-    const sessionDir = globalSessionDir;
+    // Absolute paths must be within allowed directories (using path.resolve to prevent symlink escapes)
+    resolvedPath = path.resolve(filePath);
+    const inOutputs = outputsDir && resolvedPath.startsWith(path.resolve(outputsDir));
+    const inSession = sessionDir && resolvedPath.startsWith(path.resolve(sessionDir));
 
-    // Allow writes to outputs directory or session temp directory
-    if (!filePath.startsWith(outputsDir) && !filePath.startsWith(sessionDir)) {
-      throw new Error(`Cannot write to path outside of outputs or session directory: ${filePath}`);
+    if (!inOutputs && !inSession) {
+      throw new Error(`Access denied — can only write files within outputs or session directory`);
     }
-    resolvedPath = filePath;
   } else {
     // For relative paths, use session-specific output directory
     const sessionOutputDir = getSessionOutputDir();
@@ -476,6 +499,9 @@ async function writeFile(filePath: string, content: string): Promise<string> {
     // Strip "outputs/" prefix if present (Claude sometimes includes it)
     const cleanPath = filePath.replace(/^outputs[/\\]/, '');
     resolvedPath = path.join(sessionOutputDir, cleanPath);
+
+    // Verify resolved path didn't escape via ../
+    validatePathWithin(resolvedPath, sessionOutputDir);
   }
 
   // Ensure parent directory exists
@@ -490,18 +516,30 @@ async function writeFile(filePath: string, content: string): Promise<string> {
 }
 
 /**
- * Read a file from the filesystem
+ * Read a file from the filesystem.
+ * SECURITY: Only allows reads within the outputs dir or session temp dir.
  */
 async function readFile(filePath: string): Promise<string> {
-  let resolvedPath = filePath;
+  let resolvedPath: string;
+  const outputsDir = getOutputsDir();
+  const sessionDir = globalSessionDir;
 
-  if (!path.isAbsolute(filePath)) {
-    // For relative paths starting with outputs/, use session output directory
-    if (filePath.startsWith('outputs/') || filePath.startsWith('outputs\\')) {
-      const cleanPath = filePath.replace(/^outputs[/\\]/, '');
-      resolvedPath = path.join(getSessionOutputDir(), cleanPath);
+  if (path.isAbsolute(filePath)) {
+    // Absolute paths must be within allowed directories
+    resolvedPath = path.resolve(filePath);
+    const inOutputs = outputsDir && resolvedPath.startsWith(path.resolve(outputsDir));
+    const inSession = sessionDir && resolvedPath.startsWith(path.resolve(sessionDir));
+
+    if (!inOutputs && !inSession) {
+      throw new Error(`Access denied — can only read files within outputs or session directory`);
     }
-    // Otherwise, path is relative to session temp dir (for working-notes.md etc.)
+  } else {
+    // Relative paths: resolve to session output directory
+    const cleanPath = filePath.replace(/^outputs[/\\]/, '');
+    resolvedPath = path.join(getSessionOutputDir(), cleanPath);
+
+    // Verify resolved path didn't escape via ../
+    validatePathWithin(resolvedPath, getSessionOutputDir());
   }
 
   if (!fs.existsSync(resolvedPath)) {
@@ -513,14 +551,29 @@ async function readFile(filePath: string): Promise<string> {
 }
 
 /**
- * List directory contents
+ * List directory contents.
+ * SECURITY: Only allows listing within the outputs dir or session temp dir.
  */
 async function listDirectory(directoryPath: string): Promise<string> {
-  let resolvedPath = directoryPath;
+  let resolvedPath: string;
+  const outputsDir = getOutputsDir();
+  const sessionDir = globalSessionDir;
 
-  // Resolve "outputs" to session-specific output directory
+  // Resolve "outputs" shorthand to session-specific output directory
   if (directoryPath === 'outputs' || directoryPath === 'outputs/') {
     resolvedPath = getSessionOutputDir();
+  } else if (path.isAbsolute(directoryPath)) {
+    resolvedPath = path.resolve(directoryPath);
+    const inOutputs = outputsDir && resolvedPath.startsWith(path.resolve(outputsDir));
+    const inSession = sessionDir && resolvedPath.startsWith(path.resolve(sessionDir));
+
+    if (!inOutputs && !inSession) {
+      throw new Error(`Access denied — can only list outputs or session directory`);
+    }
+  } else {
+    // Relative paths resolve to session output dir
+    resolvedPath = path.join(getSessionOutputDir(), directoryPath);
+    validatePathWithin(resolvedPath, getSessionOutputDir());
   }
 
   if (!fs.existsSync(resolvedPath)) {
@@ -528,8 +581,7 @@ async function listDirectory(directoryPath: string): Promise<string> {
   }
 
   const files = fs.readdirSync(resolvedPath);
-  const fullPath = resolvedPath;
-  return `Contents of ${fullPath}:\n${files.join('\n')}`;
+  return `Contents of ${resolvedPath}:\n${files.join('\n')}`;
 }
 
 /**
@@ -612,6 +664,24 @@ async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
 
   const extractedImages = await extractPdfPages(globalPdfPath, pagesToExtract, renderDpi, maxImageDimension);
 
+  // Compute actual delivered image dimensions for each page
+  // Claude needs these to provide accurate crop coordinates
+  const pageDimensions: Array<{ pageNumber: number; renderWidth: number; renderHeight: number; imageWidth: number; imageHeight: number }> = [];
+  for (const img of extractedImages) {
+    const dims = await getPdfPageDimensions(globalPdfPath, img.pageNumber, renderDpi);
+    const renderW = dims.pageWidth;
+    const renderH = dims.pageHeight;
+    // Compute the same downscale that extractPdfPages applies
+    let imageW = renderW;
+    let imageH = renderH;
+    if (renderW > maxImageDimension || renderH > maxImageDimension) {
+      const scaleFactor = Math.min(maxImageDimension / renderW, maxImageDimension / renderH);
+      imageW = Math.round(renderW * scaleFactor);
+      imageH = Math.round(renderH * scaleFactor);
+    }
+    pageDimensions.push({ pageNumber: img.pageNumber, renderWidth: renderW, renderHeight: renderH, imageWidth: imageW, imageHeight: imageH });
+  }
+
   // Save images to session temp directory so user can view them
   if (globalSessionDir) {
     const imagesDir = path.join(globalSessionDir, 'images');
@@ -625,9 +695,17 @@ async function extractPdfPagesForClaude(pageNumbers: number[]): Promise<any> {
     console.log(`   💾 Saved images to ${imagesDir}`);
   }
 
-  // Build status message
+  // Build status message with image dimensions
   const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
   let statusText = `Successfully extracted ${pagesToExtract.length} pages: ${pagesToExtract.join(', ')}`;
+
+  // Include image dimensions so Claude knows the coordinate space
+  statusText += '\n\nPage dimensions (use these for crop coordinates):';
+  for (const dim of pageDimensions) {
+    statusText += `\n  Page ${dim.pageNumber}: ${dim.imageWidth} x ${dim.imageHeight} pixels`;
+  }
+  statusText += '\n\nWhen using extract_pdf_region with crop coordinates, specify x/y/width/height relative to the image dimensions above.';
+
   statusText += `\nImages saved to: ${globalSessionDir ? path.join(globalSessionDir, 'images') : 'N/A'}`;
 
   if (remainingPages.length > 0) {
@@ -688,13 +766,31 @@ async function extractPdfRegionForClaude(
     cropArea = resolveRegionToCrop(region, pageWidth, pageHeight);
     regionLabel = region;
   } else {
-    // Clamp user-provided coordinates to page bounds
+    // Scale coordinates from overview image space to render (150 DPI) space.
+    // Claude sees a downscaled overview image. Its crop coordinates reference
+    // that smaller image, but we need to crop from the full-resolution render.
+    let overviewScaleFactor = 1.0;
+    if (pageWidth > maxImageDimension || pageHeight > maxImageDimension) {
+      overviewScaleFactor = Math.min(maxImageDimension / pageWidth, maxImageDimension / pageHeight);
+    }
+    const coordScale = 1 / overviewScaleFactor;
+
+    const scaledX = Math.max(0, Math.round(crop!.x * coordScale));
+    const scaledY = Math.max(0, Math.round(crop!.y * coordScale));
+    const scaledW = Math.round(crop!.width * coordScale);
+    const scaledH = Math.round(crop!.height * coordScale);
+
+    if (coordScale > 1.01) {
+      console.log(`   📐 Scaling crop coordinates: overview→render factor=${coordScale.toFixed(2)}x (${crop!.x},${crop!.y} ${crop!.width}x${crop!.height} → ${scaledX},${scaledY} ${scaledW}x${scaledH})`);
+    }
+
     cropArea = {
-      x: Math.max(0, Math.round(crop!.x)),
-      y: Math.max(0, Math.round(crop!.y)),
-      width: Math.round(crop!.width),
-      height: Math.round(crop!.height)
+      x: scaledX,
+      y: scaledY,
+      width: scaledW,
+      height: scaledH
     };
+    // Clamp to page bounds
     if (cropArea.x + cropArea.width > pageWidth) {
       cropArea.width = pageWidth - cropArea.x;
     }
@@ -720,10 +816,19 @@ async function extractPdfRegionForClaude(
   }
 
   // Build response with metadata
+  // Compute the overview image dimensions for reference
+  let overviewWidth = pageWidth;
+  let overviewHeight = pageHeight;
+  if (pageWidth > maxImageDimension || pageHeight > maxImageDimension) {
+    const sf = Math.min(maxImageDimension / pageWidth, maxImageDimension / pageHeight);
+    overviewWidth = Math.round(pageWidth * sf);
+    overviewHeight = Math.round(pageHeight * sf);
+  }
+
   const notesPath = globalSessionDir ? path.join(globalSessionDir, 'working-notes.md') : null;
   let statusText = `Extracted ${region ? `"${region}" region` : 'custom crop'} of page ${pageNumber}.`;
-  statusText += `\nFull page dimensions: ${pageWidth}x${pageHeight} pixels (${renderDpi} DPI).`;
-  statusText += `\nCrop area: x=${cropArea.x}, y=${cropArea.y}, width=${cropArea.width}, height=${cropArea.height}`;
+  statusText += `\nOverview image dimensions: ${overviewWidth}x${overviewHeight} pixels (use these for crop coordinates).`;
+  statusText += `\nCrop area (in overview space): x=${crop ? crop.x : cropArea.x}, y=${crop ? crop.y : cropArea.y}, width=${crop ? crop.width : cropArea.width}, height=${crop ? crop.height : cropArea.height}`;
   statusText += `\n\nThis crop has ~${Math.round(pageWidth / cropArea.width)}x higher effective resolution than the full-page overview.`;
   statusText += `\n\nREMINDER: After reading details from this crop, update your working notes at: ${notesPath}`;
 
