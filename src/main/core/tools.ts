@@ -74,6 +74,37 @@ export function getGlobalSessionId(): string {
   return globalSessionId;
 }
 
+// Allowed pages for counting agents (null = no restriction, all pages accessible)
+// Set by orchestrator before each counting agent runs; cleared after it finishes.
+let allowedPages: number[] | null = null;
+
+export function setAllowedPages(pages: number[] | null): void {
+  allowedPages = pages;
+  if (pages) {
+    console.log(`   🔒 Page restriction active: only pages [${pages.join(', ')}] accessible`);
+  } else {
+    console.log(`   🔓 Page restriction cleared: all pages accessible`);
+  }
+}
+
+export function getAllowedPages(): number[] | null {
+  return allowedPages;
+}
+
+/**
+ * Filter requested pages against allowedPages.
+ * Returns { allowed, blocked } arrays.
+ * If allowedPages is null, all pages are allowed.
+ */
+function filterPages(requestedPages: number[]): { allowed: number[]; blocked: number[] } {
+  if (!allowedPages) {
+    return { allowed: requestedPages, blocked: [] };
+  }
+  const allowed = requestedPages.filter(p => allowedPages!.includes(p));
+  const blocked = requestedPages.filter(p => !allowedPages!.includes(p));
+  return { allowed, blocked };
+}
+
 // Store PDF text extraction data globally (set after extraction in IPC handler)
 let globalTextData: PDFTextData | null = null;
 
@@ -361,26 +392,71 @@ export async function executeTool(
         );
         break;
 
-      case 'extract_pdf_pages':
-        // This returns an array of content blocks (text + images)
-        result = await extractPdfPagesForClaude(toolInput.page_numbers as number[]);
+      case 'extract_pdf_pages': {
+        // Filter pages against allowed list (counting agents are restricted)
+        const reqPages = toolInput.page_numbers as number[];
+        const { allowed: allowedExtract, blocked: blockedExtract } = filterPages(reqPages);
+        if (allowedExtract.length === 0) {
+          result = `Page restriction: pages [${blockedExtract.join(', ')}] are not assigned to this stair. You can only access your assigned pages.`;
+        } else {
+          if (blockedExtract.length > 0) {
+            console.log(`   🔒 Blocked pages [${blockedExtract.join(', ')}] — not assigned to this stair`);
+          }
+          result = await extractPdfPagesForClaude(allowedExtract);
+          if (blockedExtract.length > 0) {
+            // Append warning to the result if it's a string
+            const warning = `\n\nNote: Pages [${blockedExtract.join(', ')}] were skipped — they are not assigned to this stair and contain a different stair's data.`;
+            if (typeof result === 'string') {
+              result = result + warning;
+            } else if (Array.isArray(result)) {
+              result.push({ type: 'text', text: warning });
+            }
+          }
+        }
         break;
+      }
 
-      case 'extract_pdf_region':
-        result = await extractPdfRegionForClaude(
-          toolInput.page_number as number,
-          toolInput.region as NamedRegion | undefined,
-          toolInput.crop as CropArea | undefined
-        );
+      case 'extract_pdf_region': {
+        // Check if the requested page is allowed
+        const regionPage = toolInput.page_number as number;
+        const { blocked: blockedRegion } = filterPages([regionPage]);
+        if (blockedRegion.length > 0) {
+          result = `Page restriction: page ${regionPage} is not assigned to this stair. You can only access your assigned pages.`;
+        } else {
+          result = await extractPdfRegionForClaude(
+            regionPage,
+            toolInput.region as NamedRegion | undefined,
+            toolInput.crop as CropArea | undefined
+          );
+        }
         break;
+      }
 
-      case 'get_page_text':
-        result = await getPageText(toolInput.page_numbers as number[], (toolInput.format as string) || 'rows');
+      case 'get_page_text': {
+        // Filter pages against allowed list
+        const textPages = toolInput.page_numbers as number[];
+        const { allowed: allowedText, blocked: blockedText } = filterPages(textPages);
+        if (allowedText.length === 0) {
+          result = `Page restriction: pages [${blockedText.join(', ')}] are not assigned to this stair. You can only access your assigned pages.`;
+        } else {
+          result = await getPageText(allowedText, (toolInput.format as string) || 'rows');
+          if (blockedText.length > 0) {
+            result = result + `\n\nNote: Pages [${blockedText.join(', ')}] were skipped — they are not assigned to this stair.`;
+          }
+        }
         break;
+      }
 
-      case 'search_pdf_text':
-        result = await searchPdfText(toolInput.query as string, toolInput.pages as number[] | undefined);
+      case 'search_pdf_text': {
+        // If page restriction is active, force search to only allowed pages
+        const searchPages = allowedPages
+          ? (toolInput.pages as number[] | undefined)
+            ? (toolInput.pages as number[]).filter(p => allowedPages!.includes(p))
+            : allowedPages
+          : (toolInput.pages as number[] | undefined);
+        result = await searchPdfText(toolInput.query as string, searchPages);
         break;
+      }
 
       default:
         throw new Error(`Unknown tool: ${toolName}`);

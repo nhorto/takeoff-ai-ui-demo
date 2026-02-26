@@ -10,7 +10,7 @@
  */
 
 import { runAgentLoop, AgentLoopResult } from './agent-loop.js';
-import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, setGlobalTextData } from './tools.js';
+import { TOOL_DEFINITIONS, setGlobalPdfPath, setGlobalSessionDir, setGlobalSessionId, generateSessionId, setGlobalTextData, setAllowedPages } from './tools.js';
 import type { AgentLoopStats } from './types.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -262,20 +262,21 @@ Remember:
     onPhaseComplete?.('discovery', discovery);
 
     // =========================================================================
-    // PHASE 2: COUNTING (LIMITED PARALLELISM TO AVOID OOM)
+    // PHASE 2: COUNTING (sequential — page restrictions require exclusive access)
     // =========================================================================
-    const MAX_PARALLEL_COUNTERS = 2; // Limit to 2 at a time to avoid memory issues
-
     console.log(`\n${'─'.repeat(80)}`);
-    console.log(`📍 PHASE 2: COUNTING (${discovery.stairs.length} stairs, ${MAX_PARALLEL_COUNTERS} at a time)`);
+    console.log(`📍 PHASE 2: COUNTING (${discovery.stairs.length} stairs, sequential with page restrictions)`);
     console.log(`${'─'.repeat(80)}\n`);
 
     onPhaseStart?.('counting', `${discovery.stairs.length} stairs`);
 
     const countingSkill = loadPhaseSkill('CountingPhase', knowledgeBasePath);
 
-    // Helper function to count a single stair
-    const countStair = async (stair: DiscoveryOutput['stairs'][0]) => {
+    // Run counting agents sequentially so page restrictions work correctly.
+    // Each agent gets exclusive access to its assigned pages via setAllowedPages.
+    const countingResults: Array<{ stairId: string; result?: AgentLoopResult; error?: any; success: boolean }> = [];
+
+    for (const stair of discovery.stairs) {
       console.log(`\n   ${'·'.repeat(40)}`);
       console.log(`   🔢 COUNTER: ${stair.stairId}`);
       console.log(`   ${'·'.repeat(40)}`);
@@ -298,6 +299,9 @@ Your output file should be: ${stair.stairId.replace(/\s+/g, '_').toLowerCase()}.
 
 Count all flights, risers, treads, and landings. Be precise.`;
 
+      // Restrict PDF tools to only this stair's assigned pages
+      setAllowedPages(stair.pages);
+
       try {
         const result = await runAgentLoop(
           countMessage,
@@ -307,25 +311,17 @@ Count all flights, risers, treads, and landings. Be precise.`;
         );
 
         console.log(`   ✅ ${stair.stairId} complete (${result.stats.iterations} turns, $${result.stats.estimatedCost.toFixed(4)})`);
-        return { stairId: stair.stairId, result, success: true };
+        countingResults.push({ stairId: stair.stairId, result, success: true });
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.log(`   ❌ ${stair.stairId} failed: ${errorMsg}`);
-        return { stairId: stair.stairId, error, success: false };
+        countingResults.push({ stairId: stair.stairId, error, success: false });
+      } finally {
+        // Clear page restriction before next stair
+        setAllowedPages(null);
       }
-    };
 
-    // Run counting agents in batches to limit memory usage
-    const countingResults: Array<{ stairId: string; result?: AgentLoopResult; error?: any; success: boolean }> = [];
-
-    for (let i = 0; i < discovery.stairs.length; i += MAX_PARALLEL_COUNTERS) {
-      const batch = discovery.stairs.slice(i, i + MAX_PARALLEL_COUNTERS);
-      console.log(`\n   📦 Batch ${Math.floor(i / MAX_PARALLEL_COUNTERS) + 1}: ${batch.map(s => s.stairId).join(', ')}`);
-
-      const batchResults = await Promise.all(batch.map(countStair));
-      countingResults.push(...batchResults);
-
-      // Force garbage collection hint between batches
+      // Force garbage collection hint between agents
       if (global.gc) {
         global.gc();
       }
@@ -361,6 +357,9 @@ Count all flights, risers, treads, and landings. Be precise.`;
     console.log(`${'─'.repeat(80)}\n`);
 
     onPhaseStart?.('compilation');
+
+    // Ensure no page restrictions for compilation (it reads files, not PDF pages)
+    setAllowedPages(null);
 
     const compilationSkill = loadPhaseSkill('CompilationPhase', knowledgeBasePath);
     const compilationPrompt = buildPhasePrompt(baseSystemPrompt, compilationSkill, 'Compilation');

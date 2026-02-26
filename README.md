@@ -133,7 +133,8 @@ takeoff-ai-electron/
 - Handles file I/O and PDF extraction
 - Executes tools (write_file, extract_pdf_pages, etc.)
 - Manages API calls to Claude
-- Runs agent loop with streaming updates
+- Runs multi-phase orchestrator: Discovery → Counting → Compilation
+- **Page-level sandboxing**: Each counting agent is restricted to only its assigned PDF pages, preventing cross-stair data contamination. Agents run sequentially so page restrictions are enforced cleanly.
 
 ### Renderer Process (React)
 - Provides UI for file upload and chat
@@ -206,10 +207,25 @@ bun run tsc --noEmit
 ### Phase 3: Sub-Agent Architecture (Complete)
 - ✅ Phase-based workflow with checkpoints
 - ✅ Discovery agent (scan PDF, identify sheets and specs)
-- ✅ Parallel counting agents (one per stair)
+- ✅ Counting agents (one per stair, sequential with page sandboxing)
 - ✅ Compilation agent (generate final outputs)
+- ✅ Page-level access restrictions (each counter only sees its assigned pages)
 - ⬜ Detail agent (merged into Discovery phase)
 - ⬜ Failure recovery and retry from checkpoints
+
+### Phase 3.5: Review Pipeline (Planned)
+
+A **Review Phase** between Counting and Compilation that catches incomplete or low-confidence results before final output:
+
+```
+Discovery → Counting → REVIEW → Compilation → Done
+```
+
+- Auto-pass when all stairs have high coverage/confidence (no user interaction needed)
+- Flag stairs with low coverage (<90%), low confidence, or unresolved anomalies
+- User options: **Investigate** (look at drawings + provide guidance), **Re-run** (re-count specific stairs with updated instructions), **Accept as-is**, or **Abort**
+- Re-runs only affect flagged stairs, injecting user guidance into the counting prompt
+- See [docs/future-review-pipeline.md](docs/future-review-pipeline.md) for the full design
 
 ### Phase 4: Production Features
 - ⬜ Context trimming and compression
