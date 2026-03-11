@@ -70,9 +70,65 @@ One JSON file per drawing in `eval/golden/`. The filename should match the drawi
 ### Current State
 
 - Less than 10 drawings available
-- Correct answers exist for ~1 drawing in CSV format
+- Golden answers exist for 1 drawing (OhioHealth Women's Center) — see below
 - Rest need to be manually created (doable, just takes time)
 - **5-8 drawings is enough** to demonstrate the methodology and get meaningful comparisons
+
+### First Golden File: OhioHealth Women's Center
+
+**Correct stair count: 7** (Elevator 15 is excluded — it's not a stair)
+
+| Stair | Actual Treads | Actual Risers |
+|-------|--------------|---------------|
+| Stair 1 | 48 | 52 |
+| Stair 2 | 257 | 281 |
+| Stair 3 | 176 | 196 |
+| Stair 4 | 220 | 240 |
+| Stair 5 | 183 | 203 |
+| Stair 6 | 183 | 202 |
+| Stair 7 | 24 | 26 |
+
+### Existing Runs (Already in outputs/)
+
+These runs can be scored retroactively — no need to re-run anything to get started.
+
+**Monolith runs (main branch, pre-orchestrator):**
+- `first_output/` — earliest run
+- `second_output/` — second attempt
+- `2026-01-28-175536/` — CSV + summary only
+- `2026-01-28-195810/` — CSV + summary + working notes
+- `2026-01-30-101224/` — CSV + summary
+- `2026-01-30-110521/` — CSV + summary
+- `2026-01-31-122207/` — CSV + summary + working notes
+
+**Orchestrated runs (feature/sub-agents, has discovery.json + stair_N.json):**
+- `2026-02-14-133319/` — 7 stair JSONs, no elevator 15
+- `2026-02-14-204751/` — 7 stair JSONs + elevator_15_stair.json
+- `2026-02-17-202937/` — 7 stair JSONs, no elevator 15
+- `2026-02-21-115313/` — 7 stair JSONs, no elevator 15
+- `2026-02-21-155558/` — 7 stair JSONs + elevator_15_stairs.json (the run we compared above)
+
+**Partial/empty runs (skip for eval):**
+- `2026-01-30-112921/` — single page only
+- `2026-01-30-115723/`, `2026-01-30-154125/`, `2026-01-30-154828/`, `2026-01-30-160338/`, `2026-01-30-181619/` — empty
+- `2026-02-14-132159/` — discovery only, no counting
+- `2026-02-14-133117/`, `2026-02-14-145404/`, `2026-02-14-155611/` — empty
+
+### Preliminary Comparison: Agent vs Actuals (2026-02-21-155558 run)
+
+| Stair | Agent Treads | Actual Treads | Delta | Agent Risers | Actual Risers | Delta |
+|-------|-------------|---------------|-------|-------------|---------------|-------|
+| 1 | 48 | 48 | 0 | — | 52 | — |
+| 2 | 264 | 257 | +7 | 288 | 281 | +7 |
+| 3 | 164 | 176 | -12 | 184 | 196 | -12 |
+| 4 | 225 | 220 | +5 | 245 | 240 | +5 |
+| 5 | 198 | 183 | +15 | 218 | 203 | +15 |
+| 6 | 171 | 183 | -12 | 189 | 202 | -13 |
+| 7 | 24 | 24 | 0 | 26 | 26 | 0 |
+
+**Key finding:** Tread and riser deltas are nearly identical per stair, suggesting the agent miscounts whole flights (over/undercounting levels served) rather than misreading individual annotations. This is the kind of qualitative insight the eval should surface.
+
+**Stair count:** Agent found 8 (included Elevator 15). Correct answer is 7. This is a stair detection error.
 
 ### Future Extensions
 

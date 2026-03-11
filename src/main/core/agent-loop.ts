@@ -10,8 +10,55 @@ import type {
 } from './types.js';
 import { executeTool, getGlobalSessionDir } from './tools.js';
 import * as path from 'path';
+import * as fs from 'fs';
 
 const DEFAULT_MAX_ITERATIONS = 100;
+
+// ─── Tool Trace Logging ──────────────────────────────────────────────────────
+
+interface ToolTraceEntry {
+  turn: number;
+  tool: string;
+  args: Record<string, any>;
+  timestamp: string;
+}
+
+interface ToolTrace {
+  run_id: string;
+  model: string;
+  started_at: string;
+  completed_at: string;
+  tool_calls: ToolTraceEntry[];
+  stats: AgentLoopStats;
+}
+
+/** Active trace being collected during a run */
+let activeTrace: ToolTraceEntry[] = [];
+
+/** Save the tool trace to the session directory */
+function saveToolTrace(stats: AgentLoopStats): void {
+  const sessionDir = getGlobalSessionDir();
+  if (!sessionDir) return;
+
+  const trace: ToolTrace = {
+    run_id: path.basename(sessionDir),
+    model: 'claude-sonnet-4-5-20250929',
+    started_at: activeTrace.length > 0 ? activeTrace[0].timestamp : new Date().toISOString(),
+    completed_at: new Date().toISOString(),
+    tool_calls: activeTrace,
+    stats,
+  };
+
+  try {
+    fs.writeFileSync(
+      path.join(sessionDir, 'tool-trace.json'),
+      JSON.stringify(trace, null, 2)
+    );
+    console.log(`📝 Tool trace saved (${activeTrace.length} calls)`);
+  } catch (err) {
+    console.error('⚠️  Failed to save tool trace:', err);
+  }
+}
 
 // Token pricing for Claude Sonnet
 const PRICING = {
@@ -78,6 +125,9 @@ export async function runAgentLoop(
     // Start new conversation
     messages = [buildInitialMessage(initialMessage, images)];
   }
+
+  // Reset tool trace for this run
+  activeTrace = [];
 
   const stats: AgentLoopStats = {
     iterations: 0,
@@ -146,12 +196,14 @@ export async function runAgentLoop(
       // Check stop reason
       if (response.stop_reason === 'end_turn') {
         console.log('✅ Claude finished - extracting final response...\n');
+        saveToolTrace(stats);
         const finalText = extractTextContent(response.content as ContentBlock[]);
         return { result: finalText, stats, messages };
       }
 
       if (response.stop_reason === 'max_tokens') {
         console.log('⚠️  Warning: Hit max tokens limit\n');
+        saveToolTrace(stats);
         const finalText = extractTextContent(response.content as ContentBlock[]);
         return { result: finalText + '\n\n[Response truncated - hit max tokens]', stats, messages };
       }
@@ -161,7 +213,8 @@ export async function runAgentLoop(
 
         // Execute all tool calls
         const toolResults = await executeToolCalls(
-          response.content as ContentBlock[]
+          response.content as ContentBlock[],
+          iterationCount
         );
 
         // Clean up old images before adding new ones to prevent request size limit
@@ -178,6 +231,7 @@ export async function runAgentLoop(
 
       // Unexpected stop reason
       console.log(`⚠️  Unexpected stop reason: ${response.stop_reason}\n`);
+      saveToolTrace(stats);
       const finalText = extractTextContent(response.content as ContentBlock[]);
       return { result: finalText, stats, messages };
 
@@ -202,6 +256,7 @@ export async function runAgentLoop(
     }
   }
 
+  saveToolTrace(stats);
   throw new Error(`Maximum iterations (${maxIterations}) reached without completion`);
 }
 
@@ -240,7 +295,7 @@ function extractTextContent(content: ContentBlock[]): string {
  */
 const MAX_PARALLEL_TOOLS = 5;
 
-async function executeToolCalls(content: ContentBlock[]): Promise<ContentBlock[]> {
+async function executeToolCalls(content: ContentBlock[], iterationCount: number = 0): Promise<ContentBlock[]> {
   const toolUses = content.filter(
     block => block.type === 'tool_use'
   ) as ToolUseContent[];
@@ -254,6 +309,14 @@ async function executeToolCalls(content: ContentBlock[]): Promise<ContentBlock[]
 
   // Execute tools in parallel with concurrency limit
   const executeOne = async (toolUse: ToolUseContent): Promise<ContentBlock> => {
+    // Log tool call to trace (tool name + args only, no return value)
+    activeTrace.push({
+      turn: iterationCount,
+      tool: toolUse.name,
+      args: toolUse.input as Record<string, any>,
+      timestamp: new Date().toISOString(),
+    });
+
     const result = await executeTool(
       toolUse.name,
       toolUse.input,
