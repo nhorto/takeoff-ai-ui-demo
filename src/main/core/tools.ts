@@ -965,6 +965,199 @@ function groupIntoRows(items: Array<{ text: string; x: number; y: number; fontSi
   return rows;
 }
 
+// ─── Annotation Spatial Clustering (View Deduplication) ────────────────────
+//
+// Construction drawing sheets often show the same stair in multiple views
+// (section, plan, axonometric). Each view independently labels risers/treads,
+// causing the same flight's annotation to appear 2-3x on the page.
+//
+// This clustering groups annotations by spatial proximity into "views",
+// then recommends the agent use only ONE view for counting.
+
+/** Pattern matching riser/tread annotations */
+const ANNOTATION_PATTERN = /\b(\d+)\s*(?:EQ\s*)?(?:RSRS|RISERS?)\b|\b(\d+)\s*TREADS?\s*@/i;
+
+interface AnnotationItem {
+  text: string;
+  x: number;
+  y: number;
+  value: number;         // The numeric count (e.g., 13 from "13 EQ RSRS")
+  type: 'riser' | 'tread';
+}
+
+interface ViewCluster {
+  id: number;
+  items: AnnotationItem[];
+  bounds: { minX: number; maxX: number; minY: number; maxY: number };
+  riserCount: number;
+  treadCount: number;
+  riserAnnotations: string[];   // e.g. ["12 RSRS", "13 RSRS", "12 RSRS"]
+  treadAnnotations: string[];
+}
+
+/**
+ * Cluster riser/tread annotations by X-coordinate gaps into drawing views.
+ *
+ * Construction drawing sheets arrange views side-by-side (left to right).
+ * Section views, plan views, and axonometric views occupy distinct X-bands.
+ * We find significant gaps in the X-coordinates to split annotations into
+ * view clusters. This avoids the chaining problem of distance-based clustering.
+ */
+function clusterAnnotationsIntoViews(
+  items: Array<{ text: string; x: number; y: number; fontSize: number }>,
+  pageWidth: number,
+  pageHeight: number
+): ViewCluster[] {
+  // 1. Find all annotation items
+  const annotations: AnnotationItem[] = [];
+  for (const item of items) {
+    const match = item.text.match(ANNOTATION_PATTERN);
+    if (match) {
+      const isRiser = /RSRS|RISER/i.test(item.text);
+      const value = parseInt(match[1] || match[2], 10);
+      if (!isNaN(value) && value > 0) {
+        annotations.push({
+          text: item.text.trim(),
+          x: item.x,
+          y: item.y,
+          value,
+          type: isRiser ? 'riser' : 'tread',
+        });
+      }
+    }
+  }
+
+  if (annotations.length < 4) return []; // Not enough to cluster meaningfully
+
+  // 2. X-gap clustering: sort by X, find gaps > threshold
+  // Threshold: 10% of page width — tuned for architectural sheets where
+  // views are typically separated by at least 3-4 inches on a 48" sheet
+  const xGapThreshold = pageWidth * 0.10;
+
+  const sortedByX = [...annotations].sort((a, b) => a.x - b.x);
+
+  const clusterGroups: AnnotationItem[][] = [[sortedByX[0]]];
+
+  for (let i = 1; i < sortedByX.length; i++) {
+    const gap = sortedByX[i].x - sortedByX[i - 1].x;
+    if (gap > xGapThreshold) {
+      // Start new cluster
+      clusterGroups.push([sortedByX[i]]);
+    } else {
+      // Add to current cluster
+      clusterGroups[clusterGroups.length - 1].push(sortedByX[i]);
+    }
+  }
+
+  // If only one X-band, try Y-gap clustering as fallback
+  // (views might be stacked vertically instead of side-by-side)
+  if (clusterGroups.length === 1) {
+    const yGapThreshold = pageHeight * 0.10;
+    const sortedByY = [...annotations].sort((a, b) => a.y - b.y);
+
+    const yGroups: AnnotationItem[][] = [[sortedByY[0]]];
+    for (let i = 1; i < sortedByY.length; i++) {
+      const gap = sortedByY[i].y - sortedByY[i - 1].y;
+      if (gap > yGapThreshold) {
+        yGroups.push([sortedByY[i]]);
+      } else {
+        yGroups[yGroups.length - 1].push(sortedByY[i]);
+      }
+    }
+
+    if (yGroups.length > 1) {
+      // Y-based clustering found multiple groups
+      clusterGroups.length = 0;
+      clusterGroups.push(...yGroups);
+    }
+  }
+
+  // Only report if multiple clusters found
+  if (clusterGroups.length <= 1) return [];
+
+  // 3. Build cluster objects
+  const clusters: ViewCluster[] = clusterGroups.map((group, idx) => {
+    const risers = group.filter(a => a.type === 'riser');
+    const treads = group.filter(a => a.type === 'tread');
+
+    return {
+      id: idx,
+      items: group,
+      bounds: {
+        minX: Math.min(...group.map(a => a.x)),
+        maxX: Math.max(...group.map(a => a.x)),
+        minY: Math.min(...group.map(a => a.y)),
+        maxY: Math.max(...group.map(a => a.y)),
+      },
+      riserCount: risers.reduce((sum, a) => sum + a.value, 0),
+      treadCount: treads.reduce((sum, a) => sum + a.value, 0),
+      riserAnnotations: risers.map(a => `${a.value} RSRS`),
+      treadAnnotations: treads.map(a => `${a.value} TREADS`),
+    };
+  });
+
+  // Sort: prefer cluster with riser annotations first, then by annotation count
+  clusters.sort((a, b) => {
+    // Cluster with risers > cluster with only treads
+    const aHasRisers = a.riserAnnotations.length > 0 ? 1 : 0;
+    const bHasRisers = b.riserAnnotations.length > 0 ? 1 : 0;
+    if (aHasRisers !== bHasRisers) return bHasRisers - aHasRisers;
+    // Then by total annotation count
+    return b.items.length - a.items.length;
+  });
+
+  return clusters;
+}
+
+/**
+ * Generate a deduplication guide for the counting agent.
+ * Only generated when multiple annotation clusters are detected.
+ */
+function generateDeduplicationGuide(
+  clusters: ViewCluster[],
+  pageNum: number
+): string {
+  if (clusters.length <= 1) return '';
+
+  // Find the primary cluster (has riser annotations, sorted first)
+  const primary = clusters[0];
+  const others = clusters.slice(1);
+
+  let guide = `\n[VIEW DEDUPLICATION — Page ${pageNum}]\n`;
+  guide += `⚠️  MULTIPLE DRAWING VIEWS DETECTED: ${clusters.length} spatial clusters of annotations found.\n`;
+  guide += `Different views (section, plan, axonometric) label the SAME flights independently.\n`;
+  guide += `USE ONLY THE PRIMARY CLUSTER below. Ignore all other clusters.\n`;
+  guide += `NOTE: This deduplication is PER PAGE. If your stair spans multiple pages, ADD the primary clusters from ALL pages together.\n\n`;
+
+  // Primary cluster — emphasized
+  const pYRange = `y=${Math.round(primary.bounds.minY)}-${Math.round(primary.bounds.maxY)}`;
+  const pXRange = `x=${Math.round(primary.bounds.minX)}-${Math.round(primary.bounds.maxX)}`;
+  guide += `  ✅ PRIMARY CLUSTER (${primary.items.length} annotations, ${pXRange}, ${pYRange}):\n`;
+  if (primary.riserAnnotations.length > 0) {
+    guide += `    Risers (${primary.riserAnnotations.length} flights): ${primary.riserAnnotations.join(', ')} = ${primary.riserCount} total risers\n`;
+  }
+  if (primary.treadAnnotations.length > 0) {
+    guide += `    Treads: ${primary.treadAnnotations.join(', ')} = ${primary.treadCount} total treads\n`;
+  }
+  guide += `    → Count ONLY these annotations. Derive treads = risers - 1 per flight.\n\n`;
+
+  // Other clusters — marked as duplicates
+  for (const cluster of others) {
+    const yRange = `y=${Math.round(cluster.bounds.minY)}-${Math.round(cluster.bounds.maxY)}`;
+    const xRange = `x=${Math.round(cluster.bounds.minX)}-${Math.round(cluster.bounds.maxX)}`;
+    guide += `  ❌ DUPLICATE CLUSTER (${cluster.items.length} annotations, ${xRange}, ${yRange}):\n`;
+    if (cluster.riserAnnotations.length > 0) {
+      guide += `    Risers: ${cluster.riserAnnotations.join(', ')}\n`;
+    }
+    if (cluster.treadAnnotations.length > 0) {
+      guide += `    Treads: ${cluster.treadAnnotations.join(', ')}\n`;
+    }
+    guide += `    → IGNORE these — they are the same flights from a different drawing view.\n\n`;
+  }
+
+  return guide;
+}
+
 async function getPageText(pageNumbers: number[], format: string = 'rows'): Promise<string> {
   if (!globalTextData) {
     throw new Error('No text data available. Text extraction may not have run for this PDF.');
@@ -997,6 +1190,17 @@ async function getPageText(pageNumbers: number[], format: string = 'rows'): Prom
       }
     } else {
       // Rows format: spatial rows with | separators (detailed, good for counting)
+
+      // Run annotation clustering for view deduplication
+      const clusters = clusterAnnotationsIntoViews(
+        pageData.textItems,
+        pageData.pageWidth,
+        pageData.pageHeight
+      );
+      if (clusters.length > 1) {
+        pageResult += generateDeduplicationGuide(clusters, pageNum);
+      }
+
       const rows = groupIntoRows(pageData.textItems);
       pageResult += `\n[spatial-rows] (${rows.length} rows, top-to-bottom)\n`;
       for (const row of rows) {

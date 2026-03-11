@@ -160,7 +160,7 @@ Your first job is to find EVERY occurrence of "EQ RSRS" (or other riser annotati
 
 **Step 1c: Sum the riser counts.** Add up all the N values: 14+14+14+14+8+... = total risers.
 
-**Step 1d: Deduplicate across views.** Before counting, check if you have annotations from multiple views (section + axonometric + plan). Group annotations by their spatial position (X/Y coordinates in the spatial rows). If you see two clusters of "EQ RSRS" annotations at different positions on the page, **keep only the section view cluster** (typically the leftmost group on the page). Discard duplicates from axonometric or other views.
+**Step 1d: Deduplicate across views.** The `get_page_text` output includes a `[VIEW DEDUPLICATION]` section when it detects multiple spatial clusters of annotations on a page. **READ THIS SECTION FIRST — it tells you exactly which cluster to use.** If it says "Use Cluster 1", count ONLY the annotations listed in Cluster 1 and ignore the rest. If no deduplication section appears, only one cluster was found and all annotations are from a single view.
 
 **Step 1e: Sanity check — annotation count vs levels.** Compare your deduplicated annotation count to the stair's level count. A stair serving N levels has N-1 level-to-level segments. Each segment typically has 1-4 flights depending on configuration. If your annotation count seems too low for the number of levels, the text on some pages may be incomplete — proceed to Step 2.
 

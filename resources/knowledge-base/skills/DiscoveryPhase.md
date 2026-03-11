@@ -64,7 +64,9 @@ Look for specification callouts like:
 
 ## Output Requirements
 
-Write your findings to `discovery.json` in the session directory:
+Write your findings to `discovery.json` in the session directory.
+
+**CRITICAL: Follow this EXACT schema. Do NOT add extra fields, notes, or commentary.**
 
 ```json
 {
@@ -77,14 +79,16 @@ Write your findings to `discovery.json` in the session directory:
       "stairId": "Stair 1",
       "pages": [250, 251],
       "sheets": ["A0500", "A0501"],
-      "levelsServed": ["00 IP", "01 IP", "02 IP"],
+      "levelsServed": ["LEVEL 00 IP", "LEVEL 01 IP", "LEVEL 02 IP"],
+      "levelCount": 3,
       "configuration": "scissor"
     },
     {
       "stairId": "Stair 2",
       "pages": [252, 253],
       "sheets": ["A0502", "A0503"],
-      "levelsServed": ["00 IP", "01 IP", "02 IP", "03 IP"],
+      "levelsServed": ["LEVEL 00 IP", "LEVEL 01 IP", "LEVEL 02 IP", "LEVEL 03 IP"],
+      "levelCount": 4,
       "configuration": "switchback"
     }
   ],
@@ -104,14 +108,38 @@ Write your findings to `discovery.json` in the session directory:
     "railGrade": "A500",
     "postSpacing": "4'-0\" o.c.",
     "specSections": ["055113", "055213"]
-  },
-
-  "notes": [
-    "Stair 1 is a scissor stair serving 3 levels",
-    "Detail sheets show typical tread and rail construction"
-  ]
+  }
 }
 ```
+
+### Schema Rules
+
+**Per-stair fields — use ONLY these:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `stairId` | string | Stair ID exactly as shown on drawings (e.g., "Stair 1", "Stair 7") |
+| `pages` | number[] | PDF page numbers where this stair appears |
+| `sheets` | string[] | Sheet numbers (e.g., "A0500", "A0504.1") |
+| `levelsServed` | string[] | Level names exactly as shown on drawings (e.g., "LEVEL 00 IP", "LEVEL P1") |
+| `levelCount` | number | Total number of levels served (length of levelsServed array) |
+| `configuration` | string | One of: "scissor", "switchback", "straight", "spiral", "other" |
+
+**Do NOT include per-stair:**
+- `notes` — NO free-form notes per stair
+- Annotation counts or riser/tread values — that is the counting agent's job
+- Elevation values — just list level names without elevations
+
+**Top-level fields — use ONLY these:**
+- `projectName`, `architect`, `drawingDate` — from title block
+- `stairs` — array of stair objects (schema above)
+- `detailSheets` — `pages` and `sheets` arrays only, no notes
+- `constructionSpecs` — fixed fields only (see schema), use empty string `""` if not found
+
+**Do NOT include:**
+- Top-level `notes` array
+- Any `notes` field on `detailSheets` or `constructionSpecs`
+- Any commentary, observations, or speculation
 
 ---
 
@@ -187,15 +215,16 @@ Compile findings from text + images into the JSON format above.
 
 ## Important Rules
 
-1. **DO NOT count treads** - Just identify stairs and read specs
+1. **DO NOT count treads or risers** - Do NOT list annotation values like "14 EQ RSRS" or "13 RISERS @ 6 7/8\"". That is the counting agent's job. You only identify WHICH stairs exist and WHERE they are.
 2. **DO NOT generate CSV** - That's the final phase
 3. **ALWAYS use format="compact"** for `get_page_text` — spatial rows waste tokens in discovery
 4. **ALWAYS pass pages=[...] to search_pdf_text** — never search the entire PDF
 5. **INCLUDE ALL PAGES for each stair** - A stair with plan AND section views spans multiple pages. Include every page. Missing a section view page means the counting agent won't have RSRS annotations.
-6. **Record what you find** - Even partial information is useful
-7. **Note what's missing** - If specs aren't on the drawings, say so
+6. **Follow the EXACT JSON schema** — no extra fields, no notes, no commentary
+7. **Use empty string "" for unknown spec values** — don't write "Not specified on these sheets"
 8. **Be thorough but efficient** - Don't extract pages you don't need
 9. **DO NOT extract overview images unless necessary** - Text extraction in compact format gives you sheet titles, stair IDs, and specs. Only extract images if text didn't identify stair configurations.
+10. **Level names WITHOUT elevations** - Write "LEVEL 00 IP", not "LEVEL 00 IP (85'-0\")". The counting agent reads elevations from drawings.
 
 ---
 
@@ -203,4 +232,10 @@ Compile findings from text + images into the JSON format above.
 
 After writing `discovery.json`, your job is complete. The orchestrator will read your output and spawn counting agents for each stair you found.
 
-Your output enables the next phase - make sure it's accurate and complete.
+**Self-check before finishing:**
+- Does your JSON match the schema EXACTLY? No extra fields?
+- Did you include ALL pages for each stair (plan + section + detail views)?
+- Did you avoid listing annotation values or riser/tread counts?
+- Is `levelCount` correct for each stair (matches length of `levelsServed`)?
+- Are level names clean (no elevation values in parentheses)?
+- Are unknown spec values set to `""` (not "Not specified...")?

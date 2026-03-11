@@ -1,0 +1,328 @@
+TEXT DUMP: stair-3
+PDF: 2024-06-14_Volume 2_CSPermit_Addendum 03_OHWC.pdf
+Pages: 1 of 298
+Generated: 2026-03-11T19:48:21.809Z
+
+This is EXACTLY what the agent sees when it calls get_page_text().
+Look for riser/tread annotations like "14 EQ RSRS 7'-6\"" or "13 TREADS @ 11\""
+
+────────────────────────────────────────────────────────────────────────────────
+STAIR → PAGE MAPPING
+────────────────────────────────────────────────────────────────────────────────
+  Stair 1          → pages 250, 251
+  Stair 2          → pages 252
+  Stair 3          → pages 253
+  Stair 4          → pages 254, 255
+  Stair 5          → pages 256, 257
+  Stair 6          → pages 258
+  Stair 7          → pages 259
+  Elevator 15      → pages 260
+  Details          → pages 261, 262, 263
+────────────────────────────────────────────────────────────────────────────────
+
+
+▼▼▼ Stair 3 ▼▼▼
+════════════════════════════════════════════════════════════════════════════════
+  PAGE 253 (594 text items, 3456x2592 pts)
+════════════════════════════════════════════════════════════════════════════════
+
+[spatial-rows] (263 rows, top-to-bottom)
+  ROW y=1380: a8 | a9
+  ROW y=1506: LEVEL 10 IP
+  ROW y=1516: 245' - 2"
+  ROW y=1540: 3
+  ROW y=1564: 9 | 9 | 9
+  ROW y=1579: A0503 | A0503 | A0503
+  ROW y=1602: C6s
+  ROW y=1611: 2
+  ROW y=1637: OhioHealth
+  ROW y=1653: a8 | a8 | a8
+  ROW y=1658: 3
+  ROW y=1674: Women's Center
+  ROW y=1681: F3 | C6s | C6s | F3
+  ROW y=1690: F3 | F3 | 2 | 2
+  ROW y=1700: 4'-2"
+  ROW y=1704: 157' - 2 1/2"
+  ROW y=1710: R 4' - 0" | WALL LIGHT, SEE ELECTRICAL | R 4' - 0" | 3
+  ROW y=1716: 4'-4" | R 4' - 0" | WALL LIGHT, SEE ELECTRICAL
+  ROW y=1726: R 4' - 0" | R 4' - 0"
+  ROW y=1732: R 4' - 0"
+  ROW y=1736: 4'-0" | 7 1/2" | 4'-0" | C6s | 4'-0" | 7 1/2" | 4'-0" | 4'-0"
+  ROW y=1743: 2 | WALL LIGHT, SEE ELECTRICAL
+  ROW y=1748: 055113 - METAL PAN STAIRS
+  ROW y=1770: 225 N. Michigan Ave Suite 1100
+  ROW y=1781: 055113 - METAL PAN STAIRS | Chicago, IL 60601
+  ROW y=1786: 055213 - PIPE AND TUBE RAILING
+  ROW y=1798: P: 312.332.9600
+  ROW y=1803: LEVEL 09 IP | 5'-6"
+  ROW y=1810: 223' - 2" | 055213 - PIPE AND TUBE RAILING | F: 312.332.9601
+  ROW y=1832: 6 TREADS @ 11"
+  ROW y=1841: DN | UP
+  ROW y=1848: 10'-1" | 3
+  ROW y=1853: www.cannondesign.com
+  ROW y=1866: 055113 - METAL PAN STAIRS
+  ROW y=1873: 11'-0" | R 4' - 0"
+  ROW y=1876: 11 TREADS @ 11" | C6s | Korda/Nemeth Engineering, Inc
+  ROW y=1884: 2 | 055213 - PIPE AND TUBE RAILING
+  ROW y=1887: Structural, Mechanical, Electrical, Plumbing
+  ROW y=1898: 12 TREADS @ 11" | 1650 Watermark Drive, Suite 200
+  ROW y=1909: Columbus, OH 43215
+  ROW y=1912: TYP
+  ROW y=1920: 15'-6" | 11 | 614.487.1650
+  ROW y=1925: DN | F3 | 3
+  ROW y=1932: A0510 | F3
+  ROW y=1936: DN
+  ROW y=1941: 3 | UP | MA Design
+  ROW y=1948: R 4' - 0" | C6s
+  ROW y=1953: Architecutre
+  ROW y=1957: R 4' - 0" | STAIR 3 | 2
+  ROW y=1963: 775 Yard Street, Suite 325
+  ROW y=1968: 7 | 7 | 7 | ST029-01
+  ROW y=1973: STAIR 3 | Columbus, OH 43212
+  ROW y=1976: F3 | F3
+  ROW y=1983: A0521 | A0521 | ST029-05 | A0521 | 614.764.0407
+  ROW y=2004: 6'-7 3/8" | F3
+  ROW y=2008: EMH&T
+  ROW y=2012: LEVEL 08 IP | 5'-8 3/8" | F3
+  ROW y=2018: F3 | F3 | Civil
+  ROW y=2022: 207' - 8" | C6s
+  ROW y=2029: a9 | 2 | a9 | a9 | 5500 New Albany Road
+  ROW y=2040: Columbus, OH 43054
+  ROW y=2050: 3 | 614.775.4376
+  ROW y=2056: ST029-08 | ST029-05
+  ROW y=2069: 3
+  ROW y=2073: EDGE
+  ROW y=2080: 6'-11 1/2" | WALL LIGHT, SEE ELECTRICAL
+  ROW y=2084: WALL LIGHT, SEE ELECTRICAL | Landscape Architecture
+  ROW y=2088: 12 EQ RSRS
+  ROW y=2095: C6s | 330 West Spring Street, Suite 350
+  ROW y=2106: 2 | Columbus, OH 43215
+  ROW y=2117: 614.486.3343
+  ROW y=2123: 14'-6"
+  ROW y=2139: Walsh Consulting Group, Inc
+  ROW y=2148: 3 | Equipment Planning
+  ROW y=2161: 1275 Milwaukee Avenue, Suite 333
+  ROW y=2172: Glenview, IL 60025
+  ROW y=2176: 7'-6 1/2" | aK
+  ROW y=2183: aK | aK | 847.699.2500
+  ROW y=2186: 13 EQ RSRS
+  ROW y=2204: Walker Consultants
+  ROW y=2208: LEVEL 07 IP
+  ROW y=2216: 193' - 2" | Parking Planner
+  ROW y=2226: 6602 E. 75th Street. Suite 210
+  ROW y=2230: STAIR 3 - LEVEL 08 IP PLAN | STAIR 3 - LEVEL 05 IP PLAN | STAIR 3 - LEVEL 02 IP PLAN
+  ROW y=2237: Indianapolis, IN 46250
+  ROW y=2241: 11 | 6 | 3
+  ROW y=2246: 3 | 1/4" = 1'-0" | 1/4" = 1'-0" | 1/4" = 1'-0" | 317.842.6890
+  ROW y=2270: Vision Builders & Design
+  ROW y=2276: 6'-11 1/2"
+  ROW y=2281: 12 EQ RSRS | Kitchen Planner
+  ROW y=2292: 1515 Shopton Rd, Suite 104
+  ROW y=2303: Charlotte, NC 28217
+  ROW y=2314: 704.405.3101
+  ROW y=2319: 14'-6"
+  ROW y=2336: Code Red Consultants, LLC
+  ROW y=2344: 3 | 9 | 9 | 9
+  ROW y=2347: Life Safety Consultant
+  ROW y=2358: A0503 | A0503 | A0503 | 154 Turnpike Rd, #200
+  ROW y=2369: 7'-6 1/2" | Southbourough, MA 01772
+  ROW y=2379: 13 EQ RSRS | 617.500.4512
+  ROW y=2401: LEVEL 06 IP | Whiting-Turner
+  ROW y=2412: 178' - 8" | Contractor
+  ROW y=2423: 445 Hutchinson Avenue, Suite 142
+  ROW y=2433: a8 | a8 | a8 | Columbus, OH 43235
+  ROW y=2438: 3 | 3
+  ROW y=2441: 3
+  ROW y=2445: 614.459.6515
+  ROW y=2460: C6s | F3 | C6s | F3 | WALL LIGHT, SEE ELECTRICAL | C6s | F3
+  ROW y=2467: 2 | VMP ENGINEERING INC.
+  ROW y=2471: 6'-11 1/2" | 186' - 2 1/2" | 2 | 055213 - PIPE AND TUBE RAILING | 2
+  ROW y=2479: 12 EQ RSRS | WALL LIGHT, SEE ELECTRICAL | 138' - 10 1/2" | 11" | 4'-0" | 3 | Electrical, Plumbing
+  ROW y=2483: 3
+  ROW y=2489: R 4' - 0" | 6225 Emerald Parkway
+  ROW y=2493: R 4' - 0"
+  ROW y=2497: 4'-2" | 4'-2" | Dublin, Ohio 43016
+  ROW y=2510: 4'-0" | 7 1/2" | 4'-0" | R 4' - 0" | 055113 - METAL PAN STAIRS | R 4' - 0" | 614.408.3862
+  ROW y=2513: 14'-6" | 05213 - PIPE AND TUBE RAILING
+  ROW y=2516: 4'-0" | 7 1/2" | 4'-0" | 4'-0" | 6 7/8" | 4'-0"
+  ROW y=2533: 055113 - METAL PAN STAIRS | 055213 - PIPE AND TUBE RAILING
+  ROW y=2537: WALL LIGHT, SEE ELECTRICAL
+  ROW y=2551: 3
+  ROW y=2562: 055213 - PIPE AND TUBE RAILING | 055113 - METAL PAN STAIRS
+  ROW y=2567: 7'-6 1/2" | DN
+  ROW y=2577: 13 EQ RSRS | 1'-0" 1'-10" 1'-0"
+  ROW y=2585: 055213 - PIPE AND TUBE RAILING
+  ROW y=2594: 5'-6"
+  ROW y=2600: LEVEL 05 IP
+  ROW y=2610: 164' - 2"
+  ROW y=2622: 6 TREADS @ 11"
+  ROW y=2626: 10'-1" | 1'-10"
+  ROW y=2636: 3 | 11'-0" | 11'-0" | UP
+  ROW y=2652: 2 TREADS @ 11"
+  ROW y=2656: 11 TREADS @ 11" | C6s | C6s
+  ROW y=2664: 2 | 12 TREADS @ 11" | 2 | 12 TREADS @ 11" | C6s
+  ROW y=2668: 6'-11 1/2" | STAIR INTERRUPTION
+  ROW y=2675: 12 EQ RSRS | 2
+  ROW y=2679: GATE
+  ROW y=2690: F3
+  ROW y=2699: DN | F3
+  ROW y=2705: F3 | F3
+  ROW y=2711: 14'-6" | R 4' - 0"
+  ROW y=2716: DN
+  ROW y=2720: UP | UP | R 4' - 0"
+  ROW y=2729: 3 | R 4' - 0" | R 4' - 0"
+  ROW y=2735: 3 | 100' - 0"
+  ROW y=2745: 7 | STAIR 3 | 7 | R 4' - 0" | STAIR 3 | 7
+  ROW y=2757: ST029-07 | ST029-04
+  ROW y=2760: 7'-6 1/2" | 3 | A0521 | R 4' - 0" | A0521 | A0521 | F3 | C6s
+  ROW y=2772: 13 EQ RSRS | 149' - 8" | 2
+  ROW y=2789: F3 | ST029-01
+  ROW y=2795: LEVEL 04 IP
+  ROW y=2802: C6s | F3 | C6s | F3 | J6s
+  ROW y=2806: 149' - 8"
+  ROW y=2811: 2 | a9 | 2 | a9 | a9
+  ROW y=2825: 1'-8 1/2" | 3
+  ROW y=2836: ST029-07 | ST029-04
+  ROW y=2847: 3
+  ROW y=2858: WALL LIGHT, SEE ELECTRICAL | 3
+  ROW y=2866: 4'-6 1/2" | WALL LIGHT, SEE ELECTRICAL
+  ROW y=2876: 8 EQ RSRS
+  ROW y=2891: 3
+  ROW y=2912: 15'-4" | TYP
+  ROW y=2922: 2
+  ROW y=2929: 4'-6 1/2"
+  ROW y=2934: A0511
+  ROW y=2937: 8 EQ RSRS
+  ROW y=2965: aK | aK | aK
+  ROW y=2990: 4'-6 1/2"
+  ROW y=2998: 8 EQ RSRS
+  ROW y=3002: LEVEL 03 IP
+  ROW y=3010: 134' - 4" | STAIR 3 - LEVEL 07 IP PLAN | STAIR 3 - LEVEL 04 IP PLAN | STAIR 3 - LEVEL 01 IP PLAN
+  ROW y=3021: 8 | 5 | 2
+  ROW y=3026: 1/4" = 1'-0" | 1/4" = 1'-0" | 1/4" = 1'-0"
+  ROW y=3044: 4'-7"
+  ROW y=3060: 8 EQ RSRS
+  ROW y=3067: 3
+  ROW y=3102: TYP
+  ROW y=3106: 4'-7"
+  ROW y=3110: 11
+  ROW y=3121: 8 EQ RSRS | A0511
+  ROW y=3133: 9 | 9 | 9
+  ROW y=3140: 18'-4"
+  ROW y=3148: A0503 | A0503 | A0503
+  ROW y=3167: 4'-7" | 3
+  ROW y=3184: 8 EQ RSRS
+  ROW y=3195: C6s
+  ROW y=3204: 2
+  ROW y=3222: a8 | a8 | a8
+  ROW y=3228: 4'-7" | 3
+  ROW y=3246: 8 EQ RSRS
+  ROW y=3250: LEVEL 02 IP | C6s | 129' - 9" | F3 | 3
+  ROW y=3254: 3 | F3 | C6s | F3
+  ROW y=3259: 116' - 0" | 2 | 3
+  ROW y=3266: 171' - 8 1/2" | WALL LIGHT, SEE ELECTRICAL | 2
+  ROW y=3273: 85' - 0"
+  ROW y=3278: R 4' - 0" | 4'-0" | 7 1/2" | 4'-0" | R 4' - 0"
+  ROW y=3282: 7 1/2" | WALL LIGHT, SEE ELECTRICAL
+  ROW y=3286: 4'-0" | 4'-2" | 4'-2" | R 4' - 0" | 3
+  ROW y=3294: R 4' - 0"
+  ROW y=3298: 3 | R 4' - 0"
+  ROW y=3301: 7 EQ RSRS | 4'-0" | 4'-0" | 055113 - METAL PAN STAIRS | 4'-0" | 11"
+  ROW y=3306: R 4' - 0" | WAL LLIGHT. SEE ELECTRICAL
+  ROW y=3317: 055113 - METAL PAN STAIR
+  ROW y=3325: UP
+  ROW y=3330: 055113 - METAL PAN STAIRS
+  ROW y=3334: TYP | 055113 - METAL PAN STAIRS
+  ROW y=3339: 4'-0" | 6 7/8" | 4'-0"
+  ROW y=3342: 4'-0" | 6
+  ROW y=3346: F3 | 055213 - PIPE AND TUBE RAILING
+  ROW y=3351: 055213 - PIPE AND TUBE RAILING | A0511
+  ROW y=3357: 7 EQ RSRS | 3 | CANE DETECTION RAIL
+  ROW y=3371: 16'-0" | F3 | 055213 - PIPE AND TUBE RAILING
+  ROW y=3382: 6'-5" | 3 | ADDENDUM 03 | 14 JUN 2024
+  ROW y=3389: 6'-5"
+  ROW y=3396: 4'-0" | 2 | ADDENDUM 02 | 17 MAY 2024
+  ROW y=3410: 7 EQ RSRS | 11'-7 3/4" | 12 TREADS @ 11" | 1 | CORE & SHELL PERMIT SET | 22 APRIL 2024
+  ROW y=3417: 10'-1" | 12 TREADS @ 11"
+  ROW y=3423: TYP | 11'-0" | 055213 - PIPE AND TUBE RAILING | Rev. | Description | Date
+  ROW y=3427: DN
+  ROW y=3433: 4 | TYP
+  ROW y=3438: 2
+  ROW y=3441: 9 | UP
+  ROW y=3444: A0511 | 11 TREADS @ 11" | C6s | C6s
+  ROW y=3450: 4'-0"
+  ROW y=3453: 2 | 12 TREADS @ 11" | A0511 | 2
+  ROW y=3460: R 4' - 0"
+  ROW y=3466: LEVEL 01 IP | 7 EQ RSRS
+  ROW y=3469: 3
+  ROW y=3476: 100' - 0" | 3
+  ROW y=3493: F3 | 1" | 4'-2"
+  ROW y=3507: DN | F3 | UP
+  ROW y=3513: 3 | 85' - 0"
+  ROW y=3519: R 4' - 0" | C6s
+  ROW y=3522: UP | R 4' - 0" | F3
+  ROW y=3526: TYP | 2
+  ROW y=3532: STAIR 3 | 9 | STAIR 3
+  ROW y=3537: 7 | 7 | 7
+  ROW y=3541: F3 | F3 | 10'-3 3/8" | STAIR 3
+  ROW y=3544: ST029-06 | A0511 | ST029-03
+  ROW y=3548: R 4' - 0" | F2
+  ROW y=3552: A0521 | A0521 | A0521 | ST029-00
+  ROW y=3557: 134' - 4"
+  ROW y=3578: F2
+  ROW y=3581: 15'-0" | 15'-0" | C6s
+  ROW y=3591: C6s | F3 | F3 | 2 | F3 | C6s
+  ROW y=3600: 12 EQ RISERS | 2 | a9 | a9 | 2 | a9
+  ROW y=3605: 2
+  ROW y=3623: TYP | ST029-06 | ST029-03 | ST029-00 | Drawing Title:
+  ROW y=3629: 3 | 3
+  ROW y=3633: 1
+  ROW y=3644: A0511 | 3
+  ROW y=3648: WALL LIGHT, SEE ELECTRICAL | WALL LIGHT, SEE ELECTRICAL
+  ROW y=3656: WALL LIGHT SEE ELECTRICAL
+  ROW y=3669: LEVEL 00 IP | STAIR 3 - PLANS AND
+  ROW y=3679: 85' - 0"
+  ROW y=3692: SECTIONS
+  ROW y=3747: Project No.: | 006703.03 | Checked by: | Checker
+  ROW y=3754: aK | aK | aK
+  ROW y=3796: AXON - STAIR 3 | SECTION - STAIR 3 - LOOKING EAST | STAIR 3 - LEVEL 06 IP PLAN | STAIR 3 - LEVEL 03 IP PLAN | STAIR 3 - LEVEL 00 IP PLAN
+  ROW y=3808: 10 | 9 | 7 | 4 | 1
+  ROW y=3812: 3/16" = 1'-0" | 1/4" = 1'-0" | 1/4" = 1'-0" | 1/4" = 1'-0" | A0503
+  ROW y=3826: © 2024 The Cannon Corporation | All rights reserved. No part of this document may | be reproduced or utilized in any form, without prior | written authorization by The Cannon Corporation. | 6/14/2024 4:18:43 PM
+  ROW y=3843: © 2023 The Cannon Corporation
+
+[annotations found]
+  y=1832: 6 TREADS @ 11"
+  y=1876: 11 TREADS @ 11" C6s Korda/Nemeth Engineering, Inc
+  y=1898: 12 TREADS @ 11" 1650 Watermark Drive, Suite 200
+  y=2088: 12 EQ RSRS
+  y=2186: 13 EQ RSRS
+  y=2281: 12 EQ RSRS Kitchen Planner
+  y=2379: 13 EQ RSRS 617.500.4512
+  y=2479: 12 EQ RSRS WALL LIGHT, SEE ELECTRICAL 138' - 10 1/2" 11" 4'-0" 3 Electrical, Plumbing
+  y=2577: 13 EQ RSRS 1'-0" 1'-10" 1'-0"
+  y=2622: 6 TREADS @ 11"
+  y=2652: 2 TREADS @ 11"
+  y=2656: 11 TREADS @ 11" C6s C6s
+  y=2664: 2 12 TREADS @ 11" 2 12 TREADS @ 11" C6s
+  y=2675: 12 EQ RSRS 2
+  y=2772: 13 EQ RSRS 149' - 8" 2
+  y=2876: 8 EQ RSRS
+  y=2937: 8 EQ RSRS
+  y=2998: 8 EQ RSRS
+  y=3060: 8 EQ RSRS
+  y=3121: 8 EQ RSRS A0511
+  y=3184: 8 EQ RSRS
+  y=3246: 8 EQ RSRS
+  y=3301: 7 EQ RSRS 4'-0" 4'-0" 055113 - METAL PAN STAIRS 4'-0" 11"
+  y=3357: 7 EQ RSRS 3 CANE DETECTION RAIL
+  y=3410: 7 EQ RSRS 11'-7 3/4" 12 TREADS @ 11" 1 CORE & SHELL PERMIT SET 22 APRIL 2024
+  y=3417: 10'-1" 12 TREADS @ 11"
+  y=3444: A0511 11 TREADS @ 11" C6s C6s
+  y=3453: 2 12 TREADS @ 11" A0511 2
+  y=3466: LEVEL 01 IP 7 EQ RSRS
+  y=3600: 12 EQ RISERS 2 a9 a9 2 a9
+
+[full-text]
+UP UP aK a9 a8 9 A0503 7 A0521 STAIR 3 ST029-00 85' - 0" 4'-0" 6 7/8" 4'-0" R 4' - 0" R 4' - 0" 2 F3 F3 C6s 2 C6s 2 F3 C6s 2 85' - 0" ST029-00 R 4' - 0" 4'-2" 1" 055113 - METAL PAN STAIRS 055113 - METAL PAN STAIR CANE DETECTION RAIL WALL LIGHT SEE ELECTRICAL WAL LLIGHT. SEE ELECTRICAL 11" 4'-0" 055213 - PIPE AND TUBE RAILING 055213 - PIPE AND TUBE RAILING F2 F2 aK a9 a8 9 A0503 7 A0521 UP DN 4'-0" 6 7/8" 4'-0" 100' - 0" R 4' - 0" ST029-01 F3 C6s 2 J6s C6s 2 F3 C6s 2 F3 R 4' - 0" R 4' - 0" R 4' - 0" STAIR INTERRUPTION GATE 6 TREADS @ 11" 5'-6" 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL 05213 - PIPE AND TUBE RAILING 4'-0" 11" aK a9 a8 9 A0503 7 A0521 6 TREADS @ 11" 5'-6" 4'-0" STAIR 3 ST029-01 UP DN R 4' - 0" R 4' - 0" F3 C6s 2 F3 C6s 2 F3 R 4' - 0" 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL aK a9 a8 9 A0503 7 A0521 12 TREADS @ 11" 6'-5" 4'-2" 4'-0" 7 1/2" 4'-0" 129' - 9" 134' - 4" STAIR 3 ST029-03 UP DN A0511 6 TYP A0511 9 TYP F3 C6s 2 F3 C6s 2 F3 C6s 2 F3 ST029-03 R 4' - 0" R 4' - 0" R 4' - 0" 12 TREADS @ 11" 6'-5" 10'-3 3/8" 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL F3 aK a9 a8 9 A0503 7 A0521 12 TREADS @ 11" 11'-0" 4'-2" 2 TREADS @ 11" 1'-10" 138' - 10 1/2" 149' - 8" 4'-0" 7 1/2" 4'-0" STAIR 3 ST029-04 UP DN F3 C6s 2 F3 C6s 2 F3 ST029-04 R 4' - 0" R 4' - 0" R 4' - 0" R 4' - 0" F3 C6s 2 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING 055213 - PIPE AND TUBE RAILING 1'-0" 1'-10" 1'-0" WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL aK a9 a8 9 A0503 7 A0521 4'-2" 12 TREADS @ 11" 11'-0" 157' - 2 1/2" STAIR 3 ST029-05 4'-0" 7 1/2" 4'-0" UP DN F3 C6s 2 F3 C6s 2 F3 ST029-05 R 4' - 0" R 4' - 0" R 4' - 0" R 4' - 0" F3 C6s 2 5'-8 3/8" 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL aK a9 a8 9 A0503 7 A0521 12 TREADS @ 11" 11'-0" 4'-2" 11 TREADS @ 11" 10'-1" 4'-0" 7 1/2" 4'-0" STAIR 3 ST029-06 171' - 8 1/2" UP DN A0511 9 TYP F3 C6s 2 F3 C6s 2 C6s 2 F3 ST029-06 R 4' - 0" R 4' - 0" R 4' - 0" R 4' - 0" 11'-7 3/4" F3 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL F3 aK a9 a8 9 A0503 7 A0521 11 TREADS @ 11" 10'-1" 4'-2" 12 TREADS @ 11" 11'-0" 4'-0" 7 1/2" 4'-0" STAIR 3 ST029-07 186' - 2 1/2" UP DN F3 C6s 2 F3 C6s 2 F3 ST029-07 R 4' - 0" R 4' - 0" F3 C6s 2 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL LEVEL 01 IP 100' - 0" LEVEL 02 IP 116' - 0" LEVEL 03 IP 134' - 4" LEVEL 04 IP 149' - 8" LEVEL 05 IP 164' - 2" LEVEL 06 IP 178' - 8" LEVEL 07 IP 193' - 2" LEVEL 08 IP 207' - 8" LEVEL 09 IP 223' - 2" LEVEL 10 IP 245' - 2" LEVEL 00 IP 85' - 0" a9 a8 15'-0" 16'-0" 18'-4" 15'-4" 14'-6" 14'-6" 14'-6" 14'-6" 15'-6" 12 EQ RISERS 15'-0" 7 EQ RSRS 4'-0" 7 EQ RSRS 4'-0" 7 EQ RSRS 4'-0" 7 EQ RSRS 4'-0" 8 EQ RSRS 4'-7" 8 EQ RSRS 4'-7" 8 EQ RSRS 4'-7" 8 EQ RSRS 4'-7" 8 EQ RSRS 4'-6 1/2" 13 EQ RSRS 7'-6 1/2" 12 EQ RSRS 6'-11 1/2" 13 EQ RSRS 7'-6 1/2" 12 EQ RSRS 6'-11 1/2" 13 EQ RSRS 7'-6 1/2" 12 EQ RSRS 6'-11 1/2" 13 EQ RSRS 7'-6 1/2" 12 EQ RSRS 6'-11 1/2" A0511 1 TYP A0511 11 TYP A0511 2 TYP 1'-8 1/2" 8 EQ RSRS 4'-6 1/2" 8 EQ RSRS 4'-6 1/2" A0511 4 TYP A0510 11 TYP aK a9 a8 9 A0503 7 A0521 4'-4" 11 TREADS @ 11" 10'-1" 6'-7 3/8" C6s 2 F3 C6s 2 F3 F3 F3 C6s 2 F3 055113 - METAL PAN STAIRS 055213 - PIPE AND TUBE RAILING WALL LIGHT, SEE ELECTRICAL WALL LIGHT, SEE ELECTRICAL R 4' - 0" R 4' - 0" 4'-0" 7 1/2" 4'-0" ST029-08 DN Checked by: Project No.: Drawing Title: © 2023 The Cannon Corporation © 2024 The Cannon Corporation All rights reserved. No part of this document may be reproduced or utilized in any form, without prior written authorization by The Cannon Corporation. 006703.03 Women's Center OhioHealth Rev. Description Date www.cannondesign.com Korda/Nemeth Engineering, Inc Structural, Mechanical, Electrical, Plumbing 1650 Watermark Drive, Suite 200 Columbus, OH 43215 614.487.1650 MA Design Architecutre 775 Yard Street, Suite 325 Columbus, OH 43212 614.764.0407 EMH&T Civil 5500 New Albany Road Columbus, OH 43054 614.775.4376 EDGE Landscape Architecture 330 West Spring Street, Suite 350 Columbus, OH 43215 614.486.3343 Walsh Consulting Group, Inc Equipment Planning 1275 Milwaukee Avenue, Suite 333 Glenview, IL 60025 847.699.2500 Walker Consultants Parking Planner 6602 E. 75th Street. Suite 210 Indianapolis, IN 46250 317.842.6890 Vision Builders & Design Kitchen Planner 1515 Shopton Rd, Suite 104 Charlotte, NC 28217 704.405.3101 Code Red Consultants, LLC Life Safety Consultant 154 Turnpike Rd, #200 Southbourough, MA 01772 617.500.4512 Whiting-Turner Contractor 445 Hutchinson Avenue, Suite 142 Columbus, OH 43235 614.459.6515 VMP ENGINEERING INC. Electrical, Plumbing 6225 Emerald Parkway Dublin, Ohio 43016 614.408.3862 CORE & SHELL PERMIT SET 22 APRIL 2024 1 6/14/2024 4:18:43 PM A0503 STAIR 3 - PLANS AND SECTIONS Checker 225 N. Michigan Ave Suite 1100 P: 312.332.9600 F: 312.332.9601 Chicago, IL 60601 1/4" = 1'-0" 1 STAIR 3 - LEVEL 00 IP PLAN 1/4" = 1'-0" 2 STAIR 3 - LEVEL 01 IP PLAN 1/4" = 1'-0" 3 STAIR 3 - LEVEL 02 IP PLAN 1/4" = 1'-0" 4 STAIR 3 - LEVEL 03 IP PLAN 1/4" = 1'-0" 5 STAIR 3 - LEVEL 04 IP PLAN 1/4" = 1'-0" 6 STAIR 3 - LEVEL 05 IP PLAN 1/4" = 1'-0" 7 STAIR 3 - LEVEL 06 IP PLAN 1/4" = 1'-0" 8 STAIR 3 - LEVEL 07 IP PLAN 3/16" = 1'-0" 9 SECTION - STAIR 3 - LOOKING EAST 10 AXON - STAIR 3 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 2 ADDENDUM 02 17 MAY 2024 3 ADDENDUM 03 14 JUN 2024 3 3 3 3 3 3 3 3 1/4" = 1'-0" 11 STAIR 3 - LEVEL 08 IP PLAN 3
+

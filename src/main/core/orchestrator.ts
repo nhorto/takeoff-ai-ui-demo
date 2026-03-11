@@ -60,7 +60,8 @@ interface DiscoveryOutput {
     pages: number[];
     sheets: string[];
     levelsServed: string[];
-    configuration: string;
+    levelCount: number;
+    configuration: 'scissor' | 'switchback' | 'straight' | 'spiral' | 'other';
   }>;
   detailSheets: {
     pages: number[];
@@ -77,7 +78,6 @@ interface DiscoveryOutput {
     postSpacing: string;
     specSections: string[];
   };
-  notes: string[];
 }
 
 interface CountOutput {
@@ -289,6 +289,7 @@ Stair ID: ${stair.stairId}
 Pages: ${stair.pages.join(', ')}
 Sheets: ${stair.sheets.join(', ')}
 Levels Served: ${stair.levelsServed.join(' → ')}
+Level Count: ${stair.levelCount}
 Configuration: ${stair.configuration}
 ${textAvailableMsg}
 

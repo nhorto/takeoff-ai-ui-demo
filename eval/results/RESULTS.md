@@ -25,7 +25,11 @@ Auto-generated comparison of all scored runs against the OhioHealth Women's Cent
 | 2026-03-10-205709 | orchestrated | 1.0 | 8 (wrong) | 43% | 43% | 43% |
 | 2026-03-10-211725 | orchestrated | 1.0 | 8 (wrong) | 29% | 29% | 29% |
 | 2026-03-10-213619 | orchestrated | 0 | 8 (wrong) | 29% | 29% | 29% |
-| **2026-03-10-215608** | **orchestrated** | **0** | **8 (wrong)** | **57%** | **57%** | **57%** |
+| 2026-03-10-215608 | orchestrated | 0 | 8 (wrong) | 57% | 57% | 57% |
+| 2026-03-11-run1 | orchestrated+structured-discovery | 0 | 7 | 29% | 43% | 35.7% |
+| 2026-03-11-run2 | orchestrated+clustering | 0 | 7 | 71% | 71% | 71.4% |
+| 2026-03-11-run3 | orchestrated+clustering | 0 | 7 | 71% | 71% | 71.4% |
+| **2026-03-11-run4** | **orchestrated+clustering+per-page-fix** | **0** | **7** | **71%** | **86%** | **78.6%** |
 
 ## Architecture Summary
 
@@ -34,6 +38,8 @@ Auto-generated comparison of all scored runs against the OhioHealth Women's Cent
 | Monolith | 7 | 4% | 7% | 0% |
 | Orchestrated (temp=1.0) | 9 | 34% | 57% | 14% |
 | Orchestrated (temp=0) | 2 | 43% | 57% | 29% |
+| Orchestrated + structured discovery | 1 | 36% | 36% | 36% |
+| Orchestrated + spatial clustering | 3 | 74% | 79% | 71% |
 
 ## Temperature 0 vs 1.0 Variance
 
@@ -51,15 +57,15 @@ Temperature 0 reduced variance for Stairs 2 and 6. Stair 2 locked to +1 both run
 
 ## Per-Stair Consistency
 
-| Stair | Always Exact | Typical Delta Range | Hardest Problem |
-|-------|-------------|-------------------|-----------------|
-| Stair 1 | Yes (orchestrated) | 0 | Solved |
-| Stair 2 | No | -2 to +5 | Slight over/undercount |
-| Stair 3 | No | -12 to +22 | High variance (multi-view) |
-| Stair 4 | No | -3 to +18 | Moderate variance |
-| Stair 5 | No | -25 to +42 | Highest variance (multi-view + parking levels) |
-| Stair 6 | No | -22 to +46 | Annotation deduplication (33 annotations on page) |
-| Stair 7 | Yes (orchestrated) | 0 | Solved |
+| Stair | Always Exact | Typical Delta Range | Hardest Problem | Status (2026-03-11) |
+|-------|-------------|-------------------|-----------------|---------------------|
+| Stair 1 | Yes (orchestrated) | 0 | Solved | Solved |
+| Stair 2 | No (pre-clustering) | -2 to +5 | Slight over/undercount | Solved by clustering |
+| Stair 3 | No (pre-clustering) | -12 to +22 | High variance (multi-view) | Solved by clustering |
+| Stair 4 | No | -3 to +18 | Moderate variance | Improved, not solved (~+6) |
+| Stair 5 | No (pre-clustering) | -25 to +42 | Highest variance (multi-view + parking levels) | Solved (after per-page fix) |
+| Stair 6 | No (pre-clustering) | -22 to +46 | Annotation deduplication (33 annotations on page) | Solved by clustering |
+| Stair 7 | Yes (orchestrated) | 0 | Solved | Solved |
 
 ## Discovery Phase → Accuracy Correlation
 
@@ -73,18 +79,21 @@ Analysis of discovery.json across all orchestrated runs revealed:
 ## Key Findings
 
 1. **Architecture matters more than prompting** — Orchestrated pipeline improved accuracy from 0-7% to 14-57%
-2. **Stairs 1 and 7 are solved** — 100% accuracy on every orchestrated run
-3. **Errors are whole-flight miscounts** — Tread and riser deltas are always equal per stair
-4. **Multi-view sheets cause highest variance** — Pages with section + plan + axon views have ~3x expected annotations
-5. **Text-only extraction works** — All orchestrated runs used text extraction only (no images), still achieved up to 57%
-6. **Temperature 0 reduces variance** — Stair 2 locked to +1 both runs; Stair 6 went from -12/+10 to exact/+1
-7. **Discovery quality drives counting quality** — Free-form notes cascade into counting agent behavior; specific annotations help, wrong pre-counts hurt
+2. **Spatial clustering solved the annotation deduplication problem** — X-gap clustering in `get_page_text()` identifies the primary drawing view (section column) whose riser total matches golden data exactly on every page; boosted accuracy to 71-79%
+3. **Deterministic pre-processing beats prompt engineering** — Telling the agent "here are exactly N risers, ignore the rest" eliminated judgment calls and run-to-run variance
+4. **Stairs 1 and 7 are solved** — 100% accuracy on every orchestrated run
+5. **Errors are whole-flight miscounts** — Tread and riser deltas are always equal per stair
+6. **Text-only extraction works** — All runs used text extraction only (no images), achieved up to 79%
+7. **Temperature 0 reduces variance** — Combined with deterministic clustering, variance across runs dropped sharply
+8. **Discovery quality drives counting quality** — Structured schema (no free-form notes) eliminated hallucinated stairs; stair count now always 7
 
 ## Next Steps
 
 - [x] Test temperature 0 for reduced variance
-- [ ] Implement annotation deduplication (see docs/annotation-deduplication-problem.md)
+- [x] Implement annotation deduplication (spatial X-gap clustering, docs/spatial-clustering-improvement.md)
+- [x] Structure discovery output to reduce free-form variance
+- [ ] Investigate Stair 4 root cause (~+6 variable delta)
 - [ ] Add tolerance-based scoring tiers (exact/close/approximate)
 - [ ] Compare models (Sonnet vs Opus vs Haiku)
 - [ ] Add cost and latency tracking to comparison table
-- [ ] Structure discovery output to reduce free-form variance
+- [ ] Validate spatial clustering threshold on a second drawing set
