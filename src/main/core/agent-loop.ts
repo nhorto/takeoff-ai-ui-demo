@@ -160,6 +160,7 @@ export async function runAgentLoop(
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
         max_tokens: 64000,
+        temperature: 0,
         system: [
           {
             type: "text",
