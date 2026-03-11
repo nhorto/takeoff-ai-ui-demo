@@ -1,0 +1,96 @@
+{
+  "run_id": "2026-02-14-133319",
+  "format": "orchestrated",
+  "golden_id": "ohiohealth-womens-center",
+  "stair_count_expected": 7,
+  "stair_count_actual": 7,
+  "stair_count_correct": true,
+  "stairs": [
+    {
+      "stair_id": "Stair 1",
+      "treads_expected": 48,
+      "treads_actual": 48,
+      "treads_delta": 0,
+      "treads_correct": true,
+      "risers_expected": 52,
+      "risers_actual": 52,
+      "risers_delta": 0,
+      "risers_correct": true
+    },
+    {
+      "stair_id": "Stair 2",
+      "treads_expected": 257,
+      "treads_actual": 228,
+      "treads_delta": -29,
+      "treads_correct": false,
+      "risers_expected": 281,
+      "risers_actual": 246,
+      "risers_delta": -35,
+      "risers_correct": false
+    },
+    {
+      "stair_id": "Stair 3",
+      "treads_expected": 176,
+      "treads_actual": 193,
+      "treads_delta": 17,
+      "treads_correct": false,
+      "risers_expected": 196,
+      "risers_actual": 213,
+      "risers_delta": 17,
+      "risers_correct": false
+    },
+    {
+      "stair_id": "Stair 4",
+      "treads_expected": 220,
+      "treads_actual": 210,
+      "treads_delta": -10,
+      "treads_correct": false,
+      "risers_expected": 240,
+      "risers_actual": 228,
+      "risers_delta": -12,
+      "risers_correct": false
+    },
+    {
+      "stair_id": "Stair 5",
+      "treads_expected": 183,
+      "treads_actual": 195,
+      "treads_delta": 12,
+      "treads_correct": false,
+      "risers_expected": 203,
+      "risers_actual": 215,
+      "risers_delta": 12,
+      "risers_correct": false
+    },
+    {
+      "stair_id": "Stair 6",
+      "treads_expected": 183,
+      "treads_actual": 161,
+      "treads_delta": -22,
+      "treads_correct": false,
+      "risers_expected": 202,
+      "risers_actual": 178,
+      "risers_delta": -24,
+      "risers_correct": false
+    },
+    {
+      "stair_id": "Stair 7",
+      "treads_expected": 24,
+      "treads_actual": 24,
+      "treads_delta": 0,
+      "treads_correct": true,
+      "risers_expected": 26,
+      "risers_actual": 26,
+      "risers_delta": 0,
+      "risers_correct": true
+    }
+  ],
+  "summary": {
+    "total_fields": 14,
+    "correct_fields": 4,
+    "accuracy": 0.2857142857142857,
+    "treads_accuracy": 0.2857142857142857,
+    "risers_accuracy": 0.2857142857142857,
+    "hallucinated_stairs": [],
+    "missed_stairs": []
+  }
+}
