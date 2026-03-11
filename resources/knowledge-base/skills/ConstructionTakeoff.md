@@ -5,6 +5,8 @@ description: Professional construction document quantity takeoff and coordinatio
 
 # ConstructionTakeoff
 
+> **LEGACY SINGLE-AGENT SKILL.** In the orchestrated multi-agent flow, this file is NOT loaded. Phase-specific skills (`DiscoveryPhase.md`, `CountingPhase.md`, `CompilationPhase.md`) are used instead. This file is retained as domain knowledge reference material.
+
 **Professional-grade construction document analysis for accurate quantity takeoffs and coordination reviews.**
 
 This skill replicates the work of a professional construction estimator and QC coordinator, producing contractor-ready scope documents with verified quantities and coordination issue identification.
@@ -66,29 +68,9 @@ Use `ask_user` ONLY for genuine ambiguities — unclear dimensions, conflicting 
 
 ---
 
-## Workflow Procedures (MUST LOAD BEFORE STARTING WORK)
+## Methodology Reference
 
-This skill provides domain knowledge — what to look for, code requirements, and output format. The **detailed step-by-step procedures** for how to execute the work are in separate workflow files.
-
-**You MUST load the appropriate workflow using `read_documentation` before beginning any task.** The methodology summary later in this file is a high-level overview only — the workflow files contain the full procedures.
-
-### How to load a workflow:
-
-Use the `read_documentation` tool with the file path:
-
-- `read_documentation("workflows/QuantityTakeoff.md")` — 548-line detailed counting procedure: per-stair data collection steps, CSV output column definitions, how to count flights/treads/risers, how to compile the bill of materials. **Load this for any takeoff task.**
-- `read_documentation("workflows/CoordinationReview.md")` — Cross-discipline conflict checking procedure: what to compare across architectural/structural/civil, RFI format, how to categorize findings. **Load this when reviewing coordination.**
-- `read_documentation("workflows/FullAnalysis.md")` — Combined takeoff + coordination in one pass: orchestrates both workflows together. **Load this when user wants complete document analysis.**
-- `read_documentation("workflows/ExtractSheets.md")` — How to identify and extract relevant pages from large PDFs (100+ pages): locating sheet indices, identifying target sheets by division. **Load this when working with large PDFs.**
-
-### Which workflow to load (based on user request):
-
-| User wants | Workflow to load |
-|------------|-----------------|
-| Quantity takeoff, stair count, estimate quantities | `workflows/QuantityTakeoff.md` |
-| Coordination review, QC review, find conflicts | `workflows/CoordinationReview.md` |
-| Full analysis, complete review, takeoff + coordination | `workflows/FullAnalysis.md` |
-| Extract sheets from large PDF, find specific pages | `workflows/ExtractSheets.md` |
+This skill provides domain knowledge — what to look for, code requirements, and output format. In the multi-agent flow, each phase skill contains its own step-by-step procedures.
 
 ---
 
@@ -135,7 +117,7 @@ The CSV can be imported into PowerFab, where estimators add pricing, labor codes
 
 ### Methodology Overview (From Professional Estimator)
 
-> **NOTE:** This is a high-level overview. The full step-by-step procedure with detailed instructions is in the workflow files. Load the appropriate workflow using `read_documentation` before starting work.
+> **NOTE:** This is a high-level overview. In the multi-agent flow, the phase skills (DiscoveryPhase.md, CountingPhase.md, CompilationPhase.md) contain the detailed step-by-step procedures for each phase.
 
 **Step 1: Read Detail Sheets**
 - Understand HOW it's built (materials, connections, rail details)
@@ -250,69 +232,17 @@ The **CoordinationReview** workflow produces:
 
 ---
 
-## PDF Extraction Workflow
+## PDF Sheet Identification
 
 Large construction document PDFs (often 300+ pages, 100+ MB) require strategic extraction.
 
-### Process
+### Target Sheets for Division 5500 (Stairs)
+- Architectural: A0500-A0512 series (Stair Plans & Details)
+- Structural: S0500 series (Structural details)
+- Structural: S0100 series (Foundation/Framing plans)
+- Structural: S0001 (Structural notes)
 
-**Step 1: Locate Sheet Index OR Search for Sheet Numbers**
-
-Option A - Find Index (if available):
-- Check first 10-20 pages for drawing index/sheet list
-- Index lists all sheet numbers with page numbers
-
-Option B - Search using pdftotext (faster for large PDFs):
-```bash
-# Search for stair sheets (A05xx) across page ranges
-pdftotext -f 1 -l 30 "input.pdf" - | grep -i -E "(stair|A05)"
-
-# Find which page ranges contain A05xx sheets
-for range in "80-100" "100-120" "120-140" "140-160" "160-180" "180-200" "200-220" "220-240" "240-260"; do
-  start=$(echo $range | cut -d- -f1)
-  end=$(echo $range | cut -d- -f2)
-  echo "=== Pages $range ==="
-  pdftotext -f $start -l $end "input.pdf" - 2>/dev/null | grep -o "A05[0-9][0-9]" | sort -u
-done
-```
-
-**NOTE:** Sheet locations vary widely between projects. Don't assume A05xx sheets are in a specific page range - always search first.
-
-**Step 2: Identify Target Sheets**
-- For Division 5500 (Stairs):
-  - Architectural: A0500-A0512 series (Stair Plans & Details)
-  - Structural: S0500 series (Structural details)
-  - Structural: S0100 series (Foundation/Framing plans)
-  - Structural: S0001 (Structural notes)
-
-**Step 3: Extract Individual Pages as PNG for Reading**
-```bash
-# Extract specific page as PNG (better for visual reading)
-gs -sDEVICE=png16m -dNOPAUSE -dBATCH -dSAFER -r150 \
-   -dFirstPage=X -dLastPage=X \
-   -sOutputFile=/tmp/ProjectName_Analysis/pX.png "input.pdf"
-```
-
-**Step 4: Extract Page Ranges as PDF (for archiving)**
-```bash
-gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER \
-   -dFirstPage=X -dLastPage=Y \
-   -sOutputFile=output.pdf input.pdf
-```
-
-**Step 4: Organize Extracted Files**
-```
-/tmp/[ProjectName]_Analysis/
-├── Architectural_Stairs/
-│   ├── A0500-A0501_Stairs.pdf
-│   ├── A0502-A0503_Stairs.pdf
-│   └── A0510-A0512_Details.pdf
-├── Structural/
-│   ├── S0001_Notes.pdf
-│   ├── S0100_Foundations.pdf
-│   └── S0101_Framing.pdf
-└── README.md (extraction log)
-```
+**NOTE:** Sheet locations vary widely between projects. The Electron app's PDF tools handle page extraction — use `get_page_text` and `search_pdf_text` to locate relevant sheets.
 
 ---
 
@@ -338,85 +268,20 @@ gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER \
 
 **Example 1: Basic Quantity Takeoff**
 ```
-User: "Do a quantity takeoff for the stairs in C:\Projects\Building_Plans.pdf"
-→ Invokes ExtractSheets workflow (if PDF is large)
-→ Invokes QuantityTakeoff workflow
-→ Reads detail sheets (A0510-A0512) to extract material specifications
-→ Reads plan sheets (A0500-A0508) to count flights and treads
-→ Counts every tread in every flight ("the heavy lifting")
-→ Calculates BOM quantities (stringers, treads, landing channels, rails)
-→ Produces CSV file for PowerFab import:
-  C:\Projects\Building_Plans_takeoff.csv  (SAME DIRECTORY as input PDF)
-  - 160 line items across 7 stairs
-  - Stringers, treads, landing components, rail components
-→ Produces text summary:
-  C:\Projects\Building_Plans_takeoff_summary.txt
-  - Quantities summary
-  - Code compliance status
-  - Coordination issues
-  - Components NOT extracted (for PowerFab to calculate)
-→ Notes any uncertainties in CSV Notes column
+User uploads PDF and requests a takeoff
+→ Discovery phase: Scans PDF, identifies stair sheets and specs
+→ Counting phase: Parallel agents count each stair independently
+→ Compilation phase: Generates CSV and summary
+→ Produces: takeoff.csv, takeoff_summary.txt, summary.md
 ```
 
-**Example 2: QC Coordination Review**
+**Example 2: Uncertain Area - Asking for Help**
 ```
-User: "Review these construction docs for coordination issues, focusing on Division 5500"
-→ Invokes FullAnalysis workflow (combines takeoff + coordination)
-→ Extracts relevant sheets (architectural, structural)
-→ Performs quantity takeoff (primary deliverable)
-→ Cross-checks architectural vs structural:
-  - Stair locations match?
-  - Opening dimensions match?
-  - Structural support adequate?
-→ Checks code compliance (riser heights, tread depths)
-→ Produces report with:
-  ✅ Clean items (Stairs 1, 2, 3, 6, 7)
-  🔴 Critical issues (Stair 5: Code violation - riser heights vary by 1/2")
-  ⚠️ Verification needs (Check structural opening for Stair 4)
-  ❓ Questions (RFI: Clarify landing support at Level 03)
-```
-
-**Example 3: Large PDF with Index**
-```
-User: "This is a 350MB PDF at C:\Downloads\BigProject.pdf - can you do a takeoff?"
-→ Invokes ExtractSheets workflow first
-→ Reads first 10 pages to locate sheet index
-→ Identifies relevant pages:
-  - A0500-A0512 (Architectural Stairs): Pages 250-266
-  - S0100 series (Structural): Pages 18-80
-→ Uses ghostscript to extract only needed pages
-→ Organizes temp files into /tmp/BigProject_Analysis/ directory
-→ Then proceeds with QuantityTakeoff workflow on extracted files
-→ Produces CSV file: C:\Downloads\BigProject_takeoff.csv (same dir as input)
-→ Produces summary: C:\Downloads\BigProject_takeoff_summary.txt
-```
-
-**Example 4: Uncertain Area - Asking for Help**
-```
-User: "Do a takeoff for Stair 5"
-→ Invokes QuantityTakeoff workflow
-→ Reads sheet A0505.1
-→ Counts flights: 21 flights ✅
-→ Counts treads: Varies - sees "11 treads", "12 treads", "13 treads"
-→ Reads riser heights: Shows "6 7/8", "7", "7 3/8" - INCONSISTENT
-→ **STOPS and asks user:**
-  "❓ UNCERTAINTY: Stair 5 (sheet A0505.1-A0505.2) shows variable tread counts
-   and riser heights across different flights. I can see:
-   - Some flights: 11 treads @ 6 7/8" risers
-   - Some flights: 12 treads @ 7" risers
-   - Some flights: 13 treads @ 7 3/8" risers
-
-   This creates two issues:
-   1. Which tread count should I use for the takeoff?
-   2. The riser variation (1/2") exceeds IBC code (max 3/8")
-
-   Should I:
-   A) Use the most common count and flag as code violation?
-   B) Calculate an average and note the variation?
-   C) List all variations and request clarification from architect?
-
-   Please advise how you'd like me to document this."
-→ Waits for user guidance before proceeding
+Counting agent finds variable riser heights on Stair 5:
+- Some flights: 11 treads @ 6 7/8" risers
+- Some flights: 13 treads @ 7 3/8" risers
+→ Uses ask_user to flag the discrepancy
+→ Waits for guidance before finalizing count
 ```
 
 ---
@@ -437,68 +302,14 @@ User: "Do a takeoff for Stair 5"
 
 ---
 
-## File Organization
+## Output Files
 
-### Working/Intermediate Files → `/tmp/`
+The Electron app manages session directories and output file paths. Agents write outputs to the session directory using `write_file`.
 
-**ALL intermediate files during analysis should use `/tmp/`:**
-- Extracted PDF pages
-- Converted PNG images for reading
-- Draft notes and working files
-- Temporary analysis files
-
-```
-/tmp/[ProjectName]_Analysis/
-├── Architectural_Stairs/
-│   ├── page_250.png
-│   ├── page_251.png
-│   └── ...
-├── Structural/
-├── takeoff_draft.md
-└── README.md (extraction log with page numbers)
-```
-
-These files are temporary and do not need to persist after the session.
-
----
-
-### Final Output Files → Same Directory as Input PDF
-
-**ONLY the final deliverables** should be saved to the **same directory as the input PDF**:
-
-**1. CSV File (for PowerFab Import):**
-```
-[InputPDF_Directory]/[ProjectName]_takeoff.csv
-- Line-item bill of materials
-- Columns: Item, Sequence, Stair, Category, Component, Qty, Shape, Size, Length, Grade, Notes
-- Includes: Stringers, treads, landing channels, headers, rail components
-```
-
-**2. Text Summary (for Coordination Review):**
-```
-[InputPDF_Directory]/[ProjectName]_takeoff_summary.txt
-
-REQUIRED SECTIONS (in this order):
-1. Project Information (name, date, architect)
-2. Stair Summary (table of all stairs with flights/treads)
-3. Quantities Totals
-4. 🔴 CODE COMPLIANCE STATUS (critical issues first)
-5. ⚠️ COORDINATION NOTES
-6. 📋 ASSUMPTIONS MADE ← MANDATORY - List ALL assumptions
-7. Items NOT included (for PowerFab to calculate)
-8. Sheet References
-9. Disclaimer
-```
-
-**📋 ASSUMPTIONS SECTION IS MANDATORY** - Must include:
-- Material assumptions (steel grades, sizes not verified on drawings)
-- Quantity assumptions (estimated vs. counted values)
-- Dimension assumptions (landing sizes, stair widths if estimated)
-- Any values not directly read from the drawings
-
-**Example:** If input is `C:\Users\nick\Downloads\Project_Drawings.pdf`, save outputs to:
-- `C:\Users\nick\Downloads\Project_Drawings_takeoff.csv`
-- `C:\Users\nick\Downloads\Project_Drawings_takeoff_summary.txt`
+**Final deliverables:**
+- **CSV File** (`takeoff.csv`) — Line-item bill of materials for PowerFab import
+- **Text Summary** (`takeoff_summary.txt`) — Professional takeoff summary with code compliance, assumptions, and coordination notes
+- **Markdown Summary** (`summary.md`) — Brief stair table and specs overview
 
 ---
 
@@ -514,12 +325,11 @@ REQUIRED SECTIONS (in this order):
 
 ## Related Files
 
-### Workflow Documentation (load via `read_documentation`)
-- `workflows/QuantityTakeoff.md` - Main takeoff process (step-by-step counting)
-- `workflows/CoordinationReview.md` - Cross-discipline coordination checks
-- `workflows/FullAnalysis.md` - Combined takeoff + coordination
-- `workflows/ExtractSheets.md` - PDF extraction using index and ghostscript
+### Phase Skills (used by orchestrated multi-agent flow)
+- `skills/DiscoveryPhase.md` - Scan PDF, identify sheets and specs
+- `skills/CountingPhase.md` - Count one stair, output JSON
+- `skills/CompilationPhase.md` - Generate final CSV and summary
 
 ---
 
-**This skill transforms large construction document PDFs into accurate, contractor-ready quantity takeoffs with coordination issue identification - following the exact methodology professional estimators use.**
+**This skill contains domain knowledge for Division 5500 construction takeoffs — what to look for, code requirements, and professional methodology.**

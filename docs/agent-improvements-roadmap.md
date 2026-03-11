@@ -1,5 +1,7 @@
 # Agent Improvements Roadmap
 
+> **STATUS: PARTIALLY COMPLETE.** Phase 1 quick wins (image retention, cropping protocol) are done. Phase 3 sub-agents are implemented (3-phase orchestrator with parallel counting). System reminders, structured JSON state files, incremental CSV, and failure recovery remain planned.
+
 This document details planned improvements to the TakeoffAI agent based on analysis of live execution runs. These changes aim to reduce API costs, improve accuracy, and create a more disciplined execution flow.
 
 ## Table of Contents
@@ -336,17 +338,17 @@ Emit structured progress events:
 3. ⬜ Add system reminders after key tool calls
 4. ⬜ Add structured JSON output alongside markdown notes
 
-### Phase 2: Architecture (Next Sprint)
-5. ⬜ Implement phase-based workflow with checkpoints
+### Phase 2: Architecture
+5. ✅ Implement phase-based workflow with checkpoints
 6. ⬜ Add incremental CSV output
 7. ⬜ Build progress tracking UI
 
-### Phase 3: Sub-Agents (Future)
-8. ⬜ Design sub-agent communication protocol
-9. ⬜ Implement parallel counting agents
-10. ⬜ Build orchestrator to coordinate phases
+### Phase 3: Sub-Agents (Complete)
+8. ✅ Design sub-agent communication protocol (JSON files between phases)
+9. ✅ Implement parallel counting agents (one per stair)
+10. ✅ Build orchestrator to coordinate phases (`src/main/core/orchestrator.ts`)
 
-### Phase 4: Production (Later)
+### Phase 4: Production (Planned)
 11. ⬜ Context trimming and compression
 12. ⬜ Failure recovery and retry logic
 13. ⬜ Cost estimation and budgeting

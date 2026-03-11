@@ -37,6 +37,12 @@ out/
 
 # Temp / session files
 tmp/
+TODO.txt
+terminal_output.txt
+docs/TakeoffAI-Demo-Run-Full-Log.txt
+
+# Comparison / scratch directories
+claude-code-takeoff-comparison-*/
 
 # Local test outputs (not committed)
 images/

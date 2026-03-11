@@ -89,11 +89,13 @@ takeoff-ai-electron/
 │   │   ├── window.ts         # Window management
 │   │   ├── ipc-handlers.ts   # IPC communication
 │   │   ├── preload.ts        # Secure IPC bridge
-│   │   └── core/             # PoC core logic
-│   │       ├── agent-loop.ts # Claude API orchestration
-│   │       ├── tools.ts      # Tool implementations
-│   │       ├── pdf-extractor.ts # PDF rendering
-│   │       └── types.ts      # TypeScript types
+│   │   └── core/             # Core agent logic
+│   │       ├── orchestrator.ts    # 3-phase pipeline coordinator
+│   │       ├── agent-loop.ts      # Claude API loop + tool trace logging
+│   │       ├── tools.ts           # Tool implementations (get_page_text, etc.)
+│   │       ├── pdf-extractor.ts   # PDF → image rendering
+│   │       ├── pdf-text-extractor.ts # PDF → text (dual runtime: Electron/Node)
+│   │       └── types.ts          # TypeScript types
 │   │
 │   ├── renderer/              # React UI
 │   │   ├── App.tsx           # Root component
@@ -104,11 +106,20 @@ takeoff-ai-electron/
 │   └── shared/
 │       └── ipc-channels.ts   # IPC channel constants
 │
-├── resources/
-│   └── knowledge-base/        # Skills and workflows (from PoC)
-│       ├── CLAUDE.md
-│       └── skills/
+├── eval/                      # Evaluation framework
+│   ├── run-eval.ts           # CLI eval runner (imports compiled orchestrator)
+│   ├── run-eval-cli.sh       # Shell wrapper (Electron shim + build)
+│   ├── score-runs.ts         # Scoring against golden dataset
+│   ├── dump-text.ts          # Text extraction diagnostic tool
+│   ├── golden/               # Ground truth data
+│   ├── runs/                 # Per-run score files
+│   └── results/              # Comparison tables
 │
+├── resources/
+│   └── knowledge-base/        # Agent prompts and domain knowledge
+│
+├── outputs/                   # Run outputs (stair JSONs, CSVs, traces)
+├── docs/                      # Design docs and research
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -133,7 +144,8 @@ takeoff-ai-electron/
 - Handles file I/O and PDF extraction
 - Executes tools (write_file, extract_pdf_pages, etc.)
 - Manages API calls to Claude
-- Runs agent loop with streaming updates
+- Runs multi-phase orchestrator: Discovery → Counting → Compilation
+- **Page-level sandboxing**: Each counting agent is restricted to only its assigned PDF pages, preventing cross-stair data contamination. Agents run sequentially so page restrictions are enforced cleanly.
 
 ### Renderer Process (React)
 - Provides UI for file upload and chat
@@ -195,7 +207,7 @@ bun run tsc --noEmit
 - ✅ Hybrid image strategy (overview + pixel-coordinate crops)
 - ✅ Working notes as external memory (images removed after processing)
 
-### Phase 2: Agent Improvements (Current)
+### Phase 2: Agent Improvements
 - ✅ Cropping protocol (VIEW → PLAN → WRITE → EXECUTE → RECORD)
 - ✅ Two-writes-per-batch discipline for working notes
 - ⬜ System reminders after key tool calls
@@ -203,13 +215,28 @@ bun run tsc --noEmit
 - ⬜ Incremental CSV output (rows added as stairs complete)
 - ⬜ Progress tracking UI
 
-### Phase 3: Sub-Agent Architecture (Next)
-- ⬜ Phase-based workflow with checkpoints
-- ⬜ Discovery agent (scan PDF, identify sheets)
-- ⬜ Detail agent (extract construction specs)
-- ⬜ Parallel counting agents (one per stair)
-- ⬜ Compilation agent (generate final outputs)
+### Phase 3: Sub-Agent Architecture (Complete)
+- ✅ Phase-based workflow with checkpoints
+- ✅ Discovery agent (scan PDF, identify sheets and specs)
+- ✅ Counting agents (one per stair, sequential with page sandboxing)
+- ✅ Compilation agent (generate final outputs)
+- ✅ Page-level access restrictions (each counter only sees its assigned pages)
+- ⬜ Detail agent (merged into Discovery phase)
 - ⬜ Failure recovery and retry from checkpoints
+
+### Phase 3.5: Review Pipeline (Planned)
+
+A **Review Phase** between Counting and Compilation that catches incomplete or low-confidence results before final output:
+
+```
+Discovery → Counting → REVIEW → Compilation → Done
+```
+
+- Auto-pass when all stairs have high coverage/confidence (no user interaction needed)
+- Flag stairs with low coverage (<90%), low confidence, or unresolved anomalies
+- User options: **Investigate** (look at drawings + provide guidance), **Re-run** (re-count specific stairs with updated instructions), **Accept as-is**, or **Abort**
+- Re-runs only affect flagged stairs, injecting user guidance into the counting prompt
+- See [docs/future-review-pipeline.md](docs/future-review-pipeline.md) for the full design
 
 ### Phase 4: Production Features
 - ⬜ Context trimming and compression
@@ -220,6 +247,76 @@ bun run tsc --noEmit
 - ⬜ Auto-updates and code signing
 
 See [docs/agent-improvements-roadmap.md](docs/agent-improvements-roadmap.md) for detailed technical plans.
+
+## Evaluation System
+
+A quantitative eval framework measures agent accuracy across runs, architectures, and models.
+
+### Golden Dataset
+
+Ground truth data for the OhioHealth Women's Center drawing set (7 stairs across pages 250-270), manually verified from construction documents. Each stair has expected tread and riser counts across all floor levels.
+
+### Scoring
+
+```bash
+# Score a specific run
+bun run eval/score-runs.ts <run-id>
+
+# Compare all runs in a table
+bun run eval/score-runs.ts --table
+
+# Run new eval iterations (builds, shims Electron, runs orchestrator)
+./eval/run-eval-cli.sh --runs 3
+```
+
+### Accuracy Tiers
+
+| Tier | Criteria | Description |
+|------|----------|-------------|
+| Exact | delta = 0 | Perfect match |
+| Close | delta <= 2 | Within rounding / single-flight error |
+| Approximate | delta <= 5 | Correct structure, minor miscounts |
+
+### Results Across Architectures
+
+14 scored runs across two architectures show clear improvement from monolith to orchestrated:
+
+| Architecture | Runs | Accuracy Range | Stair Count |
+|-------------|------|----------------|-------------|
+| Monolith (single agent) | 6 | 0-7% | Often wrong (1-8) |
+| Orchestrated (3-phase) | 8 | 14-57% | Usually correct (7) |
+
+Best orchestrated run (`2026-03-10-204157`):
+
+| Stair | Treads | Risers | Status |
+|-------|--------|--------|--------|
+| Stair 1 | 48 (exact) | 52 (exact) | exact |
+| Stair 2 | 258 (+1) | 282 (+1) | close |
+| Stair 3 | 174 (-2) | 194 (-2) | close |
+| Stair 4 | 217 (-3) | 237 (-3) | close |
+| Stair 5 | 198 (+15) | 218 (+15) | over |
+| Stair 6 | 174 (-9) | 192 (-10) | under |
+| Stair 7 | 24 (exact) | 26 (exact) | exact |
+
+5 of 7 stairs within the "close" tier (71%). Remaining accuracy gap traced to annotation deduplication from multi-view drawing sheets — see [docs/annotation-deduplication-problem.md](docs/annotation-deduplication-problem.md).
+
+### Diagnostic Tools
+
+```bash
+# Dump extracted text exactly as the agent sees it
+bun run eval/dump-text.ts                  # All stair pages
+bun run eval/dump-text.ts --stair 6        # Single stair
+bun run eval/dump-text.ts --pages 252,253  # Specific pages
+```
+
+### Key Findings
+
+1. **Architecture matters more than prompting**: Orchestrated pipeline (Discovery → Counting → Compilation) with page-level sandboxing improved accuracy from 0-7% to 29-57%
+2. **Tread and riser deltas are always equal per stair**: Errors are whole-flight miscounts, not individual annotation misreads
+3. **Multi-view sheets are the bottleneck**: Pages with section + plan + axonometric views have ~3x the expected annotations, causing over/undercounts
+4. **Simple stairs are solved**: Stairs with single-view pages (Stair 1, 7) achieve 100% accuracy consistently
+
+See [docs/eval-system-design.md](docs/eval-system-design.md) for the full eval system design.
 
 ## Known Limitations (MVP Scope)
 
