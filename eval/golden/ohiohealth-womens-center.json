@@ -4,43 +4,141 @@
   "pdf": "OhioHealth_WomensCenter.pdf",
   "pages": [250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270],
   "notes": "Large healthcare facility. 8 stair systems in drawings but Elevator 15 is NOT a stair — correct count is 7. Stairs 1-4 serve inpatient tower, Stair 5 serves parking+MOB, Stair 6 serves MOB, Stair 7 is metal grating.",
+  "scoring_notes": "Runs before 2026-04-09 only scored treads and risers. Flights, width, landings, and landing dimensions were added on 2026-04-09. Prior run accuracy numbers are NOT comparable to runs scored after this date. Landing counts use the number of landings with available dimensions (not estimated totals from stair tower counts). Dimensions are stored in inches. Null values mean the drawing does not provide that dimension — these are skipped during scoring, not penalized. NOTE: There are two landing counts per stair — 'landing_count' (dimensioned landings, used for scoring) and 'landing_count_overview' (total landings visible in the stair tower overview). The overview count is what you get by counting landing platforms in the section view. Early orchestrator runs (pre-2026-04-09) correctly reported the overview count (e.g., 14 for Stair 2) even though scoring showed 0% because it was compared against the dimensioned count. The overview count is stored for reference and future scoring use.",
   "expected": {
     "stair_count": 7,
     "stairs": [
       {
         "id": "Stair 1",
         "total_treads": 48,
-        "total_risers": 52
+        "total_risers": 52,
+        "flights": 4,
+        "width_inches": 48,
+        "landing_count": 3,
+        "landing_count_overview": 3,
+        "landings": [
+          { "length_inches": 112.75, "depth_inches": 50.125 },
+          { "length_inches": 112.75, "depth_inches": 50.125 },
+          { "length_inches": 112.75, "depth_inches": 50.125 }
+        ],
+        "notes": "Landing count uncertain (2 or 3), using 3. Width from axonometric views. All landings assumed same dimensions: 4'-0\" + 4'-0\" + 1'-4 3/4\" = 112.75\" by 4'-2 1/8\" = 50.125\"."
       },
       {
         "id": "Stair 2",
         "total_treads": 257,
-        "total_risers": 281
+        "total_risers": 281,
+        "flights": 24,
+        "width_inches": 48,
+        "landing_count": 8,
+        "landing_count_overview": 14,
+        "landings": [
+          { "length_inches": 107.5, "depth_inches": 58 },
+          { "length_inches": 103.5, "depth_inches": null },
+          { "length_inches": null, "depth_inches": null },
+          { "length_inches": 107.5, "depth_inches": 52 },
+          { "length_inches": 103.5, "depth_inches": 52 },
+          { "length_inches": 103.5, "depth_inches": 52 },
+          { "length_inches": 103.5, "depth_inches": 52 },
+          { "length_inches": 103.5, "depth_inches": 54 }
+        ],
+        "notes": "14 landings counted on stair tower but only 8 in callouts. Landing 2 depth unknown (guess 4'-2\" but uncertain). Landing 3 has two conflicting depth measurements (4'-9 7/8\" or 4'-10\") and no length — set to null. Dimensions: L1=8'-11 1/2\" x 4'-10\", L2=4'-0\"+7 1/2\"+4'-0\" x ?, L4=8'-11 1/2\" x 4'-4\", L5-7=4'-0\"+7 1/2\"+4'-0\" x 4'-4\", L8=4'-0\"+7 1/2\"+4'-0\" x 4'-6\"."
       },
       {
         "id": "Stair 3",
         "total_treads": 176,
-        "total_risers": 196
+        "total_risers": 196,
+        "flights": 21,
+        "width_inches": 48,
+        "landing_count": 8,
+        "landing_count_overview": 14,
+        "landings": [
+          { "length_inches": 102.875, "depth_inches": null },
+          { "length_inches": 102.875, "depth_inches": null },
+          { "length_inches": 103.5, "depth_inches": 50 },
+          { "length_inches": 103.5, "depth_inches": 50 },
+          { "length_inches": 103.5, "depth_inches": 50 },
+          { "length_inches": 103.5, "depth_inches": 50 },
+          { "length_inches": 103.5, "depth_inches": 50 },
+          { "length_inches": 103.5, "depth_inches": 52 }
+        ],
+        "notes": "14 landings counted on stair tower but only 9 in callouts. Landing 3 had no dimensions at all — excluded (count=8). Landings 1-2 depth unknown. Dimensions: L1-2=4'-0\"+6 7/8\"+4'-0\" x ?, L4-8=4'-0\"+7 1/2\"+4'-0\" x 4'-2\", L9=4'-0\"+7 1/2\"+4'-0\" x 4'-4\"."
       },
       {
         "id": "Stair 4",
         "total_treads": 220,
-        "total_risers": 240
+        "total_risers": 240,
+        "flights": 20,
+        "width_inches": 46,
+        "landing_count": 10,
+        "landing_count_overview": 11,
+        "landings": [
+          { "length_inches": 101.5, "depth_inches": 47 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 50 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 50 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 48 },
+          { "length_inches": 101.5, "depth_inches": 48 }
+        ],
+        "notes": "11 landings counted, 10 dimensioned. Landing 1 depth uncertain ('I think so'). Dimensions: all lengths = 9 1/2\" + 3'-10\" + 3'-10\" = 101.5\". Depths vary: 3'-11\", 4'-0\", 4'-2\", etc."
       },
       {
         "id": "Stair 5",
         "total_treads": 183,
-        "total_risers": 203
+        "total_risers": 203,
+        "flights": 11,
+        "width_inches": 54,
+        "landing_count": 10,
+        "landing_count_overview": 6,
+        "landings": [
+          { "length_inches": 113.75, "depth_inches": 64.25 },
+          { "length_inches": 113.75, "depth_inches": 54 },
+          { "length_inches": 113.75, "depth_inches": 54 },
+          { "length_inches": 113.75, "depth_inches": 54 },
+          { "length_inches": 113.75, "depth_inches": 54 },
+          { "length_inches": 122.5, "depth_inches": null },
+          { "length_inches": 122.5, "depth_inches": 60 },
+          { "length_inches": 122.5, "depth_inches": 60 },
+          { "length_inches": 122.5, "depth_inches": 62 },
+          { "length_inches": 122.5, "depth_inches": null }
+        ],
+        "notes": "Very confusing stair. Flight count uncertain — originally wrote 21, best guess is 11. Landing count also uncertain (user estimated 6 but listed 10 dimensions). Two landing groups: L1-5 = 4'-6\"+5 3/4\"+4'-6\" = 113.75\", L6-10 = 4'-6\"+1'-2 1/2\"+4'-6\" = 122.5\". Landings 6 and 10 depth unknown."
       },
       {
         "id": "Stair 6",
         "total_treads": 183,
-        "total_risers": 202
+        "total_risers": 202,
+        "flights": 18,
+        "width_inches": 54,
+        "landing_count": 7,
+        "landing_count_overview": 9,
+        "landings": [
+          { "length_inches": 119, "depth_inches": 54 },
+          { "length_inches": null, "depth_inches": 54 },
+          { "length_inches": null, "depth_inches": 54 },
+          { "length_inches": 118.5, "depth_inches": 59.75 },
+          { "length_inches": 118.5, "depth_inches": 59.75 },
+          { "length_inches": 119, "depth_inches": 59.75 },
+          { "length_inches": 119, "depth_inches": 59.75 }
+        ],
+        "notes": "9 landings counted, 7 dimensioned. Landings 2-3 length unknown. Two length groups: 4'-6\"+11\"+4'-6\" = 119\" and 4'-6\"+10 1/2\"+4'-6\" = 118.5\". Depths: 4'-6\" = 54\" and 4'-11 3/4\" = 59.75\"."
       },
       {
         "id": "Stair 7",
         "total_treads": 24,
-        "total_risers": 26
+        "total_risers": 26,
+        "flights": 2,
+        "width_inches": 54,
+        "landing_count": 2,
+        "landing_count_overview": 2,
+        "landings": [
+          { "length_inches": 118.25, "depth_inches": 56 },
+          { "length_inches": 118.25, "depth_inches": 54 }
+        ],
+        "notes": "Landing count uncertain (maybe not 2). Both lengths = 4'-6\"+10 1/4\"+4'-6\" = 118.25\". Depths: 4'-8\" = 56\" and 4'-6\" = 54\"."
       }
     ]
   }

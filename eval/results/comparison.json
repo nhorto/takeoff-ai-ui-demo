@@ -16,7 +16,45 @@
         "risers_expected": 52,
         "risers_actual": 52,
         "risers_delta": 0,
-        "risers_correct": true
+        "risers_correct": true,
+        "flights_expected": 4,
+        "flights_actual": 4,
+        "flights_correct": true,
+        "width_expected": 48,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 3,
+        "landing_count_actual": 2,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 112.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50.125,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 112.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50.125,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": 112.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50.125,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 2",
@@ -27,7 +65,90 @@
         "risers_expected": 281,
         "risers_actual": 281,
         "risers_delta": 0,
-        "risers_correct": true
+        "risers_correct": true,
+        "flights_expected": 24,
+        "flights_actual": 24,
+        "flights_correct": true,
+        "width_expected": 48,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 8,
+        "landing_count_actual": 14,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 107.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 58,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": null,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 3,
+            "length_expected": 107.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 52,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 4,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 52,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 5,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 52,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 6,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 52,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 7,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 3",
@@ -38,7 +159,90 @@
         "risers_expected": 196,
         "risers_actual": 196,
         "risers_delta": 0,
-        "risers_correct": true
+        "risers_correct": true,
+        "flights_expected": 21,
+        "flights_actual": 20,
+        "flights_correct": false,
+        "width_expected": 48,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 8,
+        "landing_count_actual": 10,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 102.875,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 102.875,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 3,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 4,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 5,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 6,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 7,
+            "length_expected": 103.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 52,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 4",
@@ -49,7 +253,108 @@
         "risers_expected": 240,
         "risers_actual": 238,
         "risers_delta": -2,
-        "risers_correct": false
+        "risers_correct": false,
+        "flights_expected": 20,
+        "flights_actual": 20,
+        "flights_correct": true,
+        "width_expected": 46,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 10,
+        "landing_count_actual": 11,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 47,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 3,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 4,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 5,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 6,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 50,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 7,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 8,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 9,
+            "length_expected": 101.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 48,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 5",
@@ -60,7 +365,108 @@
         "risers_expected": 203,
         "risers_actual": 85,
         "risers_delta": -118,
-        "risers_correct": false
+        "risers_correct": false,
+        "flights_expected": 11,
+        "flights_actual": 10,
+        "flights_correct": false,
+        "width_expected": 54,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 10,
+        "landing_count_actual": 9,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 113.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 64.25,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 113.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": 113.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 3,
+            "length_expected": 113.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 4,
+            "length_expected": 113.75,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 5,
+            "length_expected": 122.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 6,
+            "length_expected": 122.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 60,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 7,
+            "length_expected": 122.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 60,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 8,
+            "length_expected": 122.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 62,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 9,
+            "length_expected": 122.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": null,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 6",
@@ -71,7 +477,81 @@
         "risers_expected": 202,
         "risers_actual": 202,
         "risers_delta": 0,
-        "risers_correct": true
+        "risers_correct": true,
+        "flights_expected": 18,
+        "flights_actual": 19,
+        "flights_correct": false,
+        "width_expected": 54,
+        "width_actual": null,
+        "width_correct": null,
+        "landing_count_expected": 7,
+        "landing_count_actual": 9,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 119,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": null,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 2,
+            "length_expected": null,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 3,
+            "length_expected": 118.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 59.75,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 4,
+            "length_expected": 118.5,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 59.75,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 5,
+            "length_expected": 119,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 59.75,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 6,
+            "length_expected": 119,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 59.75,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       },
       {
         "stair_id": "Stair 7",
@@ -82,15 +562,51 @@
         "risers_expected": 26,
         "risers_actual": 26,
         "risers_delta": 0,
-        "risers_correct": true
+        "risers_correct": true,
+        "flights_expected": 2,
+        "flights_actual": 2,
+        "flights_correct": true,
+        "width_expected": 54,
+        "width_actual": 54,
+        "width_correct": true,
+        "landing_count_expected": 2,
+        "landing_count_actual": 1,
+        "landing_count_correct": false,
+        "landing_scores": [
+          {
+            "index": 0,
+            "length_expected": 118.25,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 56,
+            "depth_actual": null,
+            "depth_correct": null
+          },
+          {
+            "index": 1,
+            "length_expected": 118.25,
+            "length_actual": null,
+            "length_correct": null,
+            "depth_expected": 54,
+            "depth_actual": null,
+            "depth_correct": null
+          }
+        ]
       }
     ],
     "summary": {
-      "total_fields": 14,
-      "correct_fields": 10,
-      "accuracy": 0.7142857142857143,
+      "total_tr_fields": 14,
+      "correct_tr_fields": 10,
+      "treads_risers_accuracy": 0.7142857142857143,
       "treads_accuracy": 0.7142857142857143,
       "risers_accuracy": 0.7142857142857143,
+      "total_structural_fields": 15,
+      "correct_structural_fields": 5,
+      "structural_accuracy": 0.3333333333333333,
+      "flights_accuracy": 0.5714285714285714,
+      "width_accuracy": 1,
+      "landing_count_accuracy": 0,
+      "landing_dimensions_accuracy": 0,
       "hallucinated_stairs": [],
       "missed_stairs": []
     }

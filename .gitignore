@@ -48,3 +48,16 @@ claude-code-takeoff-comparison-*/
 images/
 outputs/
 first_output/
+
+# Golden answer source files (keep .json only)
+GOLDEN ANSwers*
+golden Answers*
+
+# Eval test outputs and large files
+eval/combined-stair-drawings.pdf
+eval/view-clustering-output/
+eval/llm-view-detection-output/
+eval/view-detection-test/
+
+# Lock files
+package-lock.json

@@ -4,6 +4,8 @@ Auto-generated comparison of all scored runs against the OhioHealth Women's Cent
 
 **Golden data:** 7 stairs, 1,091 total treads, 1,200 total risers
 
+> **⚠️ Scoring change (2026-04-09):** Runs before this date were scored on **treads and risers only**. Starting 2026-04-09, the golden dataset includes flights, stair width, landing counts, and landing dimensions. The scoring now reports two separate accuracy categories: **Treads & Risers** (comparable across all runs) and **Structural** (flights, width, landings — only available in runs that output these fields). Prior runs will show "N/A" for structural accuracy. See `scoring_notes` in `eval/golden/ohiohealth-womens-center.json` for details.
+
 ## Comparison Table
 
 | Run | Architecture | Temp | Stairs | Treads Acc | Risers Acc | Overall |
