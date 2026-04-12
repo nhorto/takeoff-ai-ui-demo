@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "takeoff-spike",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-11",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // R2 — for storing test PDFs and rendered images
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "takeoff-spike-files"
+    }
+  ],
+
+  // Browser Rendering — for PDF → PNG test
+  "browser": {
+    "binding": "BROWSER"
+  },
+
+  // Workflows — for prompt caching test
+  "workflows": [
+    {
+      "name": "prompt-cache-test",
+      "binding": "CACHE_TEST_WORKFLOW",
+      "class_name": "PromptCacheTestWorkflow"
+    }
+  ],
+
+  // Observability
+  "observability": {
+    "enabled": true
+  }
+}

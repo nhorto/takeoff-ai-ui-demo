@@ -1,0 +1,23 @@
+{
+  "name": "takeoff-cloudflare-spike",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Validation spike: test Browser Rendering, unpdf, and prompt caching on Cloudflare",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create takeoff-spike-db",
+    "bucket:create": "wrangler r2 bucket create takeoff-spike-files"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@cloudflare/puppeteer": "^1.0.7",
+    "mupdf": "^1.27.0",
+    "unpdf": "^0.12.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250410.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  }
+}
