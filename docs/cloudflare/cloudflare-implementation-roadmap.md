@@ -21,77 +21,86 @@
 
 ## Implementation Steps
 
-### Step 0: Validation Spike (DO THIS FIRST)
+### Step 0: Validation Spike — COMPLETE
 
-**Goal:** Answer 3 critical unknowns before committing to the full migration. This is a throwaway proof-of-concept — minimal code, maximum learning.
+**Goal:** Answer 3 critical unknowns before committing to the full migration.
 
-**Status:** Spike project scaffolded at `spike/` — ready to deploy and test.
+**Status:** **Complete** (2026-04-12). Spike project deployed at `https://takeoff-spike.mirrorquiz-com.workers.dev`. Full results in `docs/spike-results.md`.
 
-**The 3 things we need to validate:**
+**The core architecture is validated.** The two architectural blockers both passed. PDF rendering is unblocked conceptually but needs an implementation decision before Step 1.
 
-#### Test 1: Browser Rendering PDF Quality
+#### Test 1: PDF → PNG Rendering — BLOCKED ON IMPLEMENTATION CHOICE
 
-Does Cloudflare's headless Chrome render construction PDFs with the same fidelity as our current pdfjs-dist + canvas approach?
+**What we tested:** Three approaches to rendering PDF pages to images inside Cloudflare.
 
-**What to do:**
-1. Create a minimal Cloudflare Worker with Browser Rendering binding
-2. Upload one of our real construction PDFs to R2
-3. Render 2-3 pages via headless Chrome (`page.screenshot()`)
-4. Compare output to what the current Electron app produces for the same pages
-5. Check: text legibility, line clarity, dimension accuracy, annotation readability
+**What we found:**
+- **Cloudflare Browser Rendering (Puppeteer):** Browser sessions acquire successfully but the CDP protocol connection times out on every call (`Browser.getVersion timed out`). Tried v0.0.15 and v1.0.7 of `@cloudflare/puppeteer`. The service shows as available (4 max sessions, 0 active) but something on this specific account/environment prevents CDP from connecting. History shows 10+ sessions provisioned, each running ~60s before idle timeout, but never usable.
+- **Browser Rendering Quick Actions REST API:** Not accessible through the `env.BROWSER` Worker binding. Returns 404. The REST API requires a Cloudflare API token and runs over the public internet, not the binding.
+- **mupdf WASM (pure JS rendering):** The `mupdf` npm package exists and has a WASM build, but its loader uses `createRequire(import.meta.url)` which fails in Workers with `nodejs_compat` enabled. Solvable with a custom WASM loader (~half day of work) but not working out of the box.
 
-**Pass criteria:** Claude Vision API can extract the same information from Browser Rendering screenshots as it can from our current pdfjs-dist renders. Doesn't need to be pixel-identical — just needs to carry the same information.
+**Decision needed before Step 1:** Pick a PDF rendering approach. Four viable options:
+1. **External API (ConvertAPI or similar)** — ~$0.003/page, proven reliable, minimal effort. **Recommended for Phase 1.** Cost is negligible vs Claude API cost per takeoff.
+2. **Retry Browser Rendering later** — may require a Cloudflare support ticket. No action required to keep this option open.
+3. **Custom mupdf WASM loader** — afternoon of work, results in $0/month rendering. Good candidate for Phase 6 optimization.
+4. **Cloudflare Containers with Poppler** — still in beta, highest effort, keeps it in the Cloudflare ecosystem.
 
-**Fail plan:** If Browser Rendering quality is insufficient, fall back to ConvertAPI ($0.0035/conversion) or a small Cloudflare Container running Poppler/Ghostscript.
+**Current recommendation:** Ship Phase 1-5 with an external API (Option 1) since the rendering interface is one function (`renderPdfPage(pdfKey, pageNum) → imageKey`) that can be swapped later as a pure optimization.
 
-#### Test 2: unpdf Text Extraction Quality
+#### Test 2: unpdf Text Extraction — PASS
 
-Does `unpdf` (edge-compatible pdfjs-dist wrapper) extract text with spatial layout comparable to our current pdfjs-dist spatial clustering?
+**What we tested:** Extract text from a real construction PDF using `unpdf` running inside a Cloudflare Worker.
 
-**What to do:**
-1. In the same spike Worker, add unpdf as a dependency
-2. Extract text from the same construction PDF pages
-3. Compare the output to what our current `pdf-text-extractor.ts` produces
-4. Specifically check: annotation text, dimension callouts, schedule tables, notes
+**What we found:**
+- **352 text items** extracted from page 1 in **186ms**
+- Every item captured with spatial coordinates (x, y, width, height, fontSize)
+- Spatial zone classification (top-left, center, title-block, etc.) works the same as the Electron app
+- All critical construction data captured: stair identifiers (STAIR 1, ST027-00), tread counts ("13 TREADS @ 11\""), riser equations ("14 EQ RSRS"), dimensions (7'-0 7/8"), materials ("055113 - METAL PAN STAIRS", "MC12x10.6", "C6s"), level markers, sheet references, title block info
 
-**Pass criteria:** Text extraction captures the same annotations and spatial relationships that our current approach does. Key thing: Claude should be able to identify stair names, page references, and dimension text from the unpdf output.
+**Implication:** The text-first strategy is confirmed viable. Most agent operations can use text instead of images, which is ~80% cheaper in tokens and faster for Claude to process.
 
-**Fail plan:** If unpdf text quality is poor, we rely more heavily on images (which still works, just costs more in tokens). Or, investigate whether we can bundle a custom pdfjs-dist build for Workers.
+**Limitation found:** Workers have a 128MB memory limit. Our full 81MB drawing set exceeded this as a single buffer. Solution: split large PDFs on upload, or process pages individually. Not a blocker — just means we can't load huge PDFs as a single operation.
 
-#### Test 3: Prompt Caching Across Workflow Steps
+#### Test 3: Prompt Caching Across Workflow Steps — PASS
 
-Does Anthropic's prompt caching work when Claude API calls come from different Cloudflare Workflow step invocations?
+**What we tested:** Verify Anthropic's prompt caching works when Claude API calls come from separate Cloudflare Workflow step invocations (different isolates, different step runs).
 
-**What to do:**
-1. Create a simple 3-step Workflow
-2. Step 1: Call Claude with a ~5,000 token system prompt + user message, check `cache_creation_input_tokens` in the response
-3. Step 2: Call Claude with the SAME system prompt + extended conversation, check `cache_read_input_tokens`
-4. Step 3: Same again, check cache hits
+**Results (3-step Workflow, same ~2,200-token system prompt):**
 
-**Pass criteria:** Steps 2 and 3 show `cache_read_input_tokens > 0`, meaning the prompt prefix was cached from the previous step's call.
+| Step | Cache Creation | Cache Read | Output |
+|------|---------------|------------|--------|
+| 1 | 1,657 | 0 | 566 |
+| 2 | 0 | **1,657** | 198 |
+| 3 | 0 | **1,657** | 434 |
 
-**Fail plan:** If caching doesn't work across steps (unlikely — Anthropic caches by content hash, not client), we can still run the agent loop inside a Durable Object (single long-lived process) instead of a Workflow. Caching would work there since it's one continuous process. We'd lose automatic crash recovery but keep everything else.
+**Implication:** The entire cost model holds. A 100-iteration agent loop will get 99 cache hits after the first call, keeping per-takeoff API cost around $0.05-0.15 as estimated in the architecture doc.
 
-#### Spike Project Structure
+**Critical learning:** Anthropic requires a **minimum 1,024 tokens** for prompt caching. Our first test with a smaller prompt (~684 tokens) showed 0 cache hits. The production CLAUDE.md at ~2,200 tokens is comfortably above this threshold, but we should never create a cached prompt smaller than 1,024 tokens.
+
+#### Spike Project
+
+Located at `spike/` in this repo. Deployed to Cloudflare at `https://takeoff-spike.mirrorquiz-com.workers.dev`.
 
 ```
-takeoff-spike/
+spike/
 ├── src/
-│   ├── index.ts              # Worker entry point — routes to test endpoints
-│   ├── test-browser-render.ts # Test 1: PDF → PNG via Browser Rendering
-│   ├── test-unpdf.ts          # Test 2: PDF text extraction via unpdf
-│   └── test-prompt-cache.ts   # Test 3: Workflow with 3 Claude calls
+│   ├── index.ts              # Worker entry point + diagnostic endpoints
+│   ├── test-browser-render.ts # Test 1: Browser Rendering (blocked)
+│   ├── test-unpdf.ts          # Test 2: Text extraction (PASS)
+│   ├── test-prompt-cache.ts   # Test 3: Prompt caching (PASS)
+│   ├── test-mupdf.ts          # Bonus: mupdf WASM (blocked on loader)
+│   └── types.ts
 ├── wrangler.jsonc
 ├── package.json
-└── tsconfig.json
+└── README.md
 ```
 
-**Endpoints:**
-- `POST /test/render?page=5` — renders a page from the test PDF, returns PNG
-- `POST /test/text?page=5` — extracts text from a page, returns JSON with text + coordinates
-- `POST /test/cache` — runs the 3-step workflow, returns cache hit/miss stats for each step
+**Artifacts in R2 (bucket: `takeoff-spike-files`):**
+- `test-pdfs/test-5-pages.pdf` — 12MB test PDF (5 pages, upload-safe)
+- `test-pdfs/combined-stair-drawings.pdf` — 81MB full drawing set
+- `test-text/page-1.json` — Full unpdf extraction output
+- `test-renders/` — Rendered images (will be populated when rendering works)
 
-**Time estimate:** ~1 day to build and test. Most of the time is in setting up the Cloudflare account bindings (R2 bucket, Browser Rendering, Workflow, secrets).
+**Cleanup note:** The spike project is throwaway. Once Step 1 is complete, the spike Worker and R2 bucket can be deleted. Keep the code in the repo for reference.
 
 ---
 
@@ -99,23 +108,27 @@ takeoff-spike/
 
 **Goal:** Set up the real Cloudflare project with all bindings configured and a "hello world" deployed.
 
-**Status:** Not started — blocked on Step 0 passing
+**Status:** Not started — unblocked once PDF rendering approach is chosen (see Step 0 decision)
+
+**Pre-requisite decision:** Pick the PDF rendering approach from Step 0. Default: external API (ConvertAPI). If going with external API, sign up and get an API key before starting this step.
 
 **Tasks:**
+- [ ] **Decide on PDF rendering approach** (external API / mupdf WASM / revisit Browser Rendering)
 - [ ] Create new Cloudflare project from agents-starter template
 - [ ] Configure wrangler.jsonc with all bindings:
   - Durable Object (TakeoffAgent)
   - Workflows (DiscoveryWorkflow, DetailWorkflow, StairWorkflow)
   - R2 bucket (takeoff-files)
   - D1 database (takeoff-db)
-  - Browser Rendering
   - KV namespace
+  - Browser Rendering binding (optional — include only if using that path)
 - [ ] Create D1 database and run initial migration (jobs, stairs, agent_iterations, tool_calls tables)
 - [ ] Create R2 bucket
-- [ ] Store ANTHROPIC_API_KEY as Wrangler secret
+- [ ] Store `ANTHROPIC_API_KEY` as Wrangler secret
+- [ ] If using external PDF API: store that API key as a Wrangler secret too (e.g., `CONVERTAPI_KEY`)
 - [ ] Set up TypeScript, Vite (for React frontend build), Tailwind
 - [ ] Deploy hello-world Worker to `*.workers.dev`
-- [ ] Verify all bindings work (write/read R2, query D1, launch Browser Rendering)
+- [ ] Verify all bindings work (write/read R2, query D1, call the chosen PDF renderer)
 
 ---
 
@@ -243,14 +256,19 @@ Track key decisions made during implementation so we remember why things are the
 | 2026-04-11 | Cloudflare over Fly.io + Supabase | Get product to users fast, edge deployment, simpler ops, no VM management |
 | 2026-04-11 | Workflows for agent loop (not raw DO) | Durable execution, automatic retry, crash recovery, same continuous loop but with autosave |
 | 2026-04-11 | D1 for database (not Supabase Postgres) | Keep everything in Cloudflare ecosystem, sufficient for MVP, upgrade path via Hyperdrive + Neon |
-| 2026-04-11 | Browser Rendering for PDF→PNG (not external API) | Native Cloudflare service, cheap, keeps data in-network — pending validation in Step 0 |
 | 2026-04-11 | Log EVERYTHING to D1 + R2 | Critical for evaluation and benchmarking. D1 for structured queries, R2 for full transcripts |
+| 2026-04-12 | Text extraction via unpdf (validated) | Spike confirmed 352 text items extracted in 186ms from a real construction PDF with spatial zone classification matching the Electron app. Claude can work with this structured text for most operations. |
+| 2026-04-12 | Prompt caching across Workflow steps works (validated) | Spike confirmed 1,657-token cache hits on steps 2 and 3 of a 3-step Workflow. Cost model holds. Minimum cacheable prompt size is 1,024 tokens — keep system prompts above this. |
+| 2026-04-12 | Browser Rendering NOT used for PDF→PNG (initial plan reversed) | Spike's Puppeteer CDP connection timed out consistently on this account despite the service showing as available. Not worth waiting on. PDF rendering is an abstracted interface that can be swapped later. |
+| 2026-04-12 | PDF rendering via external API for Phase 1 (pending final choice) | Lowest-risk, fastest path to shipping. ~$0.003/page is negligible vs Claude API cost per takeoff. Interface is one function that can be swapped for mupdf WASM or revisited Browser Rendering later as a pure optimization. |
 
 ---
 
 ## References
 
 - Architecture design: `docs/cloudflare-edge-architecture.md`
+- Spike results (Step 0 findings): `docs/spike-results.md`
+- Spike project: `spike/`
 - Prior web architecture plan (superseded): `docs/production-web-architecture.md`
 - Current agent loop: `src/main/core/agent-loop.ts`
 - Current tools: `src/main/core/tools.ts`
