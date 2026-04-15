@@ -26,6 +26,10 @@ export interface VariableDef {
   enumOptions?: { value: string; label: string }[];
   shapeFilter?: string[];
   position?: number;
+  // Hidden variables never render in the form. The engine uses defaultValue
+  // as a company default — this is how shop-level choices (stringer size,
+  // riser height, labor codes, etc.) stay out of the estimator's way.
+  hidden?: boolean;
 }
 
 // ─── Items (engine output) ──────────────────────────────────────────────────

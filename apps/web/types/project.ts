@@ -12,6 +12,9 @@ export interface AssemblyRecord {
   groupId: string;
   templateId: string;
   name: string;
+  // How many identical copies of this assembly exist on the job (e.g. 5 flights
+  // of the same stair, 4 identical landings). Engine output is multiplied by this.
+  quantity: number;
   values: Record<string, VariableValue>;
   createdAt: string;
   updatedAt: string;

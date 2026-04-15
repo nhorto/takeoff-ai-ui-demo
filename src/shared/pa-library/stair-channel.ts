@@ -1,15 +1,19 @@
 /**
  * Stair Channel — a channel-stringer stair with pan treads, jacks, and clips.
  *
- * Modeled on Ricky's PowerFab PA 29 (Stair Channel). See
- * scripts/powerfab-schema-dump/dump/parametric_assemblies/008_Stair_Channel.json
- * for the original.
+ * Visible to the estimator: the few numbers they can read off a drawing.
+ *   - numTreads, numRisers, stairWidth
  *
- * See docs/plans/01-pa-engine.md §6 for the worked example.
+ * Hidden (company defaults): everything else — riser height, tread depth,
+ * stringer size, grades, labor codes. The engine falls back to defaultValue
+ * when the form doesn't provide a value, so these just live here.
+ *
+ * See docs/architecture/parametric-assembly-product-direction.md for the
+ * vision this rewrite is built against.
  */
 
 import type { PATemplate } from "../engine/types";
-import { feet, ftIn, inches } from "../engine/units";
+import { ftIn, inches } from "../engine/units";
 
 export const stairChannel: PATemplate = {
   id: "stair-channel",
@@ -19,15 +23,25 @@ export const stairChannel: PATemplate = {
   category: "stair",
 
   variables: [
+    // ─── Visible to the estimator ──────────────────────────────────────────
     {
-      key: "heightBetweenLandings",
-      label: "Height Between Landings",
-      description:
-        "Vertical distance from the lower landing surface to the upper landing surface.",
-      type: "length",
-      defaultValue: feet(10),
+      key: "numTreads",
+      label: "Number of Treads",
+      description: "Total treads on the flight.",
+      type: "integer",
+      defaultValue: 14,
       required: true,
       position: 1,
+    },
+    {
+      key: "numRisers",
+      label: "Number of Risers",
+      description:
+        "Total risers on the flight. Typically one more than the number of treads.",
+      type: "integer",
+      defaultValue: 15,
+      required: true,
+      position: 2,
     },
     {
       key: "stairWidth",
@@ -36,47 +50,43 @@ export const stairChannel: PATemplate = {
       type: "length",
       defaultValue: ftIn(3, 6),
       required: true,
-      position: 2,
-    },
-    {
-      key: "stringerSize",
-      label: "Stringer Size",
-      description: "Channel size for the two stringers.",
-      type: "dimension",
-      shapeFilter: ["C", "MC"],
-      defaultValue: "C12X20.7",
-      required: true,
       position: 3,
     },
+
+    // ─── Hidden company defaults ───────────────────────────────────────────
     {
       key: "riserHeight",
       label: "Riser Height",
-      description:
-        "Vertical distance between treads. Commercial default 6.75 in.",
       type: "length",
       defaultValue: inches(6.75),
-      required: true,
-      position: 4,
+      hidden: true,
     },
     {
       key: "treadDepth",
       label: "Tread Depth",
-      description: "Horizontal run of each tread. Commercial default 11 in.",
       type: "length",
       defaultValue: inches(11),
-      required: true,
-      position: 5,
+      hidden: true,
+    },
+    {
+      key: "stringerSize",
+      label: "Stringer Size",
+      type: "dimension",
+      shapeFilter: ["C", "MC"],
+      defaultValue: "C12X20.7",
+      hidden: true,
     },
   ],
 
   calculate: (v) => {
-    const height = v.heightBetweenLandings as number;
+    const numTreads = v.numTreads as number;
+    const numRisers = v.numRisers as number;
     const width = v.stairWidth as number;
-    const stringerSize = v.stringerSize as string;
     const riser = v.riserHeight as number;
     const run = v.treadDepth as number;
+    const stringerSize = v.stringerSize as string;
 
-    const numTreads = Math.floor(height / riser);
+    const height = numRisers * riser;
     const horizontalRun = numTreads * run;
     const stringerLength =
       Math.sqrt(height * height + horizontalRun * horizontalRun) + inches(1);

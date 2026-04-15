@@ -2,7 +2,12 @@
  * Landing Channel — a channel-frame stair landing with cross members and
  * a selectable floor type (deck, floor plate, or bent plate).
  *
- * Modeled on Ricky's PowerFab PA (012_Landing_Channel).
+ * Visible to the estimator: width + depth. That's what they read off a drawing.
+ * Hidden (company defaults): frame size, front channel, cross members,
+ * flooring, connection type. The engine falls back to defaultValue.
+ *
+ * See docs/architecture/parametric-assembly-product-direction.md for the
+ * vision this rewrite is built against.
  */
 
 import type { PATemplate } from "../engine/types";
@@ -16,6 +21,7 @@ export const landingChannel: PATemplate = {
   category: "landing",
 
   variables: [
+    // ─── Visible to the estimator ──────────────────────────────────────────
     {
       key: "widthOfLanding",
       label: "Width of Landing",
@@ -32,40 +38,35 @@ export const landingChannel: PATemplate = {
       required: true,
       position: 2,
     },
+
+    // ─── Hidden company defaults ───────────────────────────────────────────
     {
       key: "frameSize",
       label: "Frame Channel Size",
-      description: "Channel for the three-sided frame (back and sides).",
       type: "dimension",
       shapeFilter: ["C", "MC"],
       defaultValue: "C12X20.7",
-      required: true,
-      position: 3,
+      hidden: true,
     },
     {
       key: "frontSize",
       label: "Front Channel Size",
-      description: "Channel for the open front edge of the landing.",
       type: "dimension",
       shapeFilter: ["C", "MC"],
       defaultValue: "C8X11.5",
-      required: true,
-      position: 4,
+      hidden: true,
     },
     {
       key: "crossMemberSize",
       label: "Cross Member Size",
-      description: "Angle size for the cross members running depth-wise.",
       type: "dimension",
       shapeFilter: ["L"],
       defaultValue: "L3X3X1/4",
-      required: true,
-      position: 5,
+      hidden: true,
     },
     {
       key: "flooring",
       label: "Flooring",
-      description: "Landing floor material.",
       type: "enum",
       enumOptions: [
         { value: "deck", label: "Deck (ribbed metal decking)" },
@@ -73,21 +74,18 @@ export const landingChannel: PATemplate = {
         { value: "bent-plate", label: "Bent plate" },
       ],
       defaultValue: "deck",
-      required: true,
-      position: 6,
+      hidden: true,
     },
     {
       key: "connectionType",
       label: "Connection Type",
-      description: "How the landing connects to the supporting structure.",
       type: "enum",
       enumOptions: [
         { value: "clips", label: "Angle clips (bolted)" },
         { value: "welded", label: "Welded" },
       ],
       defaultValue: "clips",
-      required: true,
-      position: 7,
+      hidden: true,
     },
   ],
 
@@ -111,7 +109,6 @@ export const landingChannel: PATemplate = {
       erectHours: 8,
     });
 
-    // Back of landing — one channel spanning the width.
     items.push({
       shape: "C",
       size: frameSize,
@@ -122,7 +119,6 @@ export const landingChannel: PATemplate = {
       comment: "Back of Landing",
     });
 
-    // Sides — two channels spanning the depth.
     items.push({
       shape: "C",
       size: frameSize,
@@ -133,7 +129,6 @@ export const landingChannel: PATemplate = {
       comment: "Sides of Landing",
     });
 
-    // Front — one channel (typically smaller) spanning the width.
     items.push({
       shape: "C",
       size: frontSize,
@@ -144,7 +139,6 @@ export const landingChannel: PATemplate = {
       comment: "Front of Landing",
     });
 
-    // Cross members — one per 2 ft of width, running depth-wise.
     const crossCount = Math.max(1, Math.floor(width / feet(2)));
     items.push({
       shape: "L",
@@ -156,7 +150,6 @@ export const landingChannel: PATemplate = {
       comment: "Cross Members",
     });
 
-    // Floor — one of three flavors, emitted only when selected.
     if (flooring === "deck") {
       items.push({
         shape: "DK",
@@ -192,7 +185,6 @@ export const landingChannel: PATemplate = {
       });
     }
 
-    // Connection — clips only if selected.
     if (connection === "clips") {
       items.push({
         shape: "L",

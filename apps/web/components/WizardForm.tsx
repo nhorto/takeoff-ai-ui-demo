@@ -17,6 +17,7 @@ export function WizardForm({
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       {variables
+        .filter((variable) => !variable.hidden)
         .slice()
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
         .map((variable) => (

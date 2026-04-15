@@ -60,10 +60,16 @@ export default function App() {
     if (!activeAssembly || !activeTemplate) return null;
 
     try {
-      return {
-        result: evaluatePA(activeTemplate, activeAssembly.values),
-        error: null,
+      const raw = evaluatePA(activeTemplate, activeAssembly.values);
+      const qty = activeAssembly.quantity > 0 ? activeAssembly.quantity : 1;
+      const scaled = {
+        ...raw,
+        items: raw.items.map((item) => ({
+          ...item,
+          quantity: item.quantity * qty,
+        })),
       };
+      return { result: scaled, error: null };
     } catch (error) {
       return {
         result: null,
@@ -187,6 +193,7 @@ export default function App() {
       groupId,
       templateId: template.id,
       name: `${template.name} ${countAssembliesForTemplate(project.assemblies, template.id) + 1}`,
+      quantity: 1,
       values: {},
       createdAt: now,
       updatedAt: now,
@@ -215,6 +222,19 @@ export default function App() {
     const template = starterLibrary.find((entry) => entry.id === templateId);
     if (!template) return;
     createAssemblyForCategory(template.category);
+  }
+
+  function updateAssemblyQuantity(quantity: number): void {
+    if (!activeAssembly) return;
+    const next = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+    updateProject({
+      ...project,
+      assemblies: project.assemblies.map((assembly) =>
+        assembly.id === activeAssembly.id
+          ? { ...assembly, quantity: next, updatedAt: new Date().toISOString() }
+          : assembly,
+      ),
+    });
   }
 
   function updateAssemblyValue(key: string, value: VariableValue, draft?: string): void {
@@ -491,6 +511,7 @@ export default function App() {
                         workspaceMode={state.ui.workspaceMode}
                         onSetWorkspaceMode={setWorkspaceMode}
                         onValueChange={updateAssemblyValue}
+                        onQuantityChange={updateAssemblyQuantity}
                         onExport={handleExport}
                       />
                     ) : (
@@ -608,6 +629,7 @@ function AssemblyEditor({
   workspaceMode,
   onSetWorkspaceMode,
   onValueChange,
+  onQuantityChange,
   onExport,
 }: {
   assembly: AssemblyRecord;
@@ -622,6 +644,7 @@ function AssemblyEditor({
   workspaceMode: WorkspaceMode;
   onSetWorkspaceMode: (mode: WorkspaceMode) => void;
   onValueChange: (key: string, value: VariableValue, draft?: string) => void;
+  onQuantityChange: (quantity: number) => void;
   onExport: () => void;
 }) {
   return (
@@ -629,7 +652,21 @@ function AssemblyEditor({
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xl font-semibold text-white">{assembly.name}</div>
-          <div className="mt-2 text-sm text-white/55">Label: {assembly.name}</div>
+          <div className="mt-2 flex items-center gap-3 text-sm text-white/55">
+            <span>Label: {assembly.name}</span>
+            <span className="text-white/20">·</span>
+            <label className="flex items-center gap-2">
+              <span>Quantity</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={assembly.quantity}
+                onChange={(event) => onQuantityChange(Number(event.target.value))}
+                className="w-16 rounded-lg border border-white/10 bg-slate-950/65 px-2 py-1 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
+              />
+            </label>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ModeButton

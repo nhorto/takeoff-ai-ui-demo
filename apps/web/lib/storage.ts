@@ -1,7 +1,7 @@
-import { feet, inches } from "@shared/engine";
+import { feet, ftIn } from "@shared/engine";
 import type { PersistedState } from "@/types/project";
 
-const STORAGE_KEY = "takeoffai-workbench-hybrid-v1";
+const STORAGE_KEY = "takeoffai-workbench-hybrid-v2";
 
 function createId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 8)}${Date.now()
@@ -49,12 +49,11 @@ export function defaultState(): PersistedState {
           groupId: groupA,
           templateId: "stair-channel",
           name: "Main Tower Stair 1",
+          quantity: 1,
           values: {
-            heightBetweenLandings: feet(10),
-            stairWidth: feet(4),
-            stringerSize: "C12X20.7",
-            riserHeight: inches(6.75),
-            treadDepth: inches(11),
+            numTreads: 14,
+            numRisers: 15,
+            stairWidth: ftIn(3, 6),
           },
           createdAt: now,
           updatedAt: now,
@@ -64,14 +63,10 @@ export function defaultState(): PersistedState {
           groupId: groupA,
           templateId: "landing-channel",
           name: "Main Tower Landing 1",
+          quantity: 1,
           values: {
             widthOfLanding: feet(5),
             depthOfLanding: feet(5),
-            frameSize: "C12X20.7",
-            frontSize: "C8X11.5",
-            crossMemberSize: "L3X3X1/4",
-            flooring: "floor-plate",
-            connectionType: "clips",
           },
           createdAt: now,
           updatedAt: now,
