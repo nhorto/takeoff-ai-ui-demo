@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: rgba(255, 255, 255, 0.92);
+  background:
+    radial-gradient(circle at top left, rgba(77, 214, 255, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 191, 87, 0.12), transparent 20%),
+    linear-gradient(180deg, #07111f 0%, #0b1424 46%, #040812 100%);
+  color-scheme: dark;
+  font-family:
+    "IBM Plex Sans",
+    "Segoe UI",
+    sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  position: relative;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(77, 214, 255, 0.08), transparent 0 24rem),
+    radial-gradient(circle at 85% 15%, rgba(255, 141, 106, 0.08), transparent 0 18rem),
+    radial-gradient(circle at 50% 100%, rgba(60, 224, 197, 0.05), transparent 0 28rem),
+    linear-gradient(180deg, #07111f 0%, #0b1424 46%, #040812 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  opacity: 0.45;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(77, 214, 255, 0.08), transparent 24%),
+    linear-gradient(300deg, rgba(255, 191, 87, 0.06), transparent 22%);
+  opacity: 0.7;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}

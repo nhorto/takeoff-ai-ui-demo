@@ -6,7 +6,11 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["apps/web/*"],
+      "@shared/*": ["src/shared/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,11 +20,11 @@
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
-    "allowSyntheticDefaultImports": true,
-    "types": ["node"]
+    "allowSyntheticDefaultImports": true
   },
   "include": [
-    "src/**/*"
+    "apps/web/**/*",
+    "src/shared/**/*"
   ],
   "exclude": [
     "node_modules",

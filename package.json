@@ -1,29 +1,17 @@
 {
-  "name": "takeoff-ai-electron",
+  "name": "takeoff-ai-web",
   "version": "0.1.0",
-  "description": "TakeoffAI - Construction Quantity Takeoff Desktop App",
-  "main": "dist/main/index.js",
+  "description": "TakeoffAI - Construction Quantity Takeoff Web App",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"bun run dev:renderer\" \"bun run dev:electron\"",
-    "dev:renderer": "vite",
-    "dev:electron": "bun run build:main && electron . --js-flags='--max-old-space-size=8192'",
-    "build": "bun run build:renderer && bun run build:main",
-    "build:renderer": "vite build",
-    "build:main": "tsc && tsc --project tsconfig.preload.json && mv dist/main/preload.js dist/main/preload.cjs",
-    "package": "electron-builder",
-    "start": "electron .",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
-    "electron": "^40.0.0",
-    "electron-squirrel-startup": "^1.0.1",
-    "electron-store": "^8.1.0",
-    "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^5.4.530",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.4.7"
@@ -34,30 +22,10 @@
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
-    "concurrently": "^8.2.2",
-    "electron-builder": "^24.9.1",
-    "electron-rebuild": "^3.2.9",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.2",
     "vite": "^5.0.0",
     "vitest": "^4.1.4"
-  },
-  "build": {
-    "appId": "com.yourcompany.takeoff-ai",
-    "productName": "TakeoffAI",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "resources/**/*"
-    ],
-    "win": {
-      "target": "nsis"
-    },
-    "mac": {
-      "target": "dmg"
-    }
   }
 }
