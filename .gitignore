@@ -60,3 +60,8 @@ eval/experiments/output/
 
 # Lock files
 package-lock.json
+
+# Local-only reference material (kept on disk, not in git)
+docs/powerfab/
+scripts/
+test/
