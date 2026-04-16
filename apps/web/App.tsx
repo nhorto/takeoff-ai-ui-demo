@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   evaluatePA,
+  formatFeetInches,
   ftIn,
   type EvaluateResult,
   type VariableValue,
@@ -101,11 +102,17 @@ export default function App() {
   const filteredStairs = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return project.stairs;
-    return project.stairs.filter(
-      (stair) =>
-        stair.name.toLowerCase().includes(term) ||
-        stair.flights.some((_, i) => `flight ${i + 1}`.includes(term)),
-    );
+
+    return project.stairs
+      .map((stair) => {
+        if (stair.name.toLowerCase().includes(term)) return stair;
+        const matchingFlights = stair.flights.filter((flight) =>
+          buildFlightSearchString(stair, flight).includes(term),
+        );
+        if (matchingFlights.length === 0) return null;
+        return { ...stair, flights: matchingFlights };
+      })
+      .filter((s): s is StairRecord => s !== null);
   }, [project.stairs, search]);
 
   // ── State helpers ──
@@ -206,6 +213,27 @@ export default function App() {
           : [...current.ui.expandedStairIds, stairId],
       },
     }));
+  }
+
+  function toggleFlightExpanded(flightId: string): void {
+    setState((current) => ({
+      ...current,
+      ui: {
+        ...current.ui,
+        expandedFlightIds: current.ui.expandedFlightIds.includes(
+          flightId,
+        )
+          ? current.ui.expandedFlightIds.filter(
+              (id) => id !== flightId,
+            )
+          : [...current.ui.expandedFlightIds, flightId],
+      },
+    }));
+  }
+
+  function isFlightExpanded(flightId: string): boolean {
+    if (search.trim()) return true;
+    return state.ui.expandedFlightIds.includes(flightId);
   }
 
   // ── CRUD ──
@@ -778,84 +806,162 @@ export default function App() {
                           {stair.flights.map((flight) => {
                             const active =
                               activeFlight?.id === flight.id;
-                            const risers =
-                              flight.stairValues.numRisers;
-                            const treads =
-                              flight.stairValues.numTreads;
-                            const hasData =
-                              risers != null || treads != null;
+                            const flightExp =
+                              isFlightExpanded(flight.id);
 
                             return (
-                              <div
-                                key={flight.id}
-                                className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${
-                                  active
-                                    ? "bg-white text-slate-950"
-                                    : "text-white/65 hover:bg-white/[0.06] hover:text-white"
-                                }`}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    ensureFlightTab(stair, flight)
-                                  }
-                                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                                >
-                                  <span
-                                    className={`h-2 w-2 rounded-full ${
-                                      active
-                                        ? "bg-slate-950"
-                                        : hasData
-                                          ? "bg-emerald-400"
-                                          : "bg-white/22"
-                                    }`}
-                                  />
-                                  <span className="truncate">
-                                    Flight {flight.order}
-                                  </span>
-                                  {hasData && (
-                                    <span
-                                      className={`text-xs ${active ? "text-slate-500" : "text-white/35"}`}
-                                    >
-                                      {treads != null
-                                        ? `${treads}T`
-                                        : ""}
-                                      {treads != null &&
-                                      risers != null
-                                        ? " / "
-                                        : ""}
-                                      {risers != null
-                                        ? `${risers}R`
-                                        : ""}
-                                    </span>
-                                  )}
-                                </button>
-                                {flight.landingValues && (
-                                  <span
-                                    className={`text-[10px] ${active ? "text-slate-400" : "text-white/30"}`}
-                                    title="Has landing"
-                                  >
-                                    L
-                                  </span>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteFlight(
-                                      stair.id,
-                                      flight.id,
-                                    );
-                                  }}
-                                  title="Delete flight"
-                                  className={`opacity-0 transition group-hover:opacity-100 ${
+                              <div key={flight.id}>
+                                {/* Flight row */}
+                                <div
+                                  className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition ${
                                     active
-                                      ? "text-slate-500 hover:text-red-500"
-                                      : "text-white/40 hover:text-red-300"
+                                      ? "bg-white text-slate-950"
+                                      : "text-white/65 hover:bg-white/[0.06] hover:text-white"
                                   }`}
                                 >
-                                  ×
-                                </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      toggleFlightExpanded(
+                                        flight.id,
+                                      )
+                                    }
+                                    className={`shrink-0 text-xs ${active ? "text-slate-400" : "text-white/40 hover:text-white/65"}`}
+                                  >
+                                    {flightExp ? "▾" : "▸"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      ensureFlightTab(
+                                        stair,
+                                        flight,
+                                      )
+                                    }
+                                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                  >
+                                    <span className="truncate font-medium">
+                                      Flight{" "}
+                                      {flight.order}
+                                    </span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteFlight(
+                                        stair.id,
+                                        flight.id,
+                                      );
+                                    }}
+                                    title="Delete flight"
+                                    className={`shrink-0 opacity-0 transition group-hover:opacity-100 ${
+                                      active
+                                        ? "text-slate-500 hover:text-red-500"
+                                        : "text-white/40 hover:text-red-300"
+                                    }`}
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+
+                                {/* Flight children */}
+                                {flightExp && (
+                                  <div className="ml-5 space-y-0.5 py-0.5">
+                                    {/* Stair child */}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        ensureFlightTab(
+                                          stair,
+                                          flight,
+                                        )
+                                      }
+                                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition ${
+                                        active
+                                          ? "text-slate-600 hover:bg-slate-100"
+                                          : "text-white/50 hover:bg-white/[0.05] hover:text-white/70"
+                                      }`}
+                                    >
+                                      <span
+                                        className={
+                                          active
+                                            ? "text-slate-400"
+                                            : "text-cyan-300/50"
+                                        }
+                                      >
+                                        ↳
+                                      </span>
+                                      <span className="font-medium">
+                                        Stair
+                                      </span>
+                                      <span
+                                        className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}
+                                      >
+                                        {stairSummary(
+                                          flight.stairValues,
+                                        )}
+                                      </span>
+                                    </button>
+
+                                    {/* Landing child */}
+                                    {flight.landingValues ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          ensureFlightTab(
+                                            stair,
+                                            flight,
+                                          )
+                                        }
+                                        className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition ${
+                                          active
+                                            ? "text-slate-600 hover:bg-slate-100"
+                                            : "text-white/50 hover:bg-white/[0.05] hover:text-white/70"
+                                        }`}
+                                      >
+                                        <span
+                                          className={
+                                            active
+                                              ? "text-slate-400"
+                                              : "text-cyan-300/50"
+                                          }
+                                        >
+                                          ↳
+                                        </span>
+                                        <span className="font-medium">
+                                          Landing
+                                        </span>
+                                        <span
+                                          className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}
+                                        >
+                                          {landingSummary(
+                                            flight.landingValues,
+                                          )}
+                                        </span>
+                                      </button>
+                                    ) : (
+                                      <div
+                                        className={`flex items-center gap-2 px-2 py-1 text-xs ${active ? "text-slate-400" : "text-white/25"}`}
+                                      >
+                                        <span>↳</span>
+                                        <span className="italic">
+                                          No landing
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Rails placeholder */}
+                                    <div
+                                      className={`flex items-center gap-2 px-2 py-1 text-xs ${active ? "text-slate-400" : "text-white/25"}`}
+                                    >
+                                      <span>↳</span>
+                                      <span className="italic">
+                                        Rails (coming soon)
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -1578,6 +1684,81 @@ function distributeRisers(total: number, numFlights: number): number[] {
   return Array.from({ length: numFlights }, (_, i) =>
     base + (i < remainder ? 1 : 0),
   );
+}
+
+function stairSummary(
+  values: Record<string, VariableValue>,
+): string {
+  const parts: string[] = [];
+  if (values.numTreads != null) parts.push(`${values.numTreads}T`);
+  if (values.numRisers != null) parts.push(`${values.numRisers}R`);
+  if (typeof values.stairWidth === "number")
+    parts.push(formatFeetInches(values.stairWidth));
+  return parts.length > 0 ? parts.join(" / ") : "no data";
+}
+
+function landingSummary(
+  values: Record<string, VariableValue>,
+): string {
+  const w =
+    typeof values.widthOfLanding === "number"
+      ? formatFeetInches(values.widthOfLanding)
+      : "?";
+  const d =
+    typeof values.depthOfLanding === "number"
+      ? formatFeetInches(values.depthOfLanding)
+      : "?";
+  return `${w} × ${d}`;
+}
+
+function buildFlightSearchString(
+  stair: StairRecord,
+  flight: FlightRecord,
+): string {
+  const parts: string[] = [
+    stair.name,
+    `flight ${flight.order}`,
+    "stair",
+  ];
+
+  for (const v of stairChannel.variables) {
+    if (v.hidden) continue;
+    parts.push(v.label);
+    parts.push(v.key);
+    const val = flight.stairValues[v.key];
+    if (val != null) {
+      parts.push(String(val));
+      if (typeof val === "number" && v.type === "length") {
+        try {
+          parts.push(formatFeetInches(val));
+        } catch {
+          /* skip */
+        }
+      }
+    }
+  }
+
+  if (flight.landingValues) {
+    parts.push("landing");
+    for (const v of landingChannel.variables) {
+      if (v.hidden) continue;
+      parts.push(v.label);
+      parts.push(v.key);
+      const val = flight.landingValues[v.key];
+      if (val != null) {
+        parts.push(String(val));
+        if (typeof val === "number" && v.type === "length") {
+          try {
+            parts.push(formatFeetInches(val));
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    }
+  }
+
+  return parts.join(" ").toLowerCase();
 }
 
 function relativeEditedLabel(iso: string): string {

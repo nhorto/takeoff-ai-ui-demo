@@ -45,6 +45,7 @@ export interface WorkbenchUiState {
   selectedStairId: string | null;
   selectedFlightId: string | null;
   expandedStairIds: string[];
+  expandedFlightIds: string[];
   openTabs: OpenTab[];
   activeTabId: string;
   aiPanelOpen: boolean;

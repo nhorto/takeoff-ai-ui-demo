@@ -88,6 +88,7 @@ export function defaultState(): PersistedState {
       selectedStairId: stairId,
       selectedFlightId: flight1,
       expandedStairIds: [stairId],
+      expandedFlightIds: [],
       openTabs: [
         {
           id: "welcome",
@@ -117,6 +118,7 @@ export function loadState(): PersistedState {
   try {
     const parsed = JSON.parse(raw) as PersistedState;
     if (parsed.version !== 1) return defaultState();
+    if (!parsed.ui.expandedFlightIds) parsed.ui.expandedFlightIds = [];
     return parsed;
   } catch {
     return defaultState();
