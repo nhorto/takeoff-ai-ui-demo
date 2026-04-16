@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-label="Assembly form stair hybrid mockup">
+  <defs>
+    <linearGradient id="bgGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8f5ef"/>
+      <stop offset="55%" stop-color="#efe6d8"/>
+      <stop offset="100%" stop-color="#e2d7c6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#5c5148" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <rect width="1440" height="980" fill="url(#bgGlow)"/>
+  <circle cx="1320" cy="90" r="150" fill="#f1c4a8" opacity="0.28"/>
+  <circle cx="120" cy="890" r="140" fill="#d0e0d4" opacity="0.35"/>
+  
+      <rect x="54" y="50" width="1332" height="880" rx="28" fill="#fdfbf7" stroke="#1f2937" stroke-width="3" filter="url(#shadow)" />
+      <rect x="84" y="106" width="228" height="746" rx="22" fill="#f8f4ed" stroke="#b5aa95" stroke-width="1.5"  />
+      <rect x="1128" y="106" width="228" height="746" rx="22" fill="#f8f4ed" stroke="#b5aa95" stroke-width="1.5"  />
+      <rect x="330" y="106" width="780" height="746" rx="22" fill="#fbf8f2" stroke="#b5aa95" stroke-width="1.5"  />
+      <rect x="84" y="872" width="1272" height="34" rx="12" fill="#efe7da" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="96" y="84" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="23" font-weight="800" fill="#18212f" text-anchor="start" letter-spacing="0">2026-Northside-Tower</text>
+      <text x="370" y="84" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="22" font-weight="700" fill="#5d6776" text-anchor="start" letter-spacing="0">Stair A-101</text>
+      
+    <g>
+      <rect x="1184" y="62" width="116" height="34" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="1242" y="84" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Export CSV</text>
+    </g>
+  
+      
+    <g>
+      <rect x="1310" y="62" width="46" height="34" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="1333" y="84" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">?</text>
+    </g>
+  
+      <text x="110" y="140" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13" font-weight="800" fill="#5d6776" text-anchor="start" letter-spacing="1.2">ASSEMBLIES</text>
+      <text x="1150" y="140" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13" font-weight="800" fill="#5d6776" text-anchor="start" letter-spacing="1.2">AI CHAT</text>
+      <text x="112" y="188" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Welcome</text><text x="112" y="232" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Stairs (3)</text><text x="112" y="276" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="18" font-weight="800" fill="#b65f2a" text-anchor="start" letter-spacing="0">A-101</text><text x="112" y="320" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">A-102</text><text x="112" y="364" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">A-103</text><text x="112" y="408" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">+ Add Stair</text><text x="112" y="452" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Landings (2)</text><text x="112" y="496" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Rails (5)</text><text x="112" y="540" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Ladders (1)</text><text x="112" y="584" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="550" fill="#18212f" text-anchor="start" letter-spacing="0">Columns (0)</text>
+      <text x="1150" y="190" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">&gt; add a stair like A-100</text>
+      <text x="1150" y="220" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">  but with 10 treads</text>
+      <rect x="1146" y="274" width="190" height="110" rx="14" fill="#fffdfa" stroke="#ebe3d4" stroke-width="1.5"  />
+      <text x="1162" y="304" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="700" fill="#18212f" text-anchor="start" letter-spacing="0">Done. Created Stair A-104</text>
+      <text x="1162" y="332" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">with 10 treads, W8X31</text>
+      <text x="1162" y="360" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">stringers, A36.</text>
+      
+    
+    <text x="356" y="144" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="28" font-weight="800" fill="#18212f" text-anchor="start" letter-spacing="0">Stair A-101</text>
+    <text x="356" y="174" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="600" fill="#5d6776" text-anchor="start" letter-spacing="0">Recommended default</text>
+    
+    <g>
+      <rect x="758" y="122" width="132" height="34" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="824" y="144" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Load existing</text>
+    </g>
+  
+    
+    <g>
+      <rect x="902" y="122" width="114" height="34" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="959" y="144" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Test inputs</text>
+    </g>
+  
+    
+    <g>
+      <rect x="1028" y="122" width="52" height="34" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="1054" y="144" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">...</text>
+    </g>
+  
+    <line x1="354" y1="196" x2="1088" y2="196" stroke="#ebe3d4" stroke-width="2" stroke-linecap="round" />
+  
+    <text x="356" y="236" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13" font-weight="800" fill="#5d6776" text-anchor="start" letter-spacing="1.2">TYPE</text>
+    
+    <g>
+      <rect x="356" y="250" width="118" height="42" rx="14" fill="#f4d7c3" stroke="#b65f2a" stroke-width="2.5"  />
+      <text x="415" y="276" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="700" fill="#b65f2a" text-anchor="middle" letter-spacing="0">Straight</text>
+    </g>
+  
+    <g>
+      <rect x="488" y="250" width="118" height="42" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="547" y="276" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Switchback</text>
+    </g>
+  
+    <g>
+      <rect x="620" y="250" width="118" height="42" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="679" y="276" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Spiral</text>
+    </g>
+  
+    <g>
+      <rect x="752" y="250" width="118" height="42" rx="14" fill="#e8dcc6" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="811" y="276" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="middle" letter-spacing="0">Quarter-turn</text>
+    </g>
+  
+    <rect x="356" y="312" width="316" height="410" rx="20" fill="#f8f5ee" stroke="#1f2937" stroke-width="2"  />
+    <rect x="692" y="312" width="396" height="410" rx="20" fill="#f9f6f0" stroke="#1f2937" stroke-width="2"  />
+    <text x="376" y="342" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="800" fill="#18212f" text-anchor="start" letter-spacing="0">Schematic</text>
+    <text x="712" y="342" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="16" font-weight="800" fill="#18212f" text-anchor="start" letter-spacing="0">Fields</text>
+    <path d="M 410 572 L 438 572 L 438 552 L 466 552 L 466 532 L 494 532 L 494 512 L 522 512 L 522 492 L 550 492 L 550 472 L 578 472 L 578 452 L 606 452 L 606 432 L 634 432" fill="none" stroke="#1f2937" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="575" y="424" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="800" fill="#b65f2a" text-anchor="start" letter-spacing="0">① top</text>
+    <text x="504" y="518" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="800" fill="#1f6d62" text-anchor="start" letter-spacing="0">③ riser</text>
+    <text x="402" y="596" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="800" fill="#4769a8" text-anchor="start" letter-spacing="0">⑤ stringer</text>
+    <text x="432" y="676" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="800" fill="#b65f2a" text-anchor="start" letter-spacing="0">④ bottom</text>
+    
+    <text x="712" y="374" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="12" font-weight="800" fill="#5d6776" text-anchor="start" letter-spacing="1.4">GEOMETRY</text>
+    <line x1="712" y1="384" x2="862" y2="384" stroke="#ebe3d4" stroke-width="3" stroke-linecap="round" />
+  
+    
+    <g>
+      <text x="712" y="410" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">① Number of treads  ◆</text>
+      <rect x="954" y="392" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="412" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">8</text>
+      
+    </g>
+  
+    
+    <g>
+      <text x="712" y="464" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">② Tread width  ◆</text>
+      <rect x="954" y="446" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="466" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">36&quot;</text>
+      
+    </g>
+  
+    
+    <g>
+      <text x="712" y="518" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">③ Riser height  ◆</text>
+      <rect x="954" y="500" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="520" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">7.5&quot;</text>
+      <text x="712" y="548" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="12.5" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">7.0&quot;–7.75&quot; per IBC</text>
+    </g>
+  
+    
+    <g>
+      <text x="712" y="584" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">④ Overall rise</text>
+      <rect x="954" y="566" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="586" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">auto</text>
+      
+    </g>
+  
+    
+    <text x="712" y="630" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="12" font-weight="800" fill="#5d6776" text-anchor="start" letter-spacing="1.4">STRINGERS</text>
+    <line x1="712" y1="640" x2="862" y2="640" stroke="#ebe3d4" stroke-width="3" stroke-linecap="round" />
+  
+    
+    <g>
+      <text x="712" y="666" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">⑤ Shape  ◆</text>
+      <rect x="954" y="648" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="668" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">C-Channel</text>
+      
+    </g>
+  
+    
+    <g>
+      <text x="712" y="720" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="600" fill="#18212f" text-anchor="start" letter-spacing="0">⑥ Size  ◆</text>
+      <rect x="954" y="702" width="118" height="30" rx="9" fill="#fffdfa" stroke="#b5aa95" stroke-width="1.5"  />
+      <text x="968" y="722" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">C10X25</text>
+      
+    </g>
+  
+    
+    <g>
+      <rect x="356" y="742" width="732" height="96" rx="16" fill="#fbf8f2" stroke="#1f2937" stroke-width="2"  />
+      <text x="374" y="772" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="15" font-weight="800" fill="#18212f" text-anchor="start" letter-spacing="0">MATERIAL LIST PREVIEW</text>
+      <text x="1070" y="772" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13" font-weight="700" fill="#2d7a57" text-anchor="end" letter-spacing="0">12 lines · All valid</text>
+      <line x1="372" y1="784" x2="1072" y2="784" stroke="#ebe3d4" stroke-width="2" stroke-linecap="round" />
+      
+        <text x="374" y="808" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">1</text>
+        <text x="414" y="808" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">2</text>
+        <text x="494" y="808" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">Channel</text>
+        <text x="594" y="808" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">C10X25</text>
+        <text x="688" y="808" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">Stringers</text>
+        <line x1="370" y1="818" x2="1074" y2="818" stroke="#efe8dc" stroke-width="1" stroke-linecap="round" />
+      
+        <text x="374" y="832" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">2</text>
+        <text x="414" y="832" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">8</text>
+        <text x="494" y="832" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">Plate</text>
+        <text x="594" y="832" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#18212f" text-anchor="start" letter-spacing="0">PL1/4X10</text>
+        <text x="688" y="832" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="13.5" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">Treads</text>
+        <line x1="370" y1="842" x2="1074" y2="842" stroke="#efe8dc" stroke-width="1" stroke-linecap="round" />
+      
+    </g>
+  
+  
+      <text x="96" y="895" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">11 assemblies · 7 complete · All valid · Autosaved 2s ago</text>
+      <text x="1322" y="895" font-family="'Segoe UI', 'Inter', 'Arial', sans-serif" font-size="14" font-weight="500" fill="#5d6776" text-anchor="start" letter-spacing="0">dark</text>
+    
+</svg>
