@@ -268,6 +268,64 @@ export default function App() {
     }));
   }
 
+  function deleteAssembly(assemblyId: string): void {
+    const target = project.assemblies.find((assembly) => assembly.id === assemblyId);
+    if (!target) return;
+    if (!window.confirm(`Delete "${target.name}"? This cannot be undone.`)) return;
+
+    const tabId = `assembly-${assemblyId}`;
+    setState((current) => {
+      const nextAssemblies = current.project.assemblies.filter(
+        (assembly) => assembly.id !== assemblyId,
+      );
+      const nextTabs = current.ui.openTabs.filter((tab) => tab.id !== tabId);
+      const { [assemblyId]: _removed, ...nextDrafts } = current.drafts;
+
+      return {
+        ...current,
+        project: {
+          ...current.project,
+          assemblies: nextAssemblies,
+          updatedAt: new Date().toISOString(),
+        },
+        ui: {
+          ...current.ui,
+          openTabs: nextTabs.length > 0 ? nextTabs : [{ id: "welcome", type: "welcome", title: "Welcome" }],
+          activeTabId:
+            current.ui.activeTabId === tabId
+              ? nextTabs[0]?.id ?? "welcome"
+              : current.ui.activeTabId,
+          selectedAssemblyId:
+            current.ui.selectedAssemblyId === assemblyId
+              ? null
+              : current.ui.selectedAssemblyId,
+        },
+        drafts: nextDrafts,
+      };
+    });
+  }
+
+  function duplicateAssembly(assemblyId: string): void {
+    const source = project.assemblies.find((assembly) => assembly.id === assemblyId);
+    if (!source) return;
+
+    const now = new Date().toISOString();
+    const copy: AssemblyRecord = {
+      ...source,
+      id: makeId("assembly"),
+      name: `${source.name} (Copy)`,
+      values: { ...source.values },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    updateProject({
+      ...project,
+      assemblies: [...project.assemblies, copy],
+    });
+    ensureAssemblyTab(copy);
+  }
+
   function handleExport(): void {
     if (!activeAssembly || !activeTemplate || !evaluation?.result) return;
     const csv = exportItemsToCsv(evaluation.result.items);
@@ -299,9 +357,9 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen px-4 py-4 text-white md:px-6">
-      <div className="mx-auto max-w-[1600px]">
-        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,17,30,0.98),rgba(8,13,24,0.98))] shadow-glow">
+    <div className="flex min-h-screen flex-col px-4 py-4 text-white md:px-6">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,17,30,0.98),rgba(8,13,24,0.98))] shadow-glow">
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3 text-sm">
               <div className="font-semibold tracking-[0.16em] text-white">TakeoffAI</div>
@@ -333,7 +391,7 @@ export default function App() {
           </header>
 
           <div
-            className={`grid min-h-[760px] ${
+            className={`grid min-h-0 flex-1 ${
               state.ui.aiPanelOpen
                 ? "xl:grid-cols-[260px_minmax(0,1fr)_260px]"
                 : "xl:grid-cols-[260px_minmax(0,1fr)]"
@@ -373,29 +431,54 @@ export default function App() {
                         {sectionAssemblies.map((assembly) => {
                           const complete = getCompletionPercentForAssembly(assembly);
                           const active = activeAssembly?.id === assembly.id;
+                          const status: "empty" | "in-progress" | "complete" =
+                            complete === 100
+                              ? "complete"
+                              : complete === 0
+                                ? "empty"
+                                : "in-progress";
+                          const dotClass = active
+                            ? "bg-slate-950"
+                            : status === "complete"
+                              ? "bg-emerald-400"
+                              : status === "in-progress"
+                                ? "bg-amber-400"
+                                : "bg-white/22";
 
                           return (
-                            <button
+                            <div
                               key={assembly.id}
-                              type="button"
-                              onClick={() => ensureAssemblyTab(assembly)}
-                              className={`flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
+                              className={`group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
                                 active
                                   ? "bg-white text-slate-950"
                                   : "text-white/72 hover:bg-white/[0.06] hover:text-white"
                               }`}
                             >
-                              <span
-                                className={`h-2.5 w-2.5 rounded-full ${
-                                  complete === 100
-                                    ? "bg-emerald-400"
-                                    : active
-                                      ? "bg-slate-950"
-                                      : "bg-white/22"
+                              <button
+                                type="button"
+                                onClick={() => ensureAssemblyTab(assembly)}
+                                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                                title={`${status} — ${complete}%`}
+                              >
+                                <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
+                                <span className="truncate">{assembly.name}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  deleteAssembly(assembly.id);
+                                }}
+                                title="Delete"
+                                className={`opacity-0 transition group-hover:opacity-100 ${
+                                  active
+                                    ? "text-slate-500 hover:text-red-500"
+                                    : "text-white/40 hover:text-red-300"
                                 }`}
-                              />
-                              <span className="truncate">{assembly.name}</span>
-                            </button>
+                              >
+                                ×
+                              </button>
+                            </div>
                           );
                         })}
                         <button
@@ -513,6 +596,8 @@ export default function App() {
                         onValueChange={updateAssemblyValue}
                         onQuantityChange={updateAssemblyQuantity}
                         onExport={handleExport}
+                        onDuplicate={() => duplicateAssembly(activeAssembly.id)}
+                        onDelete={() => deleteAssembly(activeAssembly.id)}
                       />
                     ) : (
                       <div className="py-16 text-center text-sm text-white/42">
@@ -631,6 +716,8 @@ function AssemblyEditor({
   onValueChange,
   onQuantityChange,
   onExport,
+  onDuplicate,
+  onDelete,
 }: {
   assembly: AssemblyRecord;
   template: PATemplate;
@@ -646,6 +733,8 @@ function AssemblyEditor({
   onValueChange: (key: string, value: VariableValue, draft?: string) => void;
   onQuantityChange: (quantity: number) => void;
   onExport: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -701,6 +790,8 @@ function AssemblyEditor({
             drafts={drafts}
             onValueChange={onValueChange}
             onExport={onExport}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
           />
           <SimpleDrawingView template={template} compact />
         </div>
@@ -712,6 +803,8 @@ function AssemblyEditor({
           drafts={drafts}
           onValueChange={onValueChange}
           onExport={onExport}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
         />
       )}
     </div>
@@ -725,6 +818,8 @@ function EditorWorkbench({
   drafts,
   onValueChange,
   onExport,
+  onDuplicate,
+  onDelete,
 }: {
   assembly: AssemblyRecord;
   template: PATemplate;
@@ -737,6 +832,8 @@ function EditorWorkbench({
   drafts: Record<string, string>;
   onValueChange: (key: string, value: VariableValue, draft?: string) => void;
   onExport: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="space-y-5">
@@ -778,13 +875,15 @@ function EditorWorkbench({
       <div className="flex justify-end gap-3">
         <button
           type="button"
+          onClick={onDuplicate}
           className="rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05]"
         >
           Duplicate
         </button>
         <button
           type="button"
-          className="rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05]"
+          onClick={onDelete}
+          className="rounded-full border border-red-400/25 px-4 py-2.5 text-sm text-red-200/80 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
         >
           Delete
         </button>
