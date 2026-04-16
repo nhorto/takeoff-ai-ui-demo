@@ -1,0 +1,44 @@
+# Dependencies — Vercel installs fresh
+node_modules/
+
+# Local build output — Vercel rebuilds
+dist/
+
+# Unrelated Cloudflare scaffolding (different deploy target).
+# Leading slash is required — unanchored `web/` would also match `apps/web/`.
+/web/
+/spike/
+
+# Eval artifacts, scratch, large binaries
+eval/
+outputs/
+images/
+first_output/
+claude-code-takeoff-comparison-*/
+terminal_output.txt
+TODO.txt
+TODO.md
+resources/
+
+# Legacy Electron main process (not used in web build)
+src/main/
+src/preload/
+
+# PowerFab reference data
+scripts/
+docs/
+.claude/
+
+# macOS app files
+*.m4a
+*.docx
+*.pages
+
+# Env + secrets
+.env
+.env.*
+
+# Misc
+.DS_Store
+.wrangler/
+release/

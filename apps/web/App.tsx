@@ -1,43 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   evaluatePA,
+  ftIn,
   type EvaluateResult,
-  type PACategory,
-  type PATemplate,
   type VariableValue,
 } from "@shared/engine";
 import { exportItemsToCsv } from "@shared/exporters";
-import { starterLibrary } from "@shared/pa-library";
+import { stairChannel, landingChannel } from "@shared/pa-library";
 import { ItemsTable } from "@/components/ItemsTable";
 import { WizardForm } from "@/components/WizardForm";
 import { downloadTextFile } from "@/lib/download";
 import { loadState, makeId, resetState, saveState } from "@/lib/storage";
 import type {
-  AssemblyRecord,
+  FlightRecord,
   OpenTab,
   PersistedState,
   ProjectState,
+  StairInputMode,
+  StairRecord,
   WorkspaceMode,
 } from "@/types/project";
-
-type CategorySection = {
-  key: PACategory;
-  label: string;
-  addLabel: string;
-};
-
-const CATEGORY_SECTIONS: CategorySection[] = [
-  { key: "stair", label: "Stairs", addLabel: "Add stair" },
-  { key: "landing", label: "Landings", addLabel: "Add landing" },
-  { key: "rail", label: "Rails", addLabel: "Add rail" },
-  { key: "ladder", label: "Ladders", addLabel: "Add ladder" },
-];
 
 export default function App() {
   const [state, setState] = useState<PersistedState>(() => loadState());
   const [search, setSearch] = useState("");
-  const [commandText, setCommandText] = useState("");
   const [aiInput, setAiInput] = useState("");
+  const [addStairOpen, setAddStairOpen] = useState(false);
+  const [renamingStairId, setRenamingStairId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     saveState(state);
@@ -45,59 +35,80 @@ export default function App() {
 
   const project = state.project;
   const activeTab =
-    state.ui.openTabs.find((tab) => tab.id === state.ui.activeTabId) ?? state.ui.openTabs[0];
-  const activeAssembly =
-    activeTab?.type === "assembly"
-      ? project.assemblies.find((assembly) => assembly.id === activeTab.assemblyId) ?? null
-      : null;
-  const activeTemplate =
-    activeAssembly
-      ? starterLibrary.find((template) => template.id === activeAssembly.templateId) ?? null
-      : null;
-  const activeDrafts = activeAssembly ? state.drafts[activeAssembly.id] ?? {} : {};
+    state.ui.openTabs.find((tab) => tab.id === state.ui.activeTabId) ??
+    state.ui.openTabs[0];
 
-  const evaluation = useMemo(() => {
-    if (!activeAssembly || !activeTemplate) return null;
+  const activeStair = activeTab?.stairId
+    ? (project.stairs.find((s) => s.id === activeTab.stairId) ?? null)
+    : null;
+  const activeFlight =
+    activeStair && activeTab?.flightId
+      ? (activeStair.flights.find((f) => f.id === activeTab.flightId) ?? null)
+      : null;
 
+  const stairEvaluation = useMemo(() => {
+    if (!activeFlight) return null;
     try {
-      const raw = evaluatePA(activeTemplate, activeAssembly.values);
-      const qty = activeAssembly.quantity > 0 ? activeAssembly.quantity : 1;
-      const scaled = {
-        ...raw,
-        items: raw.items.map((item) => ({
-          ...item,
-          quantity: item.quantity * qty,
-        })),
-      };
-      return { result: scaled, error: null };
+      const result = evaluatePA(stairChannel, activeFlight.stairValues);
+      return { result, error: null };
     } catch (error) {
       return {
         result: null,
-        error: error instanceof Error ? error.message : "Unknown evaluation error.",
+        error: error instanceof Error ? error.message : "Evaluation error",
       };
     }
-  }, [activeAssembly, activeTemplate]);
+  }, [activeFlight]);
 
-  const filteredAssemblies = useMemo(() => {
+  const landingEvaluation = useMemo(() => {
+    if (!activeFlight?.landingValues) return null;
+    try {
+      const result = evaluatePA(landingChannel, activeFlight.landingValues);
+      return { result, error: null };
+    } catch (error) {
+      return {
+        result: null,
+        error: error instanceof Error ? error.message : "Evaluation error",
+      };
+    }
+  }, [activeFlight]);
+
+  const allItems = useMemo(() => {
+    const items = [];
+    if (stairEvaluation?.result) items.push(...stairEvaluation.result.items);
+    if (landingEvaluation?.result)
+      items.push(...landingEvaluation.result.items);
+    return items;
+  }, [stairEvaluation, landingEvaluation]);
+
+  const totalFlights = project.stairs.reduce(
+    (sum, s) => sum + s.flights.length,
+    0,
+  );
+  const completedFlights = project.stairs.reduce((sum, stair) => {
+    return (
+      sum +
+      stair.flights.filter((f) => {
+        const required = stairChannel.variables.filter(
+          (v) => v.required && !v.hidden,
+        );
+        return required.every(
+          (v) => f.stairValues[v.key] != null && f.stairValues[v.key] !== "",
+        );
+      }).length
+    );
+  }, 0);
+
+  const filteredStairs = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return project.assemblies;
-    return project.assemblies.filter((assembly) => {
-      const template = starterLibrary.find((entry) => entry.id === assembly.templateId);
-      return (
-        assembly.name.toLowerCase().includes(term) ||
-        template?.name.toLowerCase().includes(term)
-      );
-    });
-  }, [project.assemblies, search]);
+    if (!term) return project.stairs;
+    return project.stairs.filter(
+      (stair) =>
+        stair.name.toLowerCase().includes(term) ||
+        stair.flights.some((_, i) => `flight ${i + 1}`.includes(term)),
+    );
+  }, [project.stairs, search]);
 
-  const recentAssemblies = [...project.assemblies]
-    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
-    .slice(0, 4);
-
-  const completedAssemblies = project.assemblies.filter((assembly) => {
-    const template = starterLibrary.find((entry) => entry.id === assembly.templateId);
-    return template ? getCompletionPercent(assembly.values, template) === 100 : false;
-  }).length;
+  // ── State helpers ──
 
   function updateProject(nextProject: ProjectState): void {
     setState((current) => ({
@@ -112,10 +123,7 @@ export default function App() {
   function setWorkspaceMode(mode: WorkspaceMode): void {
     setState((current) => ({
       ...current,
-      ui: {
-        ...current.ui,
-        workspaceMode: mode,
-      },
+      ui: { ...current.ui, workspaceMode: mode },
     }));
   }
 
@@ -127,30 +135,30 @@ export default function App() {
         ui: {
           ...current.ui,
           activeTabId: tabId,
-          selectedAssemblyId:
-            tab?.type === "assembly"
-              ? tab.assemblyId ?? current.ui.selectedAssemblyId
-              : current.ui.selectedAssemblyId,
+          selectedStairId: tab?.stairId ?? current.ui.selectedStairId,
+          selectedFlightId: tab?.flightId ?? current.ui.selectedFlightId,
         },
       };
     });
   }
 
-  function ensureAssemblyTab(assembly: AssemblyRecord): void {
-    const tabId = `assembly-${assembly.id}`;
+  function ensureFlightTab(stair: StairRecord, flight: FlightRecord): void {
+    const tabId = `flight-${flight.id}`;
+    const title = `${stair.name} / Flight ${flight.order}`;
     setState((current) => {
       const exists = current.ui.openTabs.some((tab) => tab.id === tabId);
       const nextTabs = exists
         ? current.ui.openTabs.map((tab) =>
-            tab.id === tabId ? { ...tab, title: assembly.name } : tab,
+            tab.id === tabId ? { ...tab, title } : tab,
           )
         : [
             ...current.ui.openTabs,
             {
               id: tabId,
-              type: "assembly",
-              title: assembly.name,
-              assemblyId: assembly.id,
+              type: "flight",
+              title,
+              stairId: stair.id,
+              flightId: flight.id,
             } satisfies OpenTab,
           ];
 
@@ -160,7 +168,11 @@ export default function App() {
           ...current.ui,
           openTabs: nextTabs,
           activeTabId: tabId,
-          selectedAssemblyId: assembly.id,
+          selectedStairId: stair.id,
+          selectedFlightId: flight.id,
+          expandedStairIds: current.ui.expandedStairIds.includes(stair.id)
+            ? current.ui.expandedStairIds
+            : [...current.ui.expandedStairIds, stair.id],
         },
       };
     });
@@ -168,7 +180,6 @@ export default function App() {
 
   function closeTab(tabId: string): void {
     if (tabId === "welcome") return;
-
     setState((current) => {
       const nextTabs = current.ui.openTabs.filter((tab) => tab.id !== tabId);
       return {
@@ -176,193 +187,446 @@ export default function App() {
         ui: {
           ...current.ui,
           openTabs: nextTabs.length > 0 ? nextTabs : current.ui.openTabs,
-          activeTabId: current.ui.activeTabId === tabId ? "welcome" : current.ui.activeTabId,
+          activeTabId:
+            current.ui.activeTabId === tabId
+              ? "welcome"
+              : current.ui.activeTabId,
         },
       };
     });
   }
 
-  function createAssemblyForCategory(category: PACategory): void {
-    const template = starterLibrary.find((entry) => entry.category === category);
-    if (!template) return;
+  function toggleExpanded(stairId: string): void {
+    setState((current) => ({
+      ...current,
+      ui: {
+        ...current.ui,
+        expandedStairIds: current.ui.expandedStairIds.includes(stairId)
+          ? current.ui.expandedStairIds.filter((id) => id !== stairId)
+          : [...current.ui.expandedStairIds, stairId],
+      },
+    }));
+  }
 
+  // ── CRUD ──
+
+  function addStair(config: {
+    name: string;
+    numFlights: number;
+    mode: StairInputMode;
+    totalRisers?: number;
+    stairWidth: number;
+  }): void {
     const now = new Date().toISOString();
-    const groupId = project.groups[0]?.id ?? makeId("group");
-    const assembly: AssemblyRecord = {
-      id: makeId("assembly"),
-      groupId,
-      templateId: template.id,
-      name: `${template.name} ${countAssembliesForTemplate(project.assemblies, template.id) + 1}`,
-      quantity: 1,
-      values: {},
+    const stairId = makeId("stair");
+
+    let risersPerFlight: number[] | null = null;
+    if (config.mode === "averaged" && config.totalRisers) {
+      risersPerFlight = distributeRisers(
+        config.totalRisers,
+        config.numFlights,
+      );
+    }
+
+    const flights: FlightRecord[] = Array.from(
+      { length: config.numFlights },
+      (_, i): FlightRecord => {
+        const stairValues: Record<string, VariableValue> = {
+          stairWidth: config.stairWidth,
+        };
+        if (risersPerFlight) {
+          stairValues.numRisers = risersPerFlight[i];
+          stairValues.numTreads = risersPerFlight[i] - 1;
+        }
+        return {
+          id: makeId("flight"),
+          order: i + 1,
+          stairValues,
+          landingValues: null,
+          createdAt: now,
+          updatedAt: now,
+        };
+      },
+    );
+
+    const newStair: StairRecord = {
+      id: stairId,
+      name: config.name,
+      inputMode: config.mode,
+      totalRisers: config.totalRisers,
+      defaultStairWidth: config.stairWidth,
+      flights,
       createdAt: now,
       updatedAt: now,
     };
 
     updateProject({
       ...project,
-      groups:
-        project.groups.length > 0
-          ? project.groups
-          : [
-              {
-                id: groupId,
-                name: "Default",
-                note: "",
-                createdAt: now,
-              },
-            ],
-      assemblies: [...project.assemblies, assembly],
+      stairs: [...project.stairs, newStair],
     });
 
-    ensureAssemblyTab(assembly);
+    ensureFlightTab(newStair, flights[0]);
+    setAddStairOpen(false);
   }
 
-  function createAssemblyFromTemplate(templateId: string): void {
-    const template = starterLibrary.find((entry) => entry.id === templateId);
-    if (!template) return;
-    createAssemblyForCategory(template.category);
-  }
-
-  function updateAssemblyQuantity(quantity: number): void {
-    if (!activeAssembly) return;
-    const next = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
-    updateProject({
-      ...project,
-      assemblies: project.assemblies.map((assembly) =>
-        assembly.id === activeAssembly.id
-          ? { ...assembly, quantity: next, updatedAt: new Date().toISOString() }
-          : assembly,
-      ),
-    });
-  }
-
-  function updateAssemblyValue(key: string, value: VariableValue, draft?: string): void {
-    if (!activeAssembly) return;
-
-    updateProject({
-      ...project,
-      assemblies: project.assemblies.map((assembly) =>
-        assembly.id === activeAssembly.id
-          ? {
-              ...assembly,
-              values: {
-                ...assembly.values,
-                [key]: value,
-              },
-              updatedAt: new Date().toISOString(),
-            }
-          : assembly,
-      ),
-    });
-
-    setState((current) => ({
-      ...current,
-      drafts: {
-        ...current.drafts,
-        [activeAssembly.id]: {
-          ...(current.drafts[activeAssembly.id] ?? {}),
-          ...(draft !== undefined ? { [key]: draft } : {}),
-        },
-      },
-    }));
-  }
-
-  function deleteAssembly(assemblyId: string): void {
-    const target = project.assemblies.find((assembly) => assembly.id === assemblyId);
+  function deleteStair(stairId: string): void {
+    const target = project.stairs.find((s) => s.id === stairId);
     if (!target) return;
-    if (!window.confirm(`Delete "${target.name}"? This cannot be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete "${target.name}" and all its flights? This cannot be undone.`,
+      )
+    )
+      return;
 
-    const tabId = `assembly-${assemblyId}`;
+    const flightIds = new Set(target.flights.map((f) => f.id));
     setState((current) => {
-      const nextAssemblies = current.project.assemblies.filter(
-        (assembly) => assembly.id !== assemblyId,
+      const nextTabs = current.ui.openTabs.filter(
+        (tab) =>
+          tab.type !== "flight" || !flightIds.has(tab.flightId ?? ""),
       );
-      const nextTabs = current.ui.openTabs.filter((tab) => tab.id !== tabId);
-      const { [assemblyId]: _removed, ...nextDrafts } = current.drafts;
+      const nextDrafts = { ...current.drafts };
+      for (const fId of flightIds) {
+        delete nextDrafts[`${fId}-stair`];
+        delete nextDrafts[`${fId}-landing`];
+      }
+
+      const activeFlightId =
+        current.ui.openTabs.find(
+          (t) => t.id === current.ui.activeTabId,
+        )?.flightId ?? "";
 
       return {
         ...current,
         project: {
           ...current.project,
-          assemblies: nextAssemblies,
+          stairs: current.project.stairs.filter((s) => s.id !== stairId),
           updatedAt: new Date().toISOString(),
         },
         ui: {
           ...current.ui,
-          openTabs: nextTabs.length > 0 ? nextTabs : [{ id: "welcome", type: "welcome", title: "Welcome" }],
-          activeTabId:
-            current.ui.activeTabId === tabId
-              ? nextTabs[0]?.id ?? "welcome"
-              : current.ui.activeTabId,
-          selectedAssemblyId:
-            current.ui.selectedAssemblyId === assemblyId
+          openTabs:
+            nextTabs.length > 0
+              ? nextTabs
+              : [{ id: "welcome", type: "welcome" as const, title: "Welcome" }],
+          activeTabId: flightIds.has(activeFlightId)
+            ? "welcome"
+            : current.ui.activeTabId,
+          selectedStairId:
+            current.ui.selectedStairId === stairId
               ? null
-              : current.ui.selectedAssemblyId,
+              : current.ui.selectedStairId,
+          selectedFlightId: flightIds.has(
+            current.ui.selectedFlightId ?? "",
+          )
+            ? null
+            : current.ui.selectedFlightId,
+          expandedStairIds: current.ui.expandedStairIds.filter(
+            (id) => id !== stairId,
+          ),
         },
         drafts: nextDrafts,
       };
     });
   }
 
-  function duplicateAssembly(assemblyId: string): void {
-    const source = project.assemblies.find((assembly) => assembly.id === assemblyId);
-    if (!source) return;
+  function renameStair(stairId: string, name: string): void {
+    const now = new Date().toISOString();
+    setState((current) => ({
+      ...current,
+      project: {
+        ...current.project,
+        stairs: current.project.stairs.map((s) =>
+          s.id === stairId ? { ...s, name, updatedAt: now } : s,
+        ),
+        updatedAt: now,
+      },
+      ui: {
+        ...current.ui,
+        openTabs: current.ui.openTabs.map((tab) => {
+          if (tab.stairId === stairId && tab.type === "flight") {
+            const flight = current.project.stairs
+              .find((s) => s.id === stairId)
+              ?.flights.find((f) => f.id === tab.flightId);
+            return {
+              ...tab,
+              title: `${name} / Flight ${flight?.order ?? "?"}`,
+            };
+          }
+          return tab;
+        }),
+      },
+    }));
+    setRenamingStairId(null);
+  }
+
+  function addFlight(stairId: string): void {
+    const stair = project.stairs.find((s) => s.id === stairId);
+    if (!stair) return;
 
     const now = new Date().toISOString();
-    const copy: AssemblyRecord = {
-      ...source,
-      id: makeId("assembly"),
-      name: `${source.name} (Copy)`,
-      values: { ...source.values },
+    const newFlight: FlightRecord = {
+      id: makeId("flight"),
+      order: stair.flights.length + 1,
+      stairValues: stair.defaultStairWidth
+        ? { stairWidth: stair.defaultStairWidth }
+        : {},
+      landingValues: null,
       createdAt: now,
       updatedAt: now,
     };
 
     updateProject({
       ...project,
-      assemblies: [...project.assemblies, copy],
+      stairs: project.stairs.map((s) =>
+        s.id === stairId
+          ? { ...s, flights: [...s.flights, newFlight], updatedAt: now }
+          : s,
+      ),
     });
-    ensureAssemblyTab(copy);
+
+    const updatedStair = {
+      ...stair,
+      flights: [...stair.flights, newFlight],
+    };
+    ensureFlightTab(updatedStair, newFlight);
+  }
+
+  function deleteFlight(stairId: string, flightId: string): void {
+    const stair = project.stairs.find((s) => s.id === stairId);
+    if (!stair) return;
+    if (stair.flights.length <= 1) {
+      window.alert("A stair must have at least one flight.");
+      return;
+    }
+
+    const flight = stair.flights.find((f) => f.id === flightId);
+    if (!flight) return;
+    if (
+      !window.confirm(
+        `Delete Flight ${flight.order} from "${stair.name}"?`,
+      )
+    )
+      return;
+
+    const now = new Date().toISOString();
+    const nextFlights = stair.flights
+      .filter((f) => f.id !== flightId)
+      .map((f, i) => ({ ...f, order: i + 1 }));
+
+    const tabId = `flight-${flightId}`;
+    setState((current) => {
+      const nextTabs = current.ui.openTabs.filter(
+        (tab) => tab.id !== tabId,
+      );
+      const nextDrafts = { ...current.drafts };
+      delete nextDrafts[`${flightId}-stair`];
+      delete nextDrafts[`${flightId}-landing`];
+
+      const updatedTabs = nextTabs.map((tab) => {
+        if (tab.stairId === stairId && tab.type === "flight") {
+          const updated = nextFlights.find((f) => f.id === tab.flightId);
+          if (updated) {
+            return {
+              ...tab,
+              title: `${stair.name} / Flight ${updated.order}`,
+            };
+          }
+        }
+        return tab;
+      });
+
+      return {
+        ...current,
+        project: {
+          ...current.project,
+          stairs: current.project.stairs.map((s) =>
+            s.id === stairId
+              ? { ...s, flights: nextFlights, updatedAt: now }
+              : s,
+          ),
+          updatedAt: now,
+        },
+        ui: {
+          ...current.ui,
+          openTabs:
+            updatedTabs.length > 0
+              ? updatedTabs
+              : [{ id: "welcome", type: "welcome" as const, title: "Welcome" }],
+          activeTabId:
+            current.ui.activeTabId === tabId
+              ? (updatedTabs[0]?.id ?? "welcome")
+              : current.ui.activeTabId,
+          selectedFlightId:
+            current.ui.selectedFlightId === flightId
+              ? null
+              : current.ui.selectedFlightId,
+        },
+        drafts: nextDrafts,
+      };
+    });
+  }
+
+  function updateFlightStairValue(
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ): void {
+    if (!activeStair || !activeFlight) return;
+    const now = new Date().toISOString();
+
+    updateProject({
+      ...project,
+      stairs: project.stairs.map((s) =>
+        s.id === activeStair.id
+          ? {
+              ...s,
+              flights: s.flights.map((f) =>
+                f.id === activeFlight.id
+                  ? {
+                      ...f,
+                      stairValues: { ...f.stairValues, [key]: value },
+                      updatedAt: now,
+                    }
+                  : f,
+              ),
+              updatedAt: now,
+            }
+          : s,
+      ),
+    });
+
+    if (draft !== undefined) {
+      setState((current) => ({
+        ...current,
+        drafts: {
+          ...current.drafts,
+          [`${activeFlight.id}-stair`]: {
+            ...(current.drafts[`${activeFlight.id}-stair`] ?? {}),
+            [key]: draft,
+          },
+        },
+      }));
+    }
+  }
+
+  function updateFlightLandingValue(
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ): void {
+    if (!activeStair || !activeFlight || !activeFlight.landingValues) return;
+    const now = new Date().toISOString();
+
+    updateProject({
+      ...project,
+      stairs: project.stairs.map((s) =>
+        s.id === activeStair.id
+          ? {
+              ...s,
+              flights: s.flights.map((f) =>
+                f.id === activeFlight.id
+                  ? {
+                      ...f,
+                      landingValues: {
+                        ...f.landingValues!,
+                        [key]: value,
+                      },
+                      updatedAt: now,
+                    }
+                  : f,
+              ),
+              updatedAt: now,
+            }
+          : s,
+      ),
+    });
+
+    if (draft !== undefined) {
+      setState((current) => ({
+        ...current,
+        drafts: {
+          ...current.drafts,
+          [`${activeFlight.id}-landing`]: {
+            ...(current.drafts[`${activeFlight.id}-landing`] ?? {}),
+            [key]: draft,
+          },
+        },
+      }));
+    }
+  }
+
+  function toggleLanding(): void {
+    if (!activeStair || !activeFlight) return;
+    const now = new Date().toISOString();
+    const hasLanding = activeFlight.landingValues !== null;
+
+    updateProject({
+      ...project,
+      stairs: project.stairs.map((s) =>
+        s.id === activeStair.id
+          ? {
+              ...s,
+              flights: s.flights.map((f) =>
+                f.id === activeFlight.id
+                  ? {
+                      ...f,
+                      landingValues: hasLanding ? null : {},
+                      updatedAt: now,
+                    }
+                  : f,
+              ),
+              updatedAt: now,
+            }
+          : s,
+      ),
+    });
   }
 
   function handleExport(): void {
-    if (!activeAssembly || !activeTemplate || !evaluation?.result) return;
-    const csv = exportItemsToCsv(evaluation.result.items);
-    const safeName = activeAssembly.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    downloadTextFile(`${safeName || activeTemplate.id}.csv`, csv, "text/csv;charset=utf-8");
-  }
-
-  function submitCommand(templateId: string): void {
-    createAssemblyFromTemplate(templateId);
-    setCommandText("");
+    if (!activeFlight || allItems.length === 0) return;
+    const csv = exportItemsToCsv(allItems);
+    const safeName = (activeStair?.name ?? "flight")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+    downloadTextFile(
+      `${safeName}-flight-${activeFlight.order}.csv`,
+      csv,
+      "text/csv;charset=utf-8",
+    );
   }
 
   function toggleAiPanel(): void {
     setState((current) => ({
       ...current,
-      ui: {
-        ...current.ui,
-        aiPanelOpen: !current.ui.aiPanelOpen,
-      },
+      ui: { ...current.ui, aiPanelOpen: !current.ui.aiPanelOpen },
     }));
   }
 
   function handleReset(): void {
-    if (!window.confirm("Reset the workbench demo back to its starting state?")) return;
+    if (
+      !window.confirm(
+        "Reset the workbench demo back to its starting state?",
+      )
+    )
+      return;
     setState(resetState());
     setSearch("");
-    setCommandText("");
     setAiInput("");
   }
+
+  // ── JSX ──
 
   return (
     <div className="flex min-h-screen flex-col px-4 py-4 text-white md:px-6">
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
         <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,17,30,0.98),rgba(8,13,24,0.98))] shadow-glow">
+          {/* Header */}
           <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div className="flex items-center gap-3 text-sm">
-              <div className="font-semibold tracking-[0.16em] text-white">TakeoffAI</div>
+              <div className="font-semibold tracking-[0.16em] text-white">
+                TakeoffAI
+              </div>
               <div className="text-white/35">▸</div>
               <div className="text-white/72">{project.name}</div>
             </div>
@@ -390,6 +654,7 @@ export default function App() {
             </div>
           </header>
 
+          {/* Main grid */}
           <div
             className={`grid min-h-0 flex-1 ${
               state.ui.aiPanelOpen
@@ -397,10 +662,11 @@ export default function App() {
                 : "xl:grid-cols-[260px_minmax(0,1fr)]"
             }`}
           >
+            {/* ── Left panel: Stair tree ── */}
             <aside className="border-b border-white/10 bg-white/[0.02] xl:border-b-0 xl:border-r">
               <div className="px-4 py-4">
                 <div className="text-xs uppercase tracking-[0.22em] text-white/45">
-                  Assemblies
+                  Stairs
                 </div>
                 <div className="mt-4">
                   <input
@@ -413,151 +679,219 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="space-y-4 px-4 pb-4">
-                {CATEGORY_SECTIONS.map((section) => {
-                  const sectionTemplates = starterLibrary
-                    .filter((template) => template.category === section.key)
-                    .map((template) => template.id);
-                  const sectionAssemblies = filteredAssemblies.filter((assembly) =>
-                    sectionTemplates.includes(assembly.templateId),
+              <div className="space-y-1 px-4 pb-4">
+                {filteredStairs.map((stair) => {
+                  const expanded = state.ui.expandedStairIds.includes(
+                    stair.id,
                   );
+                  const isRenaming = renamingStairId === stair.id;
 
                   return (
-                    <div key={section.key}>
-                      <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-white/45">
-                        <span>▾ {section.label}</span>
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        {sectionAssemblies.map((assembly) => {
-                          const complete = getCompletionPercentForAssembly(assembly);
-                          const active = activeAssembly?.id === assembly.id;
-                          const status: "empty" | "in-progress" | "complete" =
-                            complete === 100
-                              ? "complete"
-                              : complete === 0
-                                ? "empty"
-                                : "in-progress";
-                          const dotClass = active
-                            ? "bg-slate-950"
-                            : status === "complete"
-                              ? "bg-emerald-400"
-                              : status === "in-progress"
-                                ? "bg-amber-400"
-                                : "bg-white/22";
-
-                          return (
-                            <div
-                              key={assembly.id}
-                              className={`group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm transition ${
-                                active
-                                  ? "bg-white text-slate-950"
-                                  : "text-white/72 hover:bg-white/[0.06] hover:text-white"
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => ensureAssemblyTab(assembly)}
-                                className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                                title={`${status} — ${complete}%`}
-                              >
-                                <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
-                                <span className="truncate">{assembly.name}</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  deleteAssembly(assembly.id);
-                                }}
-                                title="Delete"
-                                className={`opacity-0 transition group-hover:opacity-100 ${
-                                  active
-                                    ? "text-slate-500 hover:text-red-500"
-                                    : "text-white/40 hover:text-red-300"
-                                }`}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          );
-                        })}
+                    <div key={stair.id}>
+                      {/* Stair header row */}
+                      <div className="group flex items-center gap-1 rounded-lg px-2 py-2 text-sm text-white/72 hover:bg-white/[0.06]">
                         <button
                           type="button"
-                          onClick={() => createAssemblyForCategory(section.key)}
-                          className="w-full rounded-lg px-2 py-2 text-left text-sm text-cyan-200/85 transition hover:bg-white/[0.06] hover:text-cyan-100"
+                          onClick={() => toggleExpanded(stair.id)}
+                          className="shrink-0 text-white/45 hover:text-white/70"
                         >
-                          + {section.addLabel}
+                          {expanded ? "▾" : "▸"}
+                        </button>
+
+                        {isRenaming ? (
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) =>
+                              setRenameValue(e.target.value)
+                            }
+                            onBlur={() => {
+                              if (renameValue.trim())
+                                renameStair(
+                                  stair.id,
+                                  renameValue.trim(),
+                                );
+                              setRenamingStairId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === "Enter" &&
+                                renameValue.trim()
+                              ) {
+                                renameStair(
+                                  stair.id,
+                                  renameValue.trim(),
+                                );
+                              } else if (e.key === "Escape") {
+                                setRenamingStairId(null);
+                              }
+                            }}
+                            autoFocus
+                            className="min-w-0 flex-1 rounded border border-cyan-300/40 bg-slate-950/65 px-1 py-0.5 text-sm text-white outline-none"
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toggleExpanded(stair.id)}
+                            onDoubleClick={() => {
+                              setRenamingStairId(stair.id);
+                              setRenameValue(stair.name);
+                            }}
+                            className="min-w-0 flex-1 truncate text-left font-medium"
+                            title={`${stair.name} (${stair.flights.length} flights) — double-click to rename`}
+                          >
+                            {stair.name}
+                          </button>
+                        )}
+
+                        <span className="shrink-0 text-xs text-white/35">
+                          {stair.flights.length}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addFlight(stair.id);
+                          }}
+                          title="Add flight"
+                          className="shrink-0 text-white/35 opacity-0 transition group-hover:opacity-100 hover:text-cyan-300"
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteStair(stair.id);
+                          }}
+                          title="Delete stair"
+                          className="shrink-0 text-white/35 opacity-0 transition group-hover:opacity-100 hover:text-red-300"
+                        >
+                          ×
                         </button>
                       </div>
+
+                      {/* Nested flights */}
+                      {expanded && (
+                        <div className="ml-4 space-y-0.5">
+                          {stair.flights.map((flight) => {
+                            const active =
+                              activeFlight?.id === flight.id;
+                            const risers =
+                              flight.stairValues.numRisers;
+                            const treads =
+                              flight.stairValues.numTreads;
+                            const hasData =
+                              risers != null || treads != null;
+
+                            return (
+                              <div
+                                key={flight.id}
+                                className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition ${
+                                  active
+                                    ? "bg-white text-slate-950"
+                                    : "text-white/65 hover:bg-white/[0.06] hover:text-white"
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    ensureFlightTab(stair, flight)
+                                  }
+                                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                                >
+                                  <span
+                                    className={`h-2 w-2 rounded-full ${
+                                      active
+                                        ? "bg-slate-950"
+                                        : hasData
+                                          ? "bg-emerald-400"
+                                          : "bg-white/22"
+                                    }`}
+                                  />
+                                  <span className="truncate">
+                                    Flight {flight.order}
+                                  </span>
+                                  {hasData && (
+                                    <span
+                                      className={`text-xs ${active ? "text-slate-500" : "text-white/35"}`}
+                                    >
+                                      {treads != null
+                                        ? `${treads}T`
+                                        : ""}
+                                      {treads != null &&
+                                      risers != null
+                                        ? " / "
+                                        : ""}
+                                      {risers != null
+                                        ? `${risers}R`
+                                        : ""}
+                                    </span>
+                                  )}
+                                </button>
+                                {flight.landingValues && (
+                                  <span
+                                    className={`text-[10px] ${active ? "text-slate-400" : "text-white/30"}`}
+                                    title="Has landing"
+                                  >
+                                    L
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteFlight(
+                                      stair.id,
+                                      flight.id,
+                                    );
+                                  }}
+                                  title="Delete flight"
+                                  className={`opacity-0 transition group-hover:opacity-100 ${
+                                    active
+                                      ? "text-slate-500 hover:text-red-500"
+                                      : "text-white/40 hover:text-red-300"
+                                  }`}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
+                <button
+                  type="button"
+                  onClick={() => setAddStairOpen(true)}
+                  className="mt-2 w-full rounded-lg px-2 py-2 text-left text-sm text-cyan-200/85 transition hover:bg-white/[0.06] hover:text-cyan-100"
+                >
+                  + Add Stair
+                </button>
               </div>
             </aside>
 
+            {/* ── Center pane ── */}
             <section className="flex min-w-0 flex-col">
               {activeTab?.type === "welcome" ? (
-                <>
-                  <div className="flex-1 px-6 py-6">
-                    <div className="mx-auto max-w-2xl pt-10">
-                      <div className="text-center text-sm text-white/58">
-                        Type a command or click below
-                      </div>
-                      <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-                        <div className="flex items-center gap-3 text-sm text-white/74">
-                          <span className="text-cyan-300">&gt;</span>
-                          <input
-                            type="text"
-                            value={commandText}
-                            onChange={(event) => setCommandText(event.target.value)}
-                            placeholder="Add stair"
-                            className="w-full bg-transparent outline-none placeholder:text-white/28"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mt-10">
-                        <div className="text-sm text-white/52">Quick actions</div>
-                        <div className="mt-4 grid gap-3 md:grid-cols-2">
-                          <QuickAction label="New stair" onClick={() => submitCommand("stair-channel")} />
-                          <QuickAction label="New landing" onClick={() => submitCommand("landing-channel")} />
-                          <QuickAction label="New rail" onClick={() => submitCommand("hss-rail-pickets")} />
-                          <QuickAction label="New ladder" onClick={() => submitCommand("roof-ladder")} />
-                          <QuickAction label="Import from PowerFab" muted />
-                          <QuickAction label="Export CSV" onClick={handleExport} muted={!activeAssembly} />
-                        </div>
-                      </div>
-
-                      <div className="mt-10">
-                        <div className="text-sm text-white/52">Recent</div>
-                        <div className="mt-4 space-y-2">
-                          {recentAssemblies.map((assembly) => (
-                            <button
-                              key={assembly.id}
-                              type="button"
-                              onClick={() => ensureAssemblyTab(assembly)}
-                              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-white/72 transition hover:bg-white/[0.05] hover:text-white"
-                            >
-                              <span className="text-white/35">◦</span>
-                              <span>
-                                {assembly.name}{" "}
-                                <span className="text-white/38">
-                                  (edited {relativeEditedLabel(assembly.updatedAt)})
-                                </span>
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                <WelcomeView
+                  stairs={project.stairs}
+                  onAddStair={() => setAddStairOpen(true)}
+                  onSelectFlight={(stair, flight) =>
+                    ensureFlightTab(stair, flight)
+                  }
+                />
               ) : (
                 <>
+                  {/* Tabs */}
                   <div className="border-b border-white/10 px-4 py-3">
                     <div className="flex gap-2 overflow-x-auto">
                       {state.ui.openTabs
-                        .filter((tab) => tab.type === "assembly")
+                        .filter((tab) => tab.type === "flight")
                         .map((tab) => (
                           <button
                             key={tab.id}
@@ -584,41 +918,61 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Flight editor */}
                   <div className="flex-1 overflow-auto px-6 py-5">
-                    {activeAssembly && activeTemplate ? (
-                      <AssemblyEditor
-                        assembly={activeAssembly}
-                        template={activeTemplate}
-                        evaluation={evaluation}
-                        drafts={activeDrafts}
+                    {activeStair && activeFlight ? (
+                      <FlightEditor
+                        stair={activeStair}
+                        flight={activeFlight}
+                        stairEvaluation={stairEvaluation}
+                        landingEvaluation={landingEvaluation}
+                        stairDrafts={
+                          state.drafts[
+                            `${activeFlight.id}-stair`
+                          ] ?? {}
+                        }
+                        landingDrafts={
+                          state.drafts[
+                            `${activeFlight.id}-landing`
+                          ] ?? {}
+                        }
                         workspaceMode={state.ui.workspaceMode}
                         onSetWorkspaceMode={setWorkspaceMode}
-                        onValueChange={updateAssemblyValue}
-                        onQuantityChange={updateAssemblyQuantity}
+                        onStairValueChange={updateFlightStairValue}
+                        onLandingValueChange={
+                          updateFlightLandingValue
+                        }
+                        onToggleLanding={toggleLanding}
                         onExport={handleExport}
-                        onDuplicate={() => duplicateAssembly(activeAssembly.id)}
-                        onDelete={() => deleteAssembly(activeAssembly.id)}
+                        onDeleteFlight={() =>
+                          deleteFlight(
+                            activeStair.id,
+                            activeFlight.id,
+                          )
+                        }
                       />
                     ) : (
                       <div className="py-16 text-center text-sm text-white/42">
-                        Select an assembly to begin editing.
+                        Select a flight to begin editing.
                       </div>
                     )}
                   </div>
                 </>
               )}
 
+              {/* Footer */}
               <footer className="border-t border-white/10 bg-slate-950/55 px-5 py-2.5 text-xs text-white/48">
-                Project: {project.assemblies.length} assemblies · {completedAssemblies} complete ·{" "}
-                {project.assemblies.length - completedAssemblies} in progress
+                {project.stairs.length} stairs · {totalFlights} flights ·{" "}
+                {completedFlights} complete
                 <span className="float-right">
-                  {activeAssembly ? "editing · " : ""}
+                  {activeFlight ? "editing · " : ""}
                   saved ✓
                 </span>
               </footer>
             </section>
 
-            {state.ui.aiPanelOpen ? (
+            {/* ── AI panel ── */}
+            {state.ui.aiPanelOpen && (
               <aside className="border-t border-white/10 bg-white/[0.02] xl:border-l xl:border-t-0">
                 <div className="px-4 py-4">
                   <div className="text-xs uppercase tracking-[0.22em] text-white/45">
@@ -626,40 +980,25 @@ export default function App() {
                   </div>
                 </div>
                 <div className="flex h-full flex-col px-4 pb-4">
-                  {activeTab?.type === "welcome" ? (
-                    <div className="space-y-4 text-sm leading-6 text-white/66">
-                      <p>Hi. Tell me what you want to add.</p>
-                      <p>You can describe it in plain English.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 text-sm leading-6 text-white/66">
-                      <div>
-                        <div className="text-white/45">You:</div>
-                        <div>change the stringer to HSS</div>
-                      </div>
-                      <div>
-                        <div className="text-white/45">AI:</div>
-                        <div>
-                          Done. I&apos;ve updated the shape to HSS and set the size to
-                          HSS8X8X1/2.
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-4 text-sm leading-6 text-white/66">
+                    <p>Hi. Tell me what you want to add or change.</p>
+                    <p>You can describe it in plain English.</p>
+                  </div>
 
-                  {activeTab?.type !== "welcome" && (
-                    <div className="mt-6 border-t border-white/10 pt-4 text-xs text-white/40">
-                      Future role: edit the active tab in plain English, explain
-                      missing inputs, and assist without leaving the workbench.
-                    </div>
-                  )}
+                  <div className="mt-6 border-t border-white/10 pt-4 text-xs text-white/40">
+                    Future: edit flights in plain English, explain
+                    missing inputs, and assist without leaving the
+                    workbench.
+                  </div>
 
                   <div className="mt-auto pt-6">
                     <div className="rounded-xl border border-white/10 bg-slate-950/65 px-3 py-2.5 text-sm text-white/70">
                       <input
                         type="text"
                         value={aiInput}
-                        onChange={(event) => setAiInput(event.target.value)}
+                        onChange={(event) =>
+                          setAiInput(event.target.value)
+                        }
                         placeholder="Type here…"
                         className="w-full bg-transparent outline-none placeholder:text-white/28"
                       />
@@ -667,17 +1006,518 @@ export default function App() {
                   </div>
                 </div>
               </aside>
-            ) : null}
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* Add Stair dialog */}
+      {addStairOpen && (
+        <AddStairDialog
+          nextStairNumber={project.stairs.length + 1}
+          onConfirm={addStair}
+          onCancel={() => setAddStairOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function WelcomeView({
+  stairs,
+  onAddStair,
+  onSelectFlight,
+}: {
+  stairs: StairRecord[];
+  onAddStair: () => void;
+  onSelectFlight: (stair: StairRecord, flight: FlightRecord) => void;
+}) {
+  const recentFlights = stairs
+    .flatMap((stair) => stair.flights.map((flight) => ({ stair, flight })))
+    .sort(
+      (a, b) =>
+        Date.parse(b.flight.updatedAt) - Date.parse(a.flight.updatedAt),
+    )
+    .slice(0, 5);
+
+  return (
+    <div className="flex-1 px-6 py-6">
+      <div className="mx-auto max-w-2xl pt-10">
+        <div className="text-center text-sm text-white/58">
+          Your stair assemblies
+        </div>
+
+        <div className="mt-10">
+          <div className="text-sm text-white/52">Quick actions</div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <QuickAction label="New stair" onClick={onAddStair} />
+            <QuickAction label="Import from PowerFab" muted />
+          </div>
+        </div>
+
+        {recentFlights.length > 0 && (
+          <div className="mt-10">
+            <div className="text-sm text-white/52">Recent flights</div>
+            <div className="mt-4 space-y-2">
+              {recentFlights.map(({ stair, flight }) => (
+                <button
+                  key={flight.id}
+                  type="button"
+                  onClick={() => onSelectFlight(stair, flight)}
+                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-white/72 transition hover:bg-white/[0.05] hover:text-white"
+                >
+                  <span className="text-white/35">◦</span>
+                  <span>
+                    {stair.name} / Flight {flight.order}
+                    <span className="ml-2 text-white/38">
+                      (edited{" "}
+                      {relativeEditedLabel(flight.updatedAt)})
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FlightEditor({
+  stair,
+  flight,
+  stairEvaluation,
+  landingEvaluation,
+  stairDrafts,
+  landingDrafts,
+  workspaceMode,
+  onSetWorkspaceMode,
+  onStairValueChange,
+  onLandingValueChange,
+  onToggleLanding,
+  onExport,
+  onDeleteFlight,
+}: {
+  stair: StairRecord;
+  flight: FlightRecord;
+  stairEvaluation: {
+    result: EvaluateResult | null;
+    error: string | null;
+  } | null;
+  landingEvaluation: {
+    result: EvaluateResult | null;
+    error: string | null;
+  } | null;
+  stairDrafts: Record<string, string>;
+  landingDrafts: Record<string, string>;
+  workspaceMode: WorkspaceMode;
+  onSetWorkspaceMode: (mode: WorkspaceMode) => void;
+  onStairValueChange: (
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ) => void;
+  onLandingValueChange: (
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ) => void;
+  onToggleLanding: () => void;
+  onExport: () => void;
+  onDeleteFlight: () => void;
+}) {
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xl font-semibold text-white">
+            {stair.name}
+            <span className="ml-2 text-base font-normal text-white/55">
+              / Flight {flight.order}
+            </span>
+          </div>
+          <div className="mt-2 text-sm text-white/55">
+            {stair.inputMode === "averaged"
+              ? "Averaged mode"
+              : "Per-flight mode"}
+            {stair.totalRisers
+              ? ` · ${stair.totalRisers} total risers`
+              : ""}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <ModeButton
+            active={workspaceMode === "workbench"}
+            onClick={() => onSetWorkspaceMode("workbench")}
+          >
+            Workbench
+          </ModeButton>
+          <ModeButton
+            active={workspaceMode === "drawing"}
+            onClick={() => onSetWorkspaceMode("drawing")}
+          >
+            Drawing
+          </ModeButton>
+          <ModeButton
+            active={workspaceMode === "split"}
+            onClick={() => onSetWorkspaceMode("split")}
+          >
+            Split
+          </ModeButton>
+        </div>
+      </div>
+
+      {workspaceMode === "drawing" ? (
+        <SimpleDrawingView />
+      ) : workspaceMode === "split" ? (
+        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
+          <FlightForms
+            flight={flight}
+            stairEvaluation={stairEvaluation}
+            landingEvaluation={landingEvaluation}
+            stairDrafts={stairDrafts}
+            landingDrafts={landingDrafts}
+            onStairValueChange={onStairValueChange}
+            onLandingValueChange={onLandingValueChange}
+            onToggleLanding={onToggleLanding}
+            onExport={onExport}
+            onDeleteFlight={onDeleteFlight}
+          />
+          <SimpleDrawingView compact />
+        </div>
+      ) : (
+        <FlightForms
+          flight={flight}
+          stairEvaluation={stairEvaluation}
+          landingEvaluation={landingEvaluation}
+          stairDrafts={stairDrafts}
+          landingDrafts={landingDrafts}
+          onStairValueChange={onStairValueChange}
+          onLandingValueChange={onLandingValueChange}
+          onToggleLanding={onToggleLanding}
+          onExport={onExport}
+          onDeleteFlight={onDeleteFlight}
+        />
+      )}
+    </div>
+  );
+}
+
+function FlightForms({
+  flight,
+  stairEvaluation,
+  landingEvaluation,
+  stairDrafts,
+  landingDrafts,
+  onStairValueChange,
+  onLandingValueChange,
+  onToggleLanding,
+  onExport,
+  onDeleteFlight,
+}: {
+  flight: FlightRecord;
+  stairEvaluation: {
+    result: EvaluateResult | null;
+    error: string | null;
+  } | null;
+  landingEvaluation: {
+    result: EvaluateResult | null;
+    error: string | null;
+  } | null;
+  stairDrafts: Record<string, string>;
+  landingDrafts: Record<string, string>;
+  onStairValueChange: (
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ) => void;
+  onLandingValueChange: (
+    key: string,
+    value: VariableValue,
+    draft?: string,
+  ) => void;
+  onToggleLanding: () => void;
+  onExport: () => void;
+  onDeleteFlight: () => void;
+}) {
+  const hasLanding = flight.landingValues !== null;
+  const allStairItems = stairEvaluation?.result?.items ?? [];
+  const allLandingItems = landingEvaluation?.result?.items ?? [];
+  const allItems = [...allStairItems, ...allLandingItems];
+
+  return (
+    <div className="space-y-6">
+      {/* Stair section */}
+      <div>
+        <div className="text-sm font-medium text-white/72">Stair</div>
+        <div className="mt-3">
+          <WizardForm
+            variables={stairChannel.variables}
+            values={flight.stairValues}
+            drafts={stairDrafts}
+            onValueChange={onStairValueChange}
+          />
+        </div>
+      </div>
+
+      {/* Landing section */}
+      <div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium text-white/72">
+            Landing
+          </div>
+          <button
+            type="button"
+            onClick={onToggleLanding}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              hasLanding
+                ? "border-red-400/25 text-red-200/70 hover:border-red-400/50 hover:bg-red-500/10"
+                : "border-cyan-300/25 text-cyan-200/70 hover:border-cyan-300/50 hover:bg-cyan-300/10"
+            }`}
+          >
+            {hasLanding ? "Remove landing" : "+ Add landing"}
+          </button>
+        </div>
+        {hasLanding && (
+          <div className="mt-3">
+            <WizardForm
+              variables={landingChannel.variables}
+              values={flight.landingValues!}
+              drafts={landingDrafts}
+              onValueChange={onLandingValueChange}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Items preview */}
+      <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm text-white/58">
+            Items (live preview)
+          </div>
+          <button
+            type="button"
+            onClick={onExport}
+            disabled={allItems.length === 0}
+            className="rounded-full border border-white/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-white/68 transition hover:border-white/20 hover:bg-white/[0.05] disabled:opacity-40"
+          >
+            Export CSV
+          </button>
+        </div>
+
+        {stairEvaluation?.error && (
+          <div className="mt-4 rounded-xl border border-red-400/18 bg-red-400/10 p-4 text-sm text-red-100">
+            Stair: {stairEvaluation.error}
+          </div>
+        )}
+        {landingEvaluation?.error && (
+          <div className="mt-4 rounded-xl border border-red-400/18 bg-red-400/10 p-4 text-sm text-red-100">
+            Landing: {landingEvaluation.error}
+          </div>
+        )}
+
+        {allItems.length > 0 && (
+          <div className="mt-4">
+            <ItemsTable items={allItems} />
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onDeleteFlight}
+          className="rounded-full border border-red-400/25 px-4 py-2.5 text-sm text-red-200/80 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+        >
+          Delete Flight
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AddStairDialog({
+  nextStairNumber,
+  onConfirm,
+  onCancel,
+}: {
+  nextStairNumber: number;
+  onConfirm: (config: {
+    name: string;
+    numFlights: number;
+    mode: StairInputMode;
+    totalRisers?: number;
+    stairWidth: number;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(`Stair ${nextStairNumber}`);
+  const [numFlights, setNumFlights] = useState(3);
+  const [mode, setMode] = useState<StairInputMode>("per-flight");
+  const [totalRisers, setTotalRisers] = useState(45);
+
+  const defaultWidth = ftIn(3, 6);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[rgb(12,18,32)] p-6 shadow-2xl">
+        <div className="text-lg font-semibold text-white">Add Stair</div>
+        <div className="mt-1 text-sm text-white/50">
+          Configure the stair and its flights
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <div>
+            <label className="block text-sm text-white/65">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-white/65">
+              Number of flights
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={numFlights}
+              onChange={(e) =>
+                setNumFlights(Math.max(1, Number(e.target.value)))
+              }
+              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-white/65">
+              Input mode
+            </label>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 text-sm text-white/72">
+                <input
+                  type="radio"
+                  checked={mode === "per-flight"}
+                  onChange={() => setMode("per-flight")}
+                  className="accent-cyan-300"
+                />
+                Per-flight
+              </label>
+              <label className="flex items-center gap-2 text-sm text-white/72">
+                <input
+                  type="radio"
+                  checked={mode === "averaged"}
+                  onChange={() => setMode("averaged")}
+                  className="accent-cyan-300"
+                />
+                Averaged
+              </label>
+            </div>
+            <div className="mt-1 text-xs text-white/40">
+              {mode === "averaged"
+                ? "Enter total risers — they'll be distributed evenly across flights."
+                : "Fill in each flight's treads and risers individually."}
+            </div>
+          </div>
+
+          {mode === "averaged" && (
+            <div>
+              <label className="block text-sm text-white/65">
+                Total risers (all flights)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={totalRisers}
+                onChange={(e) =>
+                  setTotalRisers(Math.max(1, Number(e.target.value)))
+                }
+                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
+              />
+              <div className="mt-1 text-xs text-white/40">
+                ≈ {Math.floor(totalRisers / numFlights)} risers per
+                flight
+                {totalRisers % numFlights > 0 &&
+                  ` (${totalRisers % numFlights} flights get +1)`}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/68 transition hover:border-white/20 hover:bg-white/[0.05]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onConfirm({
+                name: name.trim() || `Stair ${nextStairNumber}`,
+                numFlights,
+                mode,
+                totalRisers:
+                  mode === "averaged" ? totalRisers : undefined,
+                stairWidth: defaultWidth,
+              })
+            }
+            className="rounded-full border border-cyan-300/35 bg-cyan-300/10 px-4 py-2.5 text-sm text-cyan-100 transition hover:bg-cyan-300/20"
+          >
+            Create Stair
+          </button>
         </div>
       </div>
     </div>
   );
+}
 
-  function getCompletionPercentForAssembly(assembly: AssemblyRecord): number {
-    const template = starterLibrary.find((entry) => entry.id === assembly.templateId);
-    return template ? getCompletionPercent(assembly.values, template) : 0;
-  }
+function SimpleDrawingView({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="flex h-full flex-col rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-5">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-white/72">Drawing</div>
+        <span className="rounded-full border border-amber-300/25 bg-amber-300/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-amber-200/85">
+          Coming soon
+        </span>
+      </div>
+      <div
+        className={`mt-4 flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/10 bg-slate-950/50 p-8 text-center ${
+          compact ? "min-h-[380px]" : "min-h-[520px]"
+        }`}
+      >
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-2xl text-white/60">
+          ↥
+        </div>
+        <div className="text-base font-medium text-white/82">
+          Drop a PDF drawing here
+        </div>
+        <div className="mt-2 max-w-sm text-sm leading-6 text-white/52">
+          Upload the sheet for this flight, annotate it, and have the AI
+          pre-fill the form from what it sees.
+        </div>
+        <button
+          type="button"
+          disabled
+          className="mt-5 cursor-not-allowed rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-white/35"
+        >
+          Choose file
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function QuickAction({
@@ -706,222 +1546,6 @@ function QuickAction({
   );
 }
 
-function AssemblyEditor({
-  assembly,
-  template,
-  evaluation,
-  drafts,
-  workspaceMode,
-  onSetWorkspaceMode,
-  onValueChange,
-  onQuantityChange,
-  onExport,
-  onDuplicate,
-  onDelete,
-}: {
-  assembly: AssemblyRecord;
-  template: PATemplate;
-  evaluation:
-    | {
-        result: EvaluateResult | null;
-        error: string | null;
-      }
-    | null;
-  drafts: Record<string, string>;
-  workspaceMode: WorkspaceMode;
-  onSetWorkspaceMode: (mode: WorkspaceMode) => void;
-  onValueChange: (key: string, value: VariableValue, draft?: string) => void;
-  onQuantityChange: (quantity: number) => void;
-  onExport: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-xl font-semibold text-white">{assembly.name}</div>
-          <div className="mt-2 flex items-center gap-3 text-sm text-white/55">
-            <span>Label: {assembly.name}</span>
-            <span className="text-white/20">·</span>
-            <label className="flex items-center gap-2">
-              <span>Quantity</span>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={assembly.quantity}
-                onChange={(event) => onQuantityChange(Number(event.target.value))}
-                className="w-16 rounded-lg border border-white/10 bg-slate-950/65 px-2 py-1 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
-              />
-            </label>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <ModeButton
-            active={workspaceMode === "workbench"}
-            onClick={() => onSetWorkspaceMode("workbench")}
-          >
-            Workbench
-          </ModeButton>
-          <ModeButton
-            active={workspaceMode === "drawing"}
-            onClick={() => onSetWorkspaceMode("drawing")}
-          >
-            Drawing
-          </ModeButton>
-          <ModeButton
-            active={workspaceMode === "split"}
-            onClick={() => onSetWorkspaceMode("split")}
-          >
-            Split
-          </ModeButton>
-        </div>
-      </div>
-
-      {workspaceMode === "drawing" ? (
-        <SimpleDrawingView template={template} />
-      ) : workspaceMode === "split" ? (
-        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
-          <EditorWorkbench
-            assembly={assembly}
-            template={template}
-            evaluation={evaluation}
-            drafts={drafts}
-            onValueChange={onValueChange}
-            onExport={onExport}
-            onDuplicate={onDuplicate}
-            onDelete={onDelete}
-          />
-          <SimpleDrawingView template={template} compact />
-        </div>
-      ) : (
-        <EditorWorkbench
-          assembly={assembly}
-          template={template}
-          evaluation={evaluation}
-          drafts={drafts}
-          onValueChange={onValueChange}
-          onExport={onExport}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-        />
-      )}
-    </div>
-  );
-}
-
-function EditorWorkbench({
-  assembly,
-  template,
-  evaluation,
-  drafts,
-  onValueChange,
-  onExport,
-  onDuplicate,
-  onDelete,
-}: {
-  assembly: AssemblyRecord;
-  template: PATemplate;
-  evaluation:
-    | {
-        result: EvaluateResult | null;
-        error: string | null;
-      }
-    | null;
-  drafts: Record<string, string>;
-  onValueChange: (key: string, value: VariableValue, draft?: string) => void;
-  onExport: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <div className="text-sm text-white/58">Variables</div>
-        <div className="mt-4">
-          <WizardForm
-            variables={template.variables}
-            values={assembly.values}
-            drafts={drafts}
-            onValueChange={onValueChange}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-sm text-white/58">Items (live preview)</div>
-          <button
-            type="button"
-            onClick={onExport}
-            className="rounded-full border border-white/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-white/68 transition hover:border-white/20 hover:bg-white/[0.05]"
-          >
-            Export CSV
-          </button>
-        </div>
-
-        {evaluation?.error ? (
-          <div className="mt-4 rounded-xl border border-red-400/18 bg-red-400/10 p-4 text-sm text-red-100">
-            {evaluation.error}
-          </div>
-        ) : evaluation?.result ? (
-          <div className="mt-4">
-            <ItemsTable items={evaluation.result.items} />
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onDuplicate}
-          className="rounded-full border border-white/10 px-4 py-2.5 text-sm text-white/72 transition hover:border-white/20 hover:bg-white/[0.05]"
-        >
-          Duplicate
-        </button>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded-full border border-red-400/25 px-4 py-2.5 text-sm text-red-200/80 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SimpleDrawingView({
-  template,
-  compact = false,
-}: {
-  template: PATemplate;
-  compact?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-5">
-      <div className="text-sm text-white/58">Drawing placeholder</div>
-      <div
-        className={`mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-5 ${
-          compact ? "min-h-[380px]" : "min-h-[520px]"
-        }`}
-      >
-        <div className="text-xs uppercase tracking-[0.2em] text-white/42">
-          Future drawing review for {template.name}
-        </div>
-        <div className="mt-5 grid gap-3">
-          <div className="h-20 rounded-xl border border-white/8 bg-white/[0.04]" />
-          <div className="grid grid-cols-[1.15fr_0.85fr] gap-3">
-            <div className="h-36 rounded-xl border border-white/8 bg-white/[0.04]" />
-            <div className="h-36 rounded-xl border border-white/8 bg-white/[0.04]" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ModeButton({
   active,
   onClick,
@@ -946,27 +1570,21 @@ function ModeButton({
   );
 }
 
-function countAssembliesForTemplate(assemblies: AssemblyRecord[], templateId: string): number {
-  return assemblies.filter((assembly) => assembly.templateId === templateId).length;
-}
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-function getCompletionPercent(
-  values: Record<string, VariableValue>,
-  template: PATemplate,
-): number {
-  const required = template.variables.filter((variable) => variable.required);
-  if (required.length === 0) return 100;
-
-  const complete = required.filter((variable) => {
-    const value = values[variable.key];
-    return value !== undefined && value !== null && value !== "";
-  }).length;
-
-  return Math.round((complete / required.length) * 100);
+function distributeRisers(total: number, numFlights: number): number[] {
+  const base = Math.floor(total / numFlights);
+  const remainder = total - base * numFlights;
+  return Array.from({ length: numFlights }, (_, i) =>
+    base + (i < remainder ? 1 : 0),
+  );
 }
 
 function relativeEditedLabel(iso: string): string {
-  const minutes = Math.max(1, Math.round((Date.now() - Date.parse(iso)) / 60000));
+  const minutes = Math.max(
+    1,
+    Math.round((Date.now() - Date.parse(iso)) / 60000),
+  );
   if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.round(minutes / 60);
   return `${hours} hr ago`;

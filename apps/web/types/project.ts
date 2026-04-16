@@ -1,21 +1,23 @@
 import type { VariableValue } from "@shared/engine";
 
-export interface Group {
+export type StairInputMode = "averaged" | "per-flight";
+
+export interface FlightRecord {
   id: string;
-  name: string;
-  note: string;
+  order: number;
+  stairValues: Record<string, VariableValue>;
+  landingValues: Record<string, VariableValue> | null;
   createdAt: string;
+  updatedAt: string;
 }
 
-export interface AssemblyRecord {
+export interface StairRecord {
   id: string;
-  groupId: string;
-  templateId: string;
   name: string;
-  // How many identical copies of this assembly exist on the job (e.g. 5 flights
-  // of the same stair, 4 identical landings). Engine output is multiplied by this.
-  quantity: number;
-  values: Record<string, VariableValue>;
+  inputMode: StairInputMode;
+  totalRisers?: number;
+  defaultStairWidth?: number;
+  flights: FlightRecord[];
   createdAt: string;
   updatedAt: string;
 }
@@ -24,8 +26,7 @@ export interface ProjectState {
   id: string;
   name: string;
   summary: string;
-  groups: Group[];
-  assemblies: AssemblyRecord[];
+  stairs: StairRecord[];
   createdAt: string;
   updatedAt: string;
 }
@@ -34,14 +35,16 @@ export type WorkspaceMode = "workbench" | "drawing" | "split";
 
 export interface OpenTab {
   id: string;
-  type: "welcome" | "assembly";
+  type: "welcome" | "flight";
   title: string;
-  assemblyId?: string;
+  stairId?: string;
+  flightId?: string;
 }
 
 export interface WorkbenchUiState {
-  selectedGroupId: string | null;
-  selectedAssemblyId: string | null;
+  selectedStairId: string | null;
+  selectedFlightId: string | null;
+  expandedStairIds: string[];
   openTabs: OpenTab[];
   activeTabId: string;
   aiPanelOpen: boolean;
