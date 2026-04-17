@@ -114,6 +114,21 @@ export function LandingsSection({
                     Open
                   </ContextMenuItem>
                   <ContextMenuItem
+                    onSelect={() =>
+                      panelOpener.openLandingTemplate(template.id, "newTab")
+                    }
+                  >
+                    Open in new tab
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onSelect={() =>
+                      panelOpener.openLandingTemplate(template.id, "toSide")
+                    }
+                  >
+                    Open to side
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
                     onSelect={() => duplicateLandingTemplate(template.id)}
                   >
                     Duplicate

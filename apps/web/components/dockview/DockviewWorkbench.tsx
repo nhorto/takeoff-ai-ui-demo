@@ -32,16 +32,31 @@ const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
   "landing-template": LandingTemplatePanel,
 };
 
+export type OpenMode = "peek" | "newTab" | "toSide";
+
 export interface DockviewWorkbenchHandle {
-  openFlightTab: (stairId: string, flightId: string, title: string) => void;
+  openFlightTab: (
+    stairId: string,
+    flightId: string,
+    title: string,
+    mode?: OpenMode,
+  ) => void;
   closeFlightTab: (flightId: string) => void;
   closeFlightTabs: (flightIds: string[]) => void;
   updateFlightTabTitle: (flightId: string, title: string) => void;
   openPdfTab: (pdfId: string, title: string) => void;
   openPdfFile: (file: File) => Promise<void>;
-  openRailTemplateTab: (templateId: string, title: string) => void;
-  openLadderTab: (ladderId: string, title: string) => void;
-  openLandingTemplateTab: (templateId: string, title: string) => void;
+  openRailTemplateTab: (
+    templateId: string,
+    title: string,
+    mode?: OpenMode,
+  ) => void;
+  openLadderTab: (ladderId: string, title: string, mode?: OpenMode) => void;
+  openLandingTemplateTab: (
+    templateId: string,
+    title: string,
+    mode?: OpenMode,
+  ) => void;
   updateEntityTabTitle: (
     component: "rail-template" | "ladder" | "landing-template",
     entityId: string,
@@ -53,26 +68,13 @@ export interface DockviewWorkbenchHandle {
   ) => void;
 }
 
-function openEntityTab(
-  api: DockviewApi | null,
-  component: string,
-  id: string,
-  title: string,
-  params: Record<string, unknown>,
+function createDefaultLayout(
+  api: DockviewApi,
+  params: {
+    onAddStair: () => void;
+    onOpenFlight: (stairId: string, flightId: string) => void;
+  },
 ) {
-  if (!api) return;
-  const panelId = `${component}-${id}`;
-  const existing = api.panels.find((p) => p.id === panelId);
-  if (existing) {
-    existing.api.setActive();
-    existing.setTitle(title);
-    existing.update({ params });
-    return;
-  }
-  api.addPanel({ id: panelId, component, title, params });
-}
-
-function createDefaultLayout(api: DockviewApi, params: { onAddStair: () => void; onOpenFlight: (stairId: string, flightId: string) => void }) {
   api.addPanel({
     id: "welcome",
     component: "welcome",
@@ -89,54 +91,108 @@ export const DockviewWorkbench = forwardRef<
   }
 >(function DockviewWorkbench({ onAddStair, onOpenFlight }, ref) {
   const apiRef = useRef<DockviewApi | null>(null);
+  // peekPanelIdRef is the single "peek" tab shown from sidebar single-clicks.
+  // A new peek click replaces the current peek; promotion (open-in-new-tab,
+  // drag to another group) clears the ref so the tab sticks around.
+  const peekPanelIdRef = useRef<string | null>(null);
   const setSelectedFlight = useWorkbenchStore((s) => s.setSelectedFlight);
 
-  useImperativeHandle(ref, () => ({
-    openFlightTab(stairId: string, flightId: string, title: string) {
+  const openEntityPanel = useCallback(
+    (
+      component: string,
+      entityId: string,
+      title: string,
+      params: Record<string, unknown>,
+      mode: OpenMode,
+    ) => {
       const api = apiRef.current;
       if (!api) return;
 
-      const panelId = `flight-${flightId}`;
+      const panelId = `${component}-${entityId}`;
       const existing = api.panels.find((p) => p.id === panelId);
       if (existing) {
         existing.api.setActive();
         existing.setTitle(title);
-        existing.update({ params: { stairId, flightId } });
-      } else {
+        existing.update({ params });
+        // If this panel was the peek and the user explicitly reopens it in a
+        // non-peek mode, promote it (clear the peek ref) so the next peek
+        // click doesn't remove it.
+        if (mode !== "peek" && peekPanelIdRef.current === panelId) {
+          peekPanelIdRef.current = null;
+        }
+        return;
+      }
+
+      if (mode === "peek") {
+        const prevPeekId = peekPanelIdRef.current;
+        if (prevPeekId && prevPeekId !== panelId) {
+          const prev = api.panels.find((p) => p.id === prevPeekId);
+          if (prev) api.removePanel(prev);
+        }
+        api.addPanel({ id: panelId, component, title, params });
+        peekPanelIdRef.current = panelId;
+        return;
+      }
+
+      if (mode === "toSide") {
+        const active = api.activePanel;
         api.addPanel({
           id: panelId,
-          component: "flight",
+          component,
           title,
-          params: { stairId, flightId },
+          params,
+          ...(active
+            ? { position: { referencePanel: active.id, direction: "right" } }
+            : {}),
         });
+        return;
       }
+
+      api.addPanel({ id: panelId, component, title, params });
+    },
+    [],
+  );
+
+  useImperativeHandle(ref, () => ({
+    openFlightTab(stairId, flightId, title, mode = "peek") {
+      openEntityPanel(
+        "flight",
+        flightId,
+        title,
+        { stairId, flightId },
+        mode,
+      );
       setSelectedFlight(stairId, flightId);
     },
 
-    closeFlightTab(flightId: string) {
+    closeFlightTab(flightId) {
       const api = apiRef.current;
       if (!api) return;
-      const panel = api.panels.find((p) => p.id === `flight-${flightId}`);
+      const panelId = `flight-${flightId}`;
+      const panel = api.panels.find((p) => p.id === panelId);
       if (panel) api.removePanel(panel);
+      if (peekPanelIdRef.current === panelId) peekPanelIdRef.current = null;
     },
 
-    closeFlightTabs(flightIds: string[]) {
+    closeFlightTabs(flightIds) {
       const api = apiRef.current;
       if (!api) return;
       for (const fId of flightIds) {
-        const panel = api.panels.find((p) => p.id === `flight-${fId}`);
+        const panelId = `flight-${fId}`;
+        const panel = api.panels.find((p) => p.id === panelId);
         if (panel) api.removePanel(panel);
+        if (peekPanelIdRef.current === panelId) peekPanelIdRef.current = null;
       }
     },
 
-    updateFlightTabTitle(flightId: string, title: string) {
+    updateFlightTabTitle(flightId, title) {
       const api = apiRef.current;
       if (!api) return;
       const panel = api.panels.find((p) => p.id === `flight-${flightId}`);
       if (panel) panel.setTitle(title);
     },
 
-    openPdfTab(pdfId: string, title: string) {
+    openPdfTab(pdfId, title) {
       const api = apiRef.current;
       if (!api) return;
       const panelId = `pdf-${pdfId}`;
@@ -153,7 +209,7 @@ export const DockviewWorkbench = forwardRef<
       }
     },
 
-    async openPdfFile(file: File) {
+    async openPdfFile(file) {
       const api = apiRef.current;
       if (!api) return;
       const pdfId = await usePdfStore.getState().openPdf(file);
@@ -166,20 +222,28 @@ export const DockviewWorkbench = forwardRef<
       });
     },
 
-    openRailTemplateTab(templateId: string, title: string) {
-      openEntityTab(apiRef.current, "rail-template", templateId, title, {
+    openRailTemplateTab(templateId, title, mode = "peek") {
+      openEntityPanel(
+        "rail-template",
         templateId,
-      });
+        title,
+        { templateId },
+        mode,
+      );
     },
 
-    openLadderTab(ladderId: string, title: string) {
-      openEntityTab(apiRef.current, "ladder", ladderId, title, { ladderId });
+    openLadderTab(ladderId, title, mode = "peek") {
+      openEntityPanel("ladder", ladderId, title, { ladderId }, mode);
     },
 
-    openLandingTemplateTab(templateId: string, title: string) {
-      openEntityTab(apiRef.current, "landing-template", templateId, title, {
+    openLandingTemplateTab(templateId, title, mode = "peek") {
+      openEntityPanel(
+        "landing-template",
         templateId,
-      });
+        title,
+        { templateId },
+        mode,
+      );
     },
 
     updateEntityTabTitle(component, entityId, title) {
@@ -193,8 +257,10 @@ export const DockviewWorkbench = forwardRef<
       const api = apiRef.current;
       if (!api) return;
       for (const id of entityIds) {
-        const panel = api.panels.find((p) => p.id === `${component}-${id}`);
+        const panelId = `${component}-${id}`;
+        const panel = api.panels.find((p) => p.id === panelId);
         if (panel) api.removePanel(panel);
+        if (peekPanelIdRef.current === panelId) peekPanelIdRef.current = null;
       }
     },
   }));
@@ -215,7 +281,17 @@ export const DockviewWorkbench = forwardRef<
         }
       });
 
+      // Drag-to-another-group promotes a peek tab to a permanent one.
+      event.api.onDidMovePanel((e) => {
+        if (peekPanelIdRef.current === e.panel.id) {
+          peekPanelIdRef.current = null;
+        }
+      });
+
       event.api.onDidRemovePanel((panel) => {
+        if (peekPanelIdRef.current === panel.id) {
+          peekPanelIdRef.current = null;
+        }
         const params = panel.params as Record<string, string> | undefined;
         if (!params?.pdfId || !panel.id.startsWith("pdf-")) return;
         // Only release PDFs we actually loaded — skips restore-time prunes

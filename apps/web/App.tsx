@@ -8,7 +8,7 @@ import {
   type DockviewWorkbenchHandle,
 } from "@/components/dockview/DockviewWorkbench";
 import { WorkbenchSidebar } from "@/components/sidebar/WorkbenchSidebar";
-import type { PanelOpener } from "@/components/sidebar/types";
+import type { OpenMode, PanelOpener } from "@/components/sidebar/types";
 import { useWorkbenchStore, type AddStairConfig } from "@/hooks/useWorkbenchStore";
 import { resetState } from "@/lib/storage";
 import { pickPdfFile } from "@/lib/pdfFileManager";
@@ -37,9 +37,9 @@ export default function App() {
   );
 
   const ensureFlightTab = useCallback(
-    (stair: StairRecord, flight: FlightRecord) => {
+    (stair: StairRecord, flight: FlightRecord, mode: OpenMode = "peek") => {
       const title = `${stair.name} / Flight ${flight.order}`;
-      dockviewRef.current?.openFlightTab(stair.id, flight.id, title);
+      dockviewRef.current?.openFlightTab(stair.id, flight.id, title, mode);
     },
     [],
   );
@@ -47,7 +47,9 @@ export default function App() {
   const handleAddStair = useCallback(
     (config: AddStairConfig) => {
       const { stair, firstFlight } = storeAddStair(config);
-      ensureFlightTab(stair, firstFlight);
+      // Freshly created entities open as permanent tabs — the user just
+      // authored them and is about to edit, not browse.
+      ensureFlightTab(stair, firstFlight, "newTab");
       setAddStairOpen(false);
     },
     [ensureFlightTab, storeAddStair],
@@ -55,19 +57,27 @@ export default function App() {
 
   function handleAddRail(config: { name: string; type: RailType }) {
     const template = addRailTemplate(config.name, config.type);
-    dockviewRef.current?.openRailTemplateTab(template.id, template.name);
+    dockviewRef.current?.openRailTemplateTab(
+      template.id,
+      template.name,
+      "newTab",
+    );
     setAddRailOpen(false);
   }
 
   function handleAddLadder(config: { name: string }) {
     const ladder = addLadder(config.name);
-    dockviewRef.current?.openLadderTab(ladder.id, ladder.name);
+    dockviewRef.current?.openLadderTab(ladder.id, ladder.name, "newTab");
     setAddLadderOpen(false);
   }
 
   function handleAddLanding(config: { name: string }) {
     const template = addLandingTemplate(config.name);
-    dockviewRef.current?.openLandingTemplateTab(template.id, template.name);
+    dockviewRef.current?.openLandingTemplateTab(
+      template.id,
+      template.name,
+      "newTab",
+    );
     setAddLandingOpen(false);
   }
 
@@ -105,20 +115,25 @@ export default function App() {
   const panelOpener = useMemo<PanelOpener>(
     () => ({
       openFlight: ensureFlightTab,
-      openRailTemplate: (templateId: string) => {
+      openRailTemplate: (templateId: string, mode: OpenMode = "peek") => {
         const template = useWorkbenchStore
           .getState()
           .project.railTemplates.find((t) => t.id === templateId);
         if (template)
-          dockviewRef.current?.openRailTemplateTab(template.id, template.name);
+          dockviewRef.current?.openRailTemplateTab(
+            template.id,
+            template.name,
+            mode,
+          );
       },
-      openLadder: (ladderId: string) => {
+      openLadder: (ladderId: string, mode: OpenMode = "peek") => {
         const ladder = useWorkbenchStore
           .getState()
           .project.ladders.find((l) => l.id === ladderId);
-        if (ladder) dockviewRef.current?.openLadderTab(ladder.id, ladder.name);
+        if (ladder)
+          dockviewRef.current?.openLadderTab(ladder.id, ladder.name, mode);
       },
-      openLandingTemplate: (templateId: string) => {
+      openLandingTemplate: (templateId: string, mode: OpenMode = "peek") => {
         const template = useWorkbenchStore
           .getState()
           .project.landingTemplates.find((t) => t.id === templateId);
@@ -126,6 +141,7 @@ export default function App() {
           dockviewRef.current?.openLandingTemplateTab(
             template.id,
             template.name,
+            mode,
           );
       },
     }),

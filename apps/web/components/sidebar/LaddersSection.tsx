@@ -97,6 +97,17 @@ export function LaddersSection({
                     Open
                   </ContextMenuItem>
                   <ContextMenuItem
+                    onSelect={() => panelOpener.openLadder(ladder.id, "newTab")}
+                  >
+                    Open in new tab
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onSelect={() => panelOpener.openLadder(ladder.id, "toSide")}
+                  >
+                    Open to side
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
                     onSelect={() => duplicateLadder(ladder.id)}
                   >
                     Duplicate

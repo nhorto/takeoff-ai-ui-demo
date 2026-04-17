@@ -209,6 +209,21 @@ export function StairsSection({
                               Open
                             </ContextMenuItem>
                             <ContextMenuItem
+                              onSelect={() =>
+                                panelOpener.openFlight(stair, flight, "newTab")
+                              }
+                            >
+                              Open in new tab
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                              onSelect={() =>
+                                panelOpener.openFlight(stair, flight, "toSide")
+                              }
+                            >
+                              Open to side
+                            </ContextMenuItem>
+                            <ContextMenuSeparator />
+                            <ContextMenuItem
                               onSelect={() => duplicateFlight(stair.id, flight.id)}
                             >
                               Duplicate flight

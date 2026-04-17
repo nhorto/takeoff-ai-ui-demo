@@ -132,6 +132,21 @@ export function RailsSection({
                             Open
                           </ContextMenuItem>
                           <ContextMenuItem
+                            onSelect={() =>
+                              panelOpener.openRailTemplate(template.id, "newTab")
+                            }
+                          >
+                            Open in new tab
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            onSelect={() =>
+                              panelOpener.openRailTemplate(template.id, "toSide")
+                            }
+                          >
+                            Open to side
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem
                             onSelect={() => duplicateRailTemplate(template.id)}
                           >
                             Duplicate
