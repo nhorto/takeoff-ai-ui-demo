@@ -16,6 +16,7 @@ import "@/styles/dockview-theme.css";
 import { WelcomePanel } from "@/components/dockview/WelcomePanel";
 import { FlightPanel } from "@/components/dockview/FlightPanel";
 import { PdfPanel } from "@/components/dockview/PdfPanel";
+import { PlaceholderPanel } from "@/components/dockview/PlaceholderPanel";
 import { loadDockviewLayout, saveDockviewLayout } from "@/lib/storage";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import { usePdfStore } from "@/hooks/usePdfStore";
@@ -24,6 +25,9 @@ const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
   welcome: WelcomePanel,
   flight: FlightPanel,
   pdf: PdfPanel,
+  "rail-template": PlaceholderPanel,
+  ladder: PlaceholderPanel,
+  "landing-template": PlaceholderPanel,
 };
 
 export interface DockviewWorkbenchHandle {
@@ -33,6 +37,28 @@ export interface DockviewWorkbenchHandle {
   updateFlightTabTitle: (flightId: string, title: string) => void;
   openPdfTab: (pdfId: string, title: string) => void;
   openPdfFile: (file: File) => Promise<void>;
+  openRailTemplateTab: (templateId: string, title: string) => void;
+  openLadderTab: (ladderId: string, title: string) => void;
+  openLandingTemplateTab: (templateId: string, title: string) => void;
+}
+
+function openEntityTab(
+  api: DockviewApi | null,
+  component: string,
+  id: string,
+  title: string,
+  params: Record<string, unknown>,
+) {
+  if (!api) return;
+  const panelId = `${component}-${id}`;
+  const existing = api.panels.find((p) => p.id === panelId);
+  if (existing) {
+    existing.api.setActive();
+    existing.setTitle(title);
+    existing.update({ params });
+    return;
+  }
+  api.addPanel({ id: panelId, component, title, params });
 }
 
 function createDefaultLayout(api: DockviewApi, params: { onAddStair: () => void; onOpenFlight: (stairId: string, flightId: string) => void }) {
@@ -126,6 +152,30 @@ export const DockviewWorkbench = forwardRef<
         component: "pdf",
         title: file.name,
         params: { pdfId },
+      });
+    },
+
+    openRailTemplateTab(templateId: string, title: string) {
+      openEntityTab(apiRef.current, "rail-template", templateId, title, {
+        kind: "Rail",
+        id: templateId,
+        name: title,
+      });
+    },
+
+    openLadderTab(ladderId: string, title: string) {
+      openEntityTab(apiRef.current, "ladder", ladderId, title, {
+        kind: "Ladder",
+        id: ladderId,
+        name: title,
+      });
+    },
+
+    openLandingTemplateTab(templateId: string, title: string) {
+      openEntityTab(apiRef.current, "landing-template", templateId, title, {
+        kind: "Landing",
+        id: templateId,
+        name: title,
       });
     },
   }));
