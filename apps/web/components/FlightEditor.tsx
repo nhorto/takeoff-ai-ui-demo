@@ -7,8 +7,6 @@ export function FlightEditor({
   flight,
   stairEvaluation,
   landingEvaluation,
-  stairDrafts,
-  landingDrafts,
   onStairValueChange,
   onLandingValueChange,
   onToggleLanding,
@@ -25,18 +23,8 @@ export function FlightEditor({
     result: EvaluateResult | null;
     error: string | null;
   } | null;
-  stairDrafts: Record<string, string>;
-  landingDrafts: Record<string, string>;
-  onStairValueChange: (
-    key: string,
-    value: VariableValue,
-    draft?: string,
-  ) => void;
-  onLandingValueChange: (
-    key: string,
-    value: VariableValue,
-    draft?: string,
-  ) => void;
+  onStairValueChange: (key: string, value: VariableValue) => void;
+  onLandingValueChange: (key: string, value: VariableValue) => void;
   onToggleLanding: () => void;
   onExport: () => void;
   onDeleteFlight: () => void;
@@ -66,8 +54,6 @@ export function FlightEditor({
         flight={flight}
         stairEvaluation={stairEvaluation}
         landingEvaluation={landingEvaluation}
-        stairDrafts={stairDrafts}
-        landingDrafts={landingDrafts}
         onStairValueChange={onStairValueChange}
         onLandingValueChange={onLandingValueChange}
         onToggleLanding={onToggleLanding}

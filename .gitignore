@@ -65,3 +65,4 @@ package-lock.json
 docs/powerfab/
 scripts/
 test/
+.vercel

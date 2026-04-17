@@ -42,7 +42,6 @@ interface WorkbenchStore extends PersistedState {
     flightId: string,
     key: string,
     value: VariableValue,
-    draft?: string,
   ) => void;
 
   // Landing assignment mutations (per-flight)
@@ -51,7 +50,6 @@ interface WorkbenchStore extends PersistedState {
     flightId: string,
     key: string,
     value: VariableValue,
-    draft?: string,
   ) => void;
   toggleLanding: (stairId: string, flightId: string) => void;
   assignLandingToFlight: (
@@ -427,10 +425,10 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
         return { stair: updatedStair, flight: copy };
       },
 
-      updateFlightStairValue: (stairId, flightId, key, value, draft) => {
+      updateFlightStairValue: (stairId, flightId, key, value) => {
         const now = new Date().toISOString();
-        set((state) => {
-          const nextState = mapFlight(
+        set((state) =>
+          mapFlight(
             state,
             stairId,
             flightId,
@@ -440,24 +438,14 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
               updatedAt: now,
             }),
             now,
-          );
-          if (draft !== undefined) {
-            nextState.drafts = {
-              ...state.drafts,
-              [`${flightId}-stair`]: {
-                ...(state.drafts[`${flightId}-stair`] ?? {}),
-                [key]: draft,
-              },
-            };
-          }
-          return nextState;
-        });
+          ),
+        );
       },
 
-      updateFlightLandingValue: (stairId, flightId, key, value, draft) => {
+      updateFlightLandingValue: (stairId, flightId, key, value) => {
         const now = new Date().toISOString();
-        set((state) => {
-          const nextState = mapFlight(
+        set((state) =>
+          mapFlight(
             state,
             stairId,
             flightId,
@@ -473,18 +461,8 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
               };
             },
             now,
-          );
-          if (draft !== undefined) {
-            nextState.drafts = {
-              ...state.drafts,
-              [`${flightId}-landing`]: {
-                ...(state.drafts[`${flightId}-landing`] ?? {}),
-                [key]: draft,
-              },
-            };
-          }
-          return nextState;
-        });
+          ),
+        );
       },
 
       toggleLanding: (stairId, flightId) => {
@@ -493,15 +471,43 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
         const flight = stair?.flights.find((f) => f.id === flightId);
         if (!flight) return;
 
+        const now = new Date().toISOString();
+
         if (flight.landing) {
-          get().removeLandingFromFlight(stairId, flightId);
-        } else {
-          // Fall back to the first landing template — migration + defaultState
-          // guarantee at least "Default Landing" exists.
-          const template = state.project.landingTemplates[0];
-          if (!template) return;
-          get().assignLandingToFlight(stairId, flightId, template.id);
+          set((s) => {
+            const next = mapFlight(
+              s,
+              stairId,
+              flightId,
+              (f) => ({ ...f, landing: null, updatedAt: now }),
+              now,
+            );
+            const drafts = { ...s.drafts };
+            delete drafts[`${flightId}-landing`];
+            next.drafts = drafts;
+            return next;
+          });
+          return;
         }
+
+        // Seed a new assignment from the first landing template. Migration +
+        // defaultState guarantee "Default Landing" exists.
+        const template = state.project.landingTemplates[0];
+        if (!template) return;
+        const assignment: LandingAssignment = {
+          id: makeId("landingassign"),
+          templateId: template.id,
+          values: { ...template.values },
+        };
+        set((s) =>
+          mapFlight(
+            s,
+            stairId,
+            flightId,
+            (f) => ({ ...f, landing: assignment, updatedAt: now }),
+            now,
+          ),
+        );
       },
 
       assignLandingToFlight: (stairId, flightId, templateId) => {
@@ -630,8 +636,9 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
 
       deleteRailTemplate: (templateId) => {
         const now = new Date().toISOString();
-        // Detach any assignments whose template is being deleted — they lose
-        // their link but keep their per-instance values as orphan copies.
+        // Remove any assignments pointing at the deleted template. Per-instance
+        // values on those assignments are discarded — parallel to how
+        // deleteLandingTemplate handles landing assignments.
         set((state) => ({
           project: {
             ...state.project,

@@ -1,9 +1,19 @@
 import { feet, ftIn } from "@shared/engine";
+import type { PATemplate, VariableValue } from "@shared/engine";
+import {
+  hssRailPickets,
+  multiLineRail,
+  cableRail,
+  wallRail,
+  assistRail,
+} from "@shared/pa-library";
+import type { RailType } from "@shared/pa-library";
 import type {
   LandingAssignment,
   LandingTemplate,
   PersistedState,
   ProjectState,
+  RailTemplate,
 } from "@/types/project";
 
 const STORAGE_KEY = "takeoffai-workbench-stair-v3";
@@ -19,6 +29,30 @@ function createId(prefix: string): string {
 
 export function makeId(prefix: string): string {
   return createId(prefix);
+}
+
+function defaultValuesFor(template: PATemplate): Record<string, VariableValue> {
+  const values: Record<string, VariableValue> = {};
+  for (const v of template.variables) {
+    if (v.defaultValue !== undefined) values[v.key] = v.defaultValue;
+  }
+  return values;
+}
+
+function starterRailTemplate(
+  type: RailType,
+  name: string,
+  template: PATemplate,
+  now: string,
+): RailTemplate {
+  return {
+    id: createId("rail"),
+    name,
+    type,
+    values: defaultValuesFor(template),
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export function defaultState(): PersistedState {
@@ -113,7 +147,13 @@ export function defaultState(): PersistedState {
           updatedAt: now,
         },
       ],
-      railTemplates: [],
+      railTemplates: [
+        starterRailTemplate("picket", "Standard Picket", hssRailPickets, now),
+        starterRailTemplate("multi-line", "Standard Multi-Line", multiLineRail, now),
+        starterRailTemplate("cable", "Standard Cable", cableRail, now),
+        starterRailTemplate("wall", "Standard Wall Rail", wallRail, now),
+        starterRailTemplate("assist", "Standard Assist Rail", assistRail, now),
+      ],
       landingTemplates: [defaultLandingTemplate],
       ladders: [],
     },
@@ -128,7 +168,7 @@ export function defaultState(): PersistedState {
   };
 }
 
-function migrateV1(raw: string): unknown | null {
+export function migrateV1(raw: string): unknown | null {
   try {
     const parsed = JSON.parse(raw);
     if (parsed.version !== 1) return null;
@@ -153,7 +193,7 @@ function migrateV1(raw: string): unknown | null {
 // nothing about rails, ladders, or landing templates. v3 adds a single
 // "Default Landing" template for existing assignments so the template→copy
 // pattern holds from day one.
-function migrateV2ToV3(parsed: {
+export function migrateV2ToV3(parsed: {
   version: number;
   project: {
     id: string;

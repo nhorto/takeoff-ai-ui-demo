@@ -14,12 +14,6 @@ export function FlightPanel({
     s.project.stairs.find((st) => st.id === stairId),
   );
   const flight = stair?.flights.find((f) => f.id === flightId) ?? null;
-  const stairDrafts = useWorkbenchStore(
-    (s) => s.drafts[`${flightId}-stair`] ?? {},
-  );
-  const landingDrafts = useWorkbenchStore(
-    (s) => s.drafts[`${flightId}-landing`] ?? {},
-  );
   const updateStairValue = useWorkbenchStore((s) => s.updateFlightStairValue);
   const updateLandingValue = useWorkbenchStore((s) => s.updateFlightLandingValue);
   const toggleLanding = useWorkbenchStore((s) => s.toggleLanding);
@@ -59,12 +53,12 @@ export function FlightPanel({
     );
   }
 
-  const handleStairValueChange = (key: string, value: VariableValue, draft?: string) => {
-    updateStairValue(stairId, flightId, key, value, draft);
+  const handleStairValueChange = (key: string, value: VariableValue) => {
+    updateStairValue(stairId, flightId, key, value);
   };
 
-  const handleLandingValueChange = (key: string, value: VariableValue, draft?: string) => {
-    updateLandingValue(stairId, flightId, key, value, draft);
+  const handleLandingValueChange = (key: string, value: VariableValue) => {
+    updateLandingValue(stairId, flightId, key, value);
   };
 
   return (
@@ -87,8 +81,6 @@ export function FlightPanel({
           flight={flight}
           stairEvaluation={stairEvaluation}
           landingEvaluation={landingEvaluation}
-          stairDrafts={stairDrafts}
-          landingDrafts={landingDrafts}
           onStairValueChange={handleStairValueChange}
           onLandingValueChange={handleLandingValueChange}
           onToggleLanding={() => toggleLanding(stairId, flightId)}

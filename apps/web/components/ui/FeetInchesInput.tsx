@@ -11,12 +11,10 @@ import { formatFeetInches, parseLength } from "@shared/engine";
 export function FeetInchesInput({
   valueInches,
   onChange,
-  placeholder = "ft / in",
   disabled,
 }: {
   valueInches: number | null;
   onChange: (nextInches: number | null) => void;
-  placeholder?: string;
   disabled?: boolean;
 }) {
   const split = useMemo(() => splitFeetInches(valueInches), [valueInches]);
@@ -61,7 +59,7 @@ export function FeetInchesInput({
   }
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
+    <div className="grid grid-cols-2 items-stretch gap-2">
       <div className="flex items-stretch rounded-xl border border-white/10 bg-slate-950/75 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
@@ -79,7 +77,6 @@ export function FeetInchesInput({
         />
         <span className="flex items-center pr-3 text-xs text-white/45">ft</span>
       </div>
-      <div className="flex items-center text-xs text-white/35">{placeholder ? "" : ""}</div>
       <div className="flex items-stretch rounded-xl border border-white/10 bg-slate-950/75 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
@@ -105,6 +102,9 @@ function splitFeetInches(value: number | null): { feet: string; inches: string }
   if (value === null || !Number.isFinite(value)) {
     return { feet: "", inches: "" };
   }
+  // Stored value is exactly zero — surface it on the inches side so the user
+  // sees "0" rather than an empty field that looks unset.
+  if (value === 0) return { feet: "", inches: "0" };
   const abs = Math.abs(value);
   const ft = Math.floor(abs / 12);
   const inches = abs - ft * 12;

@@ -8,8 +8,6 @@ export function FlightForms({
   flight,
   stairEvaluation,
   landingEvaluation,
-  stairDrafts,
-  landingDrafts,
   onStairValueChange,
   onLandingValueChange,
   onToggleLanding,
@@ -25,18 +23,8 @@ export function FlightForms({
     result: EvaluateResult | null;
     error: string | null;
   } | null;
-  stairDrafts: Record<string, string>;
-  landingDrafts: Record<string, string>;
-  onStairValueChange: (
-    key: string,
-    value: VariableValue,
-    draft?: string,
-  ) => void;
-  onLandingValueChange: (
-    key: string,
-    value: VariableValue,
-    draft?: string,
-  ) => void;
+  onStairValueChange: (key: string, value: VariableValue) => void;
+  onLandingValueChange: (key: string, value: VariableValue) => void;
   onToggleLanding: () => void;
   onExport: () => void;
   onDeleteFlight: () => void;
@@ -55,7 +43,6 @@ export function FlightForms({
           <WizardForm
             variables={stairChannel.variables}
             values={flight.stairValues}
-            drafts={stairDrafts}
             onValueChange={onStairValueChange}
           />
         </div>
@@ -84,7 +71,6 @@ export function FlightForms({
             <WizardForm
               variables={landingChannel.variables}
               values={flight.landing.values}
-              drafts={landingDrafts}
               onValueChange={onLandingValueChange}
             />
           </div>

@@ -13,6 +13,13 @@ export interface RailTemplate {
   updatedAt: string;
 }
 
+// Assignments are independent copies of a template's values at the moment of
+// assignment. Later edits to the template do NOT propagate to existing
+// assignments — the templateId is kept only as provenance (so deleting the
+// template can find its dependents). `sourceType` on a rail assignment is
+// captured at assign-time for the same reason; changing the template's
+// type via setRailTemplateType won't retype already-placed rails.
+// Landings aren't typed, so LandingAssignment has no parallel field.
 export interface RailAssignment {
   id: string;
   templateId: string;

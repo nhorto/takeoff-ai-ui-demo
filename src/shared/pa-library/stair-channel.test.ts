@@ -88,6 +88,58 @@ describe("stair-channel", () => {
     });
   });
 
+  it("bumps stringer length by 5\" and relabels when dogleg is yes", () => {
+    const straight = evaluatePA(stairChannel, {
+      numTreads: 14,
+      numRisers: 15,
+      stairWidth: ftIn(3, 6),
+    });
+    const dogleg = evaluatePA(stairChannel, {
+      numTreads: 14,
+      numRisers: 15,
+      stairWidth: ftIn(3, 6),
+      dogleg: "yes",
+    });
+    // dogleg adds 6" vs the straight 1" allowance → net +5".
+    expect(
+      (dogleg.items[1].length ?? 0) - (straight.items[1].length ?? 0),
+    ).toBeCloseTo(5, 4);
+    expect(dogleg.items[1].comment).toBe("Stringer (doglegged)");
+    expect(straight.items[1].comment).toBe("Stringer");
+  });
+
+  it("produces a grating tread row when treadType is grating", () => {
+    const result = evaluatePA(stairChannel, {
+      numTreads: 14,
+      numRisers: 15,
+      stairWidth: ftIn(3, 6),
+      treadType: "grating",
+    });
+    expect(result.items[3]).toMatchObject({
+      shape: "GR",
+      grade: "A1011",
+      quantity: 14,
+      laborCode: "GG",
+      comment: "Grating Treads",
+    });
+  });
+
+  it("produces a checker-plate tread row when treadType is checker-plate", () => {
+    const result = evaluatePA(stairChannel, {
+      numTreads: 14,
+      numRisers: 15,
+      stairWidth: ftIn(3, 6),
+      treadType: "checker-plate",
+    });
+    expect(result.items[3]).toMatchObject({
+      shape: "PL",
+      grade: "A36",
+      quantity: 14,
+      laborCode: "JJ",
+      comment: "Checker Plate Treads",
+    });
+  });
+
   it("scales stringer length linearly with number of risers", () => {
     const small = evaluatePA(stairChannel, {
       numTreads: 10,

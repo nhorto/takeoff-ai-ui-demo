@@ -13,16 +13,10 @@ import {
 interface WizardFormProps {
   variables: VariableDef[];
   values: Record<string, VariableValue>;
-  drafts: Record<string, string>;
-  onValueChange: (key: string, value: VariableValue, draft?: string) => void;
+  onValueChange: (key: string, value: VariableValue) => void;
 }
 
-export function WizardForm({
-  variables,
-  values,
-  drafts: _drafts,
-  onValueChange,
-}: WizardFormProps) {
+export function WizardForm({ variables, values, onValueChange }: WizardFormProps) {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       {variables
@@ -48,7 +42,7 @@ function FieldRenderer({
 }: {
   variable: VariableDef;
   value: VariableValue;
-  onValueChange: (key: string, value: VariableValue, draft?: string) => void;
+  onValueChange: (key: string, value: VariableValue) => void;
 }) {
   const description = variable.description ?? fieldDescription(variable.type);
 

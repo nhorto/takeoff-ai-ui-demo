@@ -21,7 +21,7 @@ export const landingChannel: PATemplate = {
   category: "landing",
 
   variables: [
-    // ─── Visible to the estimator ──────────────────────────────────────────
+    // ─── Dimensions ────────────────────────────────────────────────────────
     {
       key: "widthOfLanding",
       label: "Width of Landing",
@@ -29,6 +29,7 @@ export const landingChannel: PATemplate = {
       defaultValue: feet(4),
       required: true,
       position: 1,
+      group: "dimensions",
     },
     {
       key: "depthOfLanding",
@@ -37,9 +38,10 @@ export const landingChannel: PATemplate = {
       defaultValue: feet(4),
       required: true,
       position: 2,
+      group: "dimensions",
     },
 
-    // ─── Hidden company defaults ───────────────────────────────────────────
+    // ─── Supports (channels + connections) ─────────────────────────────────
     {
       key: "frameSize",
       label: "Frame Channel Size",
@@ -47,6 +49,7 @@ export const landingChannel: PATemplate = {
       shapeFilter: ["C", "MC"],
       defaultValue: "C12X20.7",
       hidden: true,
+      group: "supports",
     },
     {
       key: "frontSize",
@@ -55,6 +58,7 @@ export const landingChannel: PATemplate = {
       shapeFilter: ["C", "MC"],
       defaultValue: "C8X11.5",
       hidden: true,
+      group: "supports",
     },
     {
       key: "crossMemberSize",
@@ -63,18 +67,7 @@ export const landingChannel: PATemplate = {
       shapeFilter: ["L"],
       defaultValue: "L3X3X1/4",
       hidden: true,
-    },
-    {
-      key: "flooring",
-      label: "Flooring",
-      type: "enum",
-      enumOptions: [
-        { value: "deck", label: "Deck (ribbed metal decking)" },
-        { value: "floor-plate", label: "Floor plate (1/4\" PL)" },
-        { value: "bent-plate", label: "Bent plate" },
-      ],
-      defaultValue: "deck",
-      hidden: true,
+      group: "supports",
     },
     {
       key: "connectionType",
@@ -86,6 +79,22 @@ export const landingChannel: PATemplate = {
       ],
       defaultValue: "clips",
       hidden: true,
+      group: "supports",
+    },
+
+    // ─── Flooring ──────────────────────────────────────────────────────────
+    {
+      key: "flooring",
+      label: "Flooring",
+      type: "enum",
+      enumOptions: [
+        { value: "deck", label: "Deck (ribbed metal decking)" },
+        { value: "floor-plate", label: "Floor plate (1/4\" PL)" },
+        { value: "bent-plate", label: "Bent plate" },
+      ],
+      defaultValue: "deck",
+      hidden: true,
+      group: "flooring",
     },
   ],
 
