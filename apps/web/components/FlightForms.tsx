@@ -41,7 +41,7 @@ export function FlightForms({
   onExport: () => void;
   onDeleteFlight: () => void;
 }) {
-  const hasLanding = flight.landingValues !== null;
+  const hasLanding = flight.landing !== null;
   const allStairItems = stairEvaluation?.result?.items ?? [];
   const allLandingItems = landingEvaluation?.result?.items ?? [];
   const allItems = [...allStairItems, ...allLandingItems];
@@ -79,11 +79,11 @@ export function FlightForms({
             {hasLanding ? "Remove landing" : "+ Add landing"}
           </button>
         </div>
-        {hasLanding && (
+        {hasLanding && flight.landing && (
           <div className="mt-3">
             <WizardForm
               variables={landingChannel.variables}
-              values={flight.landingValues!}
+              values={flight.landing.values}
               drafts={landingDrafts}
               onValueChange={onLandingValueChange}
             />

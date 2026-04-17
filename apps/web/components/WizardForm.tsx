@@ -1,5 +1,14 @@
 import type { VariableDef, VariableValue } from "@shared/engine";
-import { formatFeetInches, parseLength } from "@shared/engine";
+import { formatFeetInches } from "@shared/engine";
+import { FieldCard, fieldInputClass } from "@/components/ui/FieldCard";
+import { FeetInchesInput } from "@/components/ui/FeetInchesInput";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
 
 interface WizardFormProps {
   variables: VariableDef[];
@@ -11,7 +20,7 @@ interface WizardFormProps {
 export function WizardForm({
   variables,
   values,
-  drafts,
+  drafts: _drafts,
   onValueChange,
 }: WizardFormProps) {
   return (
@@ -21,11 +30,10 @@ export function WizardForm({
         .slice()
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
         .map((variable) => (
-          <FieldCard
+          <FieldRenderer
             key={variable.key}
             variable={variable}
             value={values[variable.key]}
-            draft={drafts[variable.key]}
             onValueChange={onValueChange}
           />
         ))}
@@ -33,90 +41,81 @@ export function WizardForm({
   );
 }
 
-interface FieldCardProps {
+function FieldRenderer({
+  variable,
+  value,
+  onValueChange,
+}: {
   variable: VariableDef;
   value: VariableValue;
-  draft?: string;
   onValueChange: (key: string, value: VariableValue, draft?: string) => void;
-}
-
-function FieldCard({ variable, value, draft, onValueChange }: FieldCardProps) {
-  const common =
-    "mt-4 w-full rounded-2xl border border-white/10 bg-slate-950/75 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20";
+}) {
+  const description = variable.description ?? fieldDescription(variable.type);
 
   return (
-    <label className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent" />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold text-white">{variable.label}</div>
-          <p className="mt-2 text-sm leading-6 text-white/55">
-            {variable.description ?? fieldDescription(variable.type)}
-          </p>
-        </div>
-        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white/55">
-          {variable.type}
-        </span>
-      </div>
-
+    <FieldCard label={variable.label} description={description} badge={variable.type}>
       {variable.type === "enum" ? (
-        <select
-          className={common}
-          value={typeof value === "string" ? value : ""}
-          onChange={(event) => onValueChange(variable.key, event.target.value)}
+        <Select
+          value={typeof value === "string" ? value : undefined}
+          onValueChange={(v) => onValueChange(variable.key, v)}
         >
-          {variable.enumOptions?.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger>
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            {variable.enumOptions?.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       ) : variable.type === "integer" || variable.type === "decimal" ? (
         <input
-          className={common}
+          className={fieldInputClass}
           type="number"
           step={variable.type === "integer" ? 1 : "any"}
           value={typeof value === "number" ? value : ""}
           onChange={(event) => {
             const next = event.target.value;
-            onValueChange(
-              variable.key,
-              next === "" ? null : Number(next),
-            );
+            onValueChange(variable.key, next === "" ? null : Number(next));
           }}
         />
       ) : variable.type === "length" ? (
-        <>
-          <input
-            className={common}
-            type="text"
-            value={draft ?? (typeof value === "number" ? formatFeetInches(value) : "")}
-            placeholder={`Try 4' 6" or 54 in`}
-            onChange={(event) => {
-              const next = event.target.value;
-              try {
-                onValueChange(variable.key, parseLength(next), next);
-              } catch {
-                onValueChange(variable.key, value ?? null, next);
-              }
-            }}
+        <div className="space-y-2">
+          <FeetInchesInput
+            valueInches={typeof value === "number" ? value : null}
+            onChange={(next) => onValueChange(variable.key, next)}
           />
-          <div className="mt-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-white/42">
-            Stored internally in inches. The workbench accepts feet/inches, decimal
-            feet, or millimeters.
-          </div>
-        </>
+          {typeof value === "number" && (
+            <div className="text-xs text-white/40">
+              = {safeFormat(value)}
+            </div>
+          )}
+        </div>
       ) : (
         <input
-          className={common}
+          className={fieldInputClass}
           type="text"
           value={typeof value === "string" ? value : ""}
-          placeholder={variable.shapeFilter?.length ? variable.shapeFilter.join(", ") : "Enter designation"}
+          placeholder={
+            variable.shapeFilter?.length
+              ? variable.shapeFilter.join(", ")
+              : "Enter designation"
+          }
           onChange={(event) => onValueChange(variable.key, event.target.value)}
         />
       )}
-    </label>
+    </FieldCard>
   );
+}
+
+function safeFormat(value: number): string {
+  try {
+    return formatFeetInches(value);
+  } catch {
+    return `${value}"`;
+  }
 }
 
 function fieldDescription(type: VariableDef["type"]): string {

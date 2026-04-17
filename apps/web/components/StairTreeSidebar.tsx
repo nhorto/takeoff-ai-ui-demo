@@ -246,7 +246,7 @@ export function StairTreeSidebar({
                               </span>
                             </button>
 
-                            {flight.landingValues ? (
+                            {flight.landing ? (
                               <button
                                 type="button"
                                 onClick={() => onEnsureFlightTab(stair, flight)}
@@ -259,7 +259,7 @@ export function StairTreeSidebar({
                                 <span className={active ? "text-slate-400" : "text-cyan-300/50"}>↳</span>
                                 <span className="font-medium">Landing</span>
                                 <span className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}>
-                                  {landingSummary(flight.landingValues)}
+                                  {landingSummary(flight.landing.values)}
                                 </span>
                               </button>
                             ) : (
@@ -333,13 +333,13 @@ function buildFlightSearchString(stair: StairRecord, flight: FlightRecord): stri
     }
   }
 
-  if (flight.landingValues) {
+  if (flight.landing) {
     parts.push("landing");
     for (const v of landingChannel.variables) {
       if (v.hidden) continue;
       parts.push(v.label);
       parts.push(v.key);
-      const val = flight.landingValues[v.key];
+      const val = flight.landing.values[v.key];
       if (val != null) {
         parts.push(String(val));
         if (typeof val === "number" && v.type === "length") {

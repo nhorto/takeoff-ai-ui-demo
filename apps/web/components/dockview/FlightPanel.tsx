@@ -39,9 +39,9 @@ export function FlightPanel({
   }, [flight]);
 
   const landingEvaluation = useMemo(() => {
-    if (!flight?.landingValues) return null;
+    if (!flight?.landing) return null;
     try {
-      const result = evaluatePA(landingChannel, flight.landingValues);
+      const result = evaluatePA(landingChannel, flight.landing.values);
       return { result, error: null };
     } catch (error) {
       return {

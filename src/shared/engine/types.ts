@@ -30,6 +30,9 @@ export interface VariableDef {
   // as a company default — this is how shop-level choices (stringer size,
   // riser height, labor codes, etc.) stay out of the estimator's way.
   hidden?: boolean;
+  // Optional tab/section grouping used by form UIs to partition related
+  // variables (e.g. "geometry" | "stringers" | "treads").
+  group?: string;
 }
 
 // ─── Items (engine output) ──────────────────────────────────────────────────

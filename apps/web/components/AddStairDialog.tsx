@@ -1,5 +1,11 @@
 import { useState } from "react";
 import { ftIn } from "@shared/engine";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/Dialog";
 import type { StairInputMode } from "@/types/project";
 
 export function AddStairDialog({
@@ -25,12 +31,15 @@ export function AddStairDialog({
   const defaultWidth = ftIn(3, 6);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[rgb(12,18,32)] p-6 shadow-2xl">
-        <div className="text-lg font-semibold text-white">Add Stair</div>
-        <div className="mt-1 text-sm text-white/50">
-          Configure the stair and its flights
-        </div>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <DialogContent>
+        <DialogTitle>Add Stair</DialogTitle>
+        <DialogDescription>Configure the stair and its flights</DialogDescription>
 
         <div className="mt-6 space-y-4">
           <div>
@@ -60,9 +69,7 @@ export function AddStairDialog({
           </div>
 
           <div>
-            <label className="block text-sm text-white/65">
-              Input mode
-            </label>
+            <label className="block text-sm text-white/65">Input mode</label>
             <div className="mt-2 flex gap-4">
               <label className="flex items-center gap-2 text-sm text-white/72">
                 <input
@@ -105,8 +112,7 @@ export function AddStairDialog({
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/65 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
               />
               <div className="mt-1 text-xs text-white/40">
-                ≈ {Math.floor(totalRisers / numFlights)} risers per
-                flight
+                ≈ {Math.floor(totalRisers / numFlights)} risers per flight
                 {totalRisers % numFlights > 0 &&
                   ` (${totalRisers % numFlights} flights get +1)`}
               </div>
@@ -129,8 +135,7 @@ export function AddStairDialog({
                 name: name.trim() || `Stair ${nextStairNumber}`,
                 numFlights,
                 mode,
-                totalRisers:
-                  mode === "averaged" ? totalRisers : undefined,
+                totalRisers: mode === "averaged" ? totalRisers : undefined,
                 stairWidth: defaultWidth,
               })
             }
@@ -139,7 +144,7 @@ export function AddStairDialog({
             Create Stair
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
