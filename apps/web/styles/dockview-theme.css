@@ -1,0 +1,86 @@
+/* Dockview dark theme matching the workbench */
+.dockview-theme-takeoff {
+  --dv-background-color: transparent;
+  --dv-paneview-header-border-color: rgba(255, 255, 255, 0.1);
+  --dv-tabs-and-actions-container-font-size: 13px;
+  --dv-tabs-and-actions-container-height: 38px;
+  --dv-tab-close-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cline x1='1' y1='1' x2='9' y2='9' stroke='rgba(255,255,255,0.4)' stroke-width='1.5'/%3E%3Cline x1='9' y1='1' x2='1' y2='9' stroke='rgba(255,255,255,0.4)' stroke-width='1.5'/%3E%3C/svg%3E");
+  --dv-drag-over-background-color: rgba(77, 214, 255, 0.08);
+  --dv-drag-over-border-color: rgba(77, 214, 255, 0.3);
+
+  /* Group/panel backgrounds */
+  --dv-group-view-background-color: transparent;
+
+  /* Separator (divider between panels) */
+  --dv-separator-border: rgba(255, 255, 255, 0.1);
+
+  /* Active group, visible panel tab */
+  --dv-activegroup-visiblepanel-tab-background-color: rgba(255, 255, 255, 0.06);
+  --dv-activegroup-visiblepanel-tab-color: rgba(255, 255, 255, 0.92);
+
+  /* Active group, hidden panel tab */
+  --dv-activegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-activegroup-hiddenpanel-tab-color: rgba(255, 255, 255, 0.52);
+
+  /* Inactive group, visible panel tab */
+  --dv-inactivegroup-visiblepanel-tab-background-color: rgba(255, 255, 255, 0.04);
+  --dv-inactivegroup-visiblepanel-tab-color: rgba(255, 255, 255, 0.65);
+
+  /* Inactive group, hidden panel tab */
+  --dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
+  --dv-inactivegroup-hiddenpanel-tab-color: rgba(255, 255, 255, 0.4);
+
+  /* Tab container (the tab bar strip) */
+  --dv-tabs-container-scrollbar-color: rgba(255, 255, 255, 0.15);
+}
+
+.dockview-theme-takeoff .tab {
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  padding: 0 12px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.dockview-theme-takeoff .tab:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.dockview-theme-takeoff .tab.active-tab {
+  border-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.dockview-theme-takeoff .tabs-container {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 8px;
+}
+
+.dockview-theme-takeoff .content-container {
+  background-color: transparent;
+}
+
+.dockview-theme-takeoff .groupview > .void-container {
+  background-color: transparent;
+}
+
+.dockview-theme-takeoff .header-actions {
+  display: none;
+}
+
+/* Drop target overlay */
+.dockview-theme-takeoff .drop-target-dropzone > .drop-target-selection {
+  background-color: rgba(77, 214, 255, 0.06);
+  border: 1px solid rgba(77, 214, 255, 0.25);
+  border-radius: 8px;
+}
+
+/* Sash (resize handle) */
+.dockview-theme-takeoff .sash {
+  background-color: transparent;
+}
+
+.dockview-theme-takeoff .sash:hover,
+.dockview-theme-takeoff .sash.active {
+  background-color: rgba(77, 214, 255, 0.3);
+}
