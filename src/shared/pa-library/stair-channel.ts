@@ -76,9 +76,9 @@ export const stairChannel: PATemplate = {
     {
       key: "stringerSize",
       label: "Stringer Size",
-      description: "Channel designation used for both stringers.",
+      description: "Shape used for both stringers.",
       type: "dimension",
-      shapeFilter: ["C", "MC"],
+      shapeFilter: ["C", "MC", "HSS", "PL"],
       defaultValue: "C12X20.7",
       required: true,
       position: 10,
