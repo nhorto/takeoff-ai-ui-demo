@@ -9,8 +9,8 @@
  */
 
 import type { PATemplate, Item } from "../engine/types";
-import { feet, inches } from "../engine/units";
-import { mountingOptions } from "./rail-shared";
+import { feet, ftIn, inches } from "../engine/units";
+import { mountingOptions, RAIL_MATERIAL_SHAPES } from "./rail-shared";
 
 export const hssRailPickets: PATemplate = {
   id: "hss-rail-pickets",
@@ -65,7 +65,7 @@ export const hssRailPickets: PATemplate = {
       key: "topMaterial",
       label: "Top Rail Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS2X2X1/4",
       required: true,
       position: 5,
@@ -75,7 +75,7 @@ export const hssRailPickets: PATemplate = {
       key: "bottomMaterial",
       label: "Bottom Rail Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS2X2X1/4",
       required: true,
       position: 6,
@@ -85,7 +85,7 @@ export const hssRailPickets: PATemplate = {
       key: "midMaterial",
       label: "Mid Rail Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS1X1X1/8",
       position: 7,
       group: "rails",
@@ -102,10 +102,20 @@ export const hssRailPickets: PATemplate = {
 
     // ─── Posts ─────────────────────────────────────────────────────────────
     {
+      key: "railHeight",
+      label: "Height of Rail",
+      description: "Top-of-rail height above the stair / landing.",
+      type: "length",
+      defaultValue: ftIn(3, 6),
+      required: true,
+      position: 8.5,
+      group: "posts",
+    },
+    {
       key: "postMaterial",
       label: "Post Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS2X2X1/4",
       required: true,
       position: 9,
@@ -161,8 +171,8 @@ export const hssRailPickets: PATemplate = {
       key: "pickMaterial",
       label: "Picket Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
-      defaultValue: "HSS1X1X1/8",
+      shapeFilter: ["RD", "SQ"],
+      defaultValue: "SQ1/2",
       position: 21,
       group: "pickets",
     },
@@ -181,6 +191,36 @@ export const hssRailPickets: PATemplate = {
       defaultValue: inches(4),
       position: 23,
       group: "pickets",
+    },
+
+    // ─── Add-ons ───────────────────────────────────────────────────────────
+    {
+      key: "includeAssistRail",
+      label: "Include Assist Rail?",
+      description:
+        "If yes, configure the assist rail as a separate assignment on this flight.",
+      type: "enum",
+      enumOptions: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ],
+      defaultValue: "no",
+      position: 30,
+      group: "addons",
+    },
+    {
+      key: "includeWallRail",
+      label: "Include Wall Rail?",
+      description:
+        "If yes, configure the wall rail as a separate assignment on this flight.",
+      type: "enum",
+      enumOptions: [
+        { value: "no", label: "No" },
+        { value: "yes", label: "Yes" },
+      ],
+      defaultValue: "no",
+      position: 31,
+      group: "addons",
     },
   ],
 

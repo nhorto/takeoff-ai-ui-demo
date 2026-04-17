@@ -10,8 +10,8 @@
  */
 
 import type { PATemplate, Item } from "../engine/types";
-import { feet, inches } from "../engine/units";
-import { mountingOptions } from "./rail-shared";
+import { feet, ftIn, inches } from "../engine/units";
+import { mountingOptions, RAIL_MATERIAL_SHAPES } from "./rail-shared";
 
 export const cableRail: PATemplate = {
   id: "cable-rail",
@@ -21,6 +21,19 @@ export const cableRail: PATemplate = {
   category: "rail",
 
   variables: [
+    {
+      key: "railContinuity",
+      label: "Rail Continuity",
+      type: "enum",
+      enumOptions: [
+        { value: "single", label: "Single rail" },
+        { value: "continuous", label: "Continuous rail" },
+      ],
+      defaultValue: "single",
+      required: true,
+      position: 0,
+      group: "geometry",
+    },
     {
       key: "sectionLength",
       label: "Section Length",
@@ -36,10 +49,19 @@ export const cableRail: PATemplate = {
       key: "topMaterial",
       label: "Top Rail Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS2X2X1/4",
       required: true,
       position: 5,
+      group: "rails",
+    },
+    {
+      key: "bottomMaterial",
+      label: "Bottom Rail Size",
+      type: "dimension",
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
+      defaultValue: "HSS2X2X1/4",
+      position: 5.5,
       group: "rails",
     },
     {
@@ -50,6 +72,21 @@ export const cableRail: PATemplate = {
       defaultValue: "CA1/8",
       required: true,
       position: 6,
+      group: "rails",
+    },
+    {
+      key: "cableHardware",
+      label: "Cable Hardware",
+      description:
+        "Tension fittings / turnbuckles / threaded terminals. Buyout line item.",
+      type: "enum",
+      enumOptions: [
+        { value: "swage-turnbuckle", label: "Swage + turnbuckle" },
+        { value: "threaded-terminal", label: "Threaded terminal" },
+        { value: "buyout", label: "Buyout (by vendor)" },
+      ],
+      defaultValue: "swage-turnbuckle",
+      position: 6.5,
       group: "rails",
     },
     {
@@ -64,11 +101,20 @@ export const cableRail: PATemplate = {
     },
 
     {
+      key: "railHeight",
+      label: "Height of Rail",
+      type: "length",
+      defaultValue: ftIn(3, 6),
+      required: true,
+      position: 8.5,
+      group: "posts",
+    },
+    {
       key: "endPostMaterial",
       label: "End Post Size",
       description: "Heavier posts at each end to take cable tension.",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS3X3X1/4",
       required: true,
       position: 9,
@@ -78,7 +124,7 @@ export const cableRail: PATemplate = {
       key: "intermediatePostMaterial",
       label: "Intermediate Post Size",
       type: "dimension",
-      shapeFilter: ["HSS"],
+      shapeFilter: [...RAIL_MATERIAL_SHAPES],
       defaultValue: "HSS2X2X1/4",
       required: true,
       position: 10,

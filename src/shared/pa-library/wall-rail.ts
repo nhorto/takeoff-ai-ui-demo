@@ -28,24 +28,21 @@ export const wallRail: PATemplate = {
       key: "railMaterial",
       label: "Rail Size",
       type: "dimension",
-      shapeFilter: ["HSS", "RD", "PIPE"],
+      shapeFilter: ["HSSR", "PIPE"],
       defaultValue: "PIPE1-1/2",
       required: true,
       position: 5,
       group: "rails",
     },
     {
-      key: "railReturns",
-      label: "End Returns",
-      description:
-        "Code typically requires returns to wall at each end of the rail.",
+      key: "endCondition",
+      label: "End Condition",
       type: "enum",
       enumOptions: [
-        { value: "both", label: "Both ends return" },
-        { value: "one", label: "One end returns" },
-        { value: "none", label: "No returns" },
+        { value: "terminate-to-wall", label: "Terminate to wall" },
+        { value: "cap", label: "Cap" },
       ],
-      defaultValue: "both",
+      defaultValue: "terminate-to-wall",
       required: true,
       position: 6,
       group: "rails",
@@ -65,10 +62,10 @@ export const wallRail: PATemplate = {
       label: "Bracket Type",
       type: "enum",
       enumOptions: [
-        { value: "plate", label: "Plate bracket (bolt-through)" },
-        { value: "wall-flange", label: "Wall flange (surface mount)" },
+        { value: "buyout", label: "Buyout" },
+        { value: "plate-and-rod", label: "Plate and Rod" },
       ],
-      defaultValue: "plate",
+      defaultValue: "plate-and-rod",
       required: true,
       position: 11,
       group: "brackets",
@@ -78,12 +75,12 @@ export const wallRail: PATemplate = {
   calculate: (v) => {
     const railLength = v.railLength as number;
     const railSize = v.railMaterial as string;
-    const returns = v.railReturns as "both" | "one" | "none";
+    const endCondition = v.endCondition as "cap" | "terminate-to-wall";
     const bracketSpacing = v.bracketSpacing as number;
-    const bracketType = v.bracketType as "plate" | "wall-flange";
+    const bracketType = v.bracketType as "buyout" | "plate-and-rod";
 
     const brackets = Math.max(2, Math.ceil(railLength / bracketSpacing) + 1);
-    const numReturns = returns === "both" ? 2 : returns === "one" ? 1 : 0;
+    const numReturns = endCondition === "terminate-to-wall" ? 2 : 0;
 
     const items: Item[] = [
       {
@@ -118,7 +115,7 @@ export const wallRail: PATemplate = {
       });
     }
 
-    if (bracketType === "plate") {
+    if (bracketType === "plate-and-rod") {
       items.push({
         shape: "PL",
         size: "PL1/4",
@@ -127,18 +124,17 @@ export const wallRail: PATemplate = {
         length: inches(4),
         width: inches(4),
         laborCode: "W",
-        comment: "Wall Brackets",
+        comment: "Wall Brackets (Plate and Rod)",
         holes: 2,
       });
-    } else {
       items.push({
-        shape: "FL",
-        size: "FL1-1/2",
+        shape: "RD",
+        size: "RD1/2",
         grade: "A36",
         quantity: brackets,
-        laborCode: "W",
-        comment: "Wall Flanges",
-        holes: 4,
+        length: inches(6),
+        laborCode: "Y",
+        comment: "Bracket Rods",
       });
     }
 

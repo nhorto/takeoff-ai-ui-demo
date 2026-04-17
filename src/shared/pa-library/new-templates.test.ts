@@ -70,8 +70,8 @@ describe("wall-rail", () => {
     expect(returns?.quantity).toBe(2);
   });
 
-  it("omits returns when configured", () => {
-    const result = evaluatePA(wallRail, { railReturns: "none" });
+  it("omits returns when end condition is cap", () => {
+    const result = evaluatePA(wallRail, { endCondition: "cap" });
     const returns = result.items.find((i) => i.comment === "End Returns");
     expect(returns).toBeUndefined();
   });

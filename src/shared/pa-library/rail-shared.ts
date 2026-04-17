@@ -6,8 +6,13 @@
 // accidental shared-reference mutation of the enum list.
 export function mountingOptions(): { value: string; label: string }[] {
   return [
-    { value: "baseplate", label: "Base plate (bolt-down)" },
-    { value: "core-drill", label: "Core-drilled into concrete" },
-    { value: "side-mount", label: "Side-mounted tabs" },
+    { value: "embedded", label: "Embedded" },
+    { value: "mounted-on-stair", label: "Mounted on Stair" },
+    { value: "mounted-on-side", label: "Mounted on Side of Stair" },
+    { value: "baseplate", label: "Base Plate and Anchors" },
   ];
 }
+
+// Rail material shape options — the spec allows HSS tubes, round HSS
+// (HSSR), or pipe for top/bottom/post on most rail types.
+export const RAIL_MATERIAL_SHAPES = ["HSS", "HSSR", "PIPE"] as const;
