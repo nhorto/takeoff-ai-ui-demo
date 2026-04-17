@@ -51,7 +51,6 @@ interface WorkbenchStore extends PersistedState {
     key: string,
     value: VariableValue,
   ) => void;
-  toggleLanding: (stairId: string, flightId: string) => void;
   assignLandingToFlight: (
     stairId: string,
     flightId: string,
@@ -460,51 +459,6 @@ export const useWorkbenchStore = create<WorkbenchStore>()(
                 updatedAt: now,
               };
             },
-            now,
-          ),
-        );
-      },
-
-      toggleLanding: (stairId, flightId) => {
-        const state = get();
-        const stair = state.project.stairs.find((s) => s.id === stairId);
-        const flight = stair?.flights.find((f) => f.id === flightId);
-        if (!flight) return;
-
-        const now = new Date().toISOString();
-
-        if (flight.landing) {
-          set((s) => {
-            const next = mapFlight(
-              s,
-              stairId,
-              flightId,
-              (f) => ({ ...f, landing: null, updatedAt: now }),
-              now,
-            );
-            const drafts = { ...s.drafts };
-            delete drafts[`${flightId}-landing`];
-            next.drafts = drafts;
-            return next;
-          });
-          return;
-        }
-
-        // Seed a new assignment from the first landing template. Migration +
-        // defaultState guarantee "Default Landing" exists.
-        const template = state.project.landingTemplates[0];
-        if (!template) return;
-        const assignment: LandingAssignment = {
-          id: makeId("landingassign"),
-          templateId: template.id,
-          values: { ...template.values },
-        };
-        set((s) =>
-          mapFlight(
-            s,
-            stairId,
-            flightId,
-            (f) => ({ ...f, landing: assignment, updatedAt: now }),
             now,
           ),
         );

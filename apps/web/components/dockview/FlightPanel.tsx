@@ -1,8 +1,13 @@
 import { useMemo } from "react";
 import type { IDockviewPanelProps } from "dockview-react";
-import { evaluatePA, type VariableValue } from "@shared/engine";
-import { stairChannel, landingChannel } from "@shared/pa-library";
-import { FlightForms } from "@/components/FlightForms";
+import { evaluatePA, type Item, type VariableValue } from "@shared/engine";
+import {
+  stairChannel,
+  landingChannel,
+  getTemplate,
+  RAIL_TEMPLATE_BY_TYPE,
+} from "@shared/pa-library";
+import { FlightEditor } from "@/components/FlightEditor";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 
 export function FlightPanel({
@@ -15,34 +20,56 @@ export function FlightPanel({
   );
   const flight = stair?.flights.find((f) => f.id === flightId) ?? null;
   const updateStairValue = useWorkbenchStore((s) => s.updateFlightStairValue);
-  const updateLandingValue = useWorkbenchStore((s) => s.updateFlightLandingValue);
-  const toggleLanding = useWorkbenchStore((s) => s.toggleLanding);
   const deleteFlight = useWorkbenchStore((s) => s.deleteFlight);
 
-  const stairEvaluation = useMemo(() => {
-    if (!flight) return null;
-    try {
-      const result = evaluatePA(stairChannel, flight.stairValues);
-      return { result, error: null };
-    } catch (error) {
-      return {
-        result: null,
-        error: error instanceof Error ? error.message : "Evaluation error",
-      };
-    }
-  }, [flight]);
+  const { items, errors } = useMemo(() => {
+    const items: Item[] = [];
+    const errors: { source: string; message: string }[] = [];
+    if (!flight) return { items, errors };
 
-  const landingEvaluation = useMemo(() => {
-    if (!flight?.landing) return null;
     try {
-      const result = evaluatePA(landingChannel, flight.landing.values);
-      return { result, error: null };
+      const stairResult = evaluatePA(stairChannel, flight.stairValues);
+      items.push(...stairResult.items);
     } catch (error) {
-      return {
-        result: null,
-        error: error instanceof Error ? error.message : "Evaluation error",
-      };
+      errors.push({
+        source: "Stair",
+        message: error instanceof Error ? error.message : "Evaluation error",
+      });
     }
+
+    if (flight.landing) {
+      try {
+        const landingResult = evaluatePA(landingChannel, flight.landing.values);
+        items.push(...landingResult.items);
+      } catch (error) {
+        errors.push({
+          source: "Landing",
+          message: error instanceof Error ? error.message : "Evaluation error",
+        });
+      }
+    }
+
+    for (const rail of flight.rails) {
+      const template = getTemplate(RAIL_TEMPLATE_BY_TYPE[rail.sourceType]);
+      if (!template) {
+        errors.push({
+          source: `Rail (${rail.sourceType})`,
+          message: `PA template not found`,
+        });
+        continue;
+      }
+      try {
+        const railResult = evaluatePA(template, rail.values);
+        items.push(...railResult.items);
+      } catch (error) {
+        errors.push({
+          source: `Rail (${rail.sourceType})`,
+          message: error instanceof Error ? error.message : "Evaluation error",
+        });
+      }
+    }
+
+    return { items, errors };
   }, [flight]);
 
   if (!stair || !flight) {
@@ -57,44 +84,26 @@ export function FlightPanel({
     updateStairValue(stairId, flightId, key, value);
   };
 
-  const handleLandingValueChange = (key: string, value: VariableValue) => {
-    updateLandingValue(stairId, flightId, key, value);
-  };
-
   return (
-    <div className="h-full overflow-auto px-6 py-5">
-      <div className="space-y-5">
-        <div>
-          <div className="text-xl font-semibold text-white">
-            {stair.name}
-            <span className="ml-2 text-base font-normal text-white/55">
-              / Flight {flight.order}
-            </span>
-          </div>
-          <div className="mt-2 text-sm text-white/55">
-            {stair.inputMode === "averaged" ? "Averaged mode" : "Per-flight mode"}
-            {stair.totalRisers ? ` · ${stair.totalRisers} total risers` : ""}
-          </div>
-        </div>
-
-        <FlightForms
-          flight={flight}
-          stairEvaluation={stairEvaluation}
-          landingEvaluation={landingEvaluation}
-          onStairValueChange={handleStairValueChange}
-          onLandingValueChange={handleLandingValueChange}
-          onToggleLanding={() => toggleLanding(stairId, flightId)}
-          onExport={() => {}}
-          onDeleteFlight={() => {
-            if (stair.flights.length <= 1) {
-              window.alert("A stair must have at least one flight.");
-              return;
-            }
-            if (!window.confirm(`Delete Flight ${flight.order} from "${stair.name}"?`)) return;
-            deleteFlight(stairId, flightId);
-          }}
-        />
-      </div>
-    </div>
+    <FlightEditor
+      stair={stair}
+      flight={flight}
+      items={items}
+      errors={errors}
+      onStairValueChange={handleStairValueChange}
+      onDeleteFlight={() => {
+        if (stair.flights.length <= 1) {
+          window.alert("A stair must have at least one flight.");
+          return;
+        }
+        if (
+          !window.confirm(
+            `Delete Flight ${flight.order} from "${stair.name}"?`,
+          )
+        )
+          return;
+        deleteFlight(stairId, flightId);
+      }}
+    />
   );
 }
