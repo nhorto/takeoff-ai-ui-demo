@@ -16,7 +16,9 @@ import "@/styles/dockview-theme.css";
 import { WelcomePanel } from "@/components/dockview/WelcomePanel";
 import { FlightPanel } from "@/components/dockview/FlightPanel";
 import { PdfPanel } from "@/components/dockview/PdfPanel";
-import { PlaceholderPanel } from "@/components/dockview/PlaceholderPanel";
+import { RailTemplatePanel } from "@/components/dockview/RailTemplatePanel";
+import { LadderPanel } from "@/components/dockview/LadderPanel";
+import { LandingTemplatePanel } from "@/components/dockview/LandingTemplatePanel";
 import { loadDockviewLayout, saveDockviewLayout } from "@/lib/storage";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import { usePdfStore } from "@/hooks/usePdfStore";
@@ -25,9 +27,9 @@ const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
   welcome: WelcomePanel,
   flight: FlightPanel,
   pdf: PdfPanel,
-  "rail-template": PlaceholderPanel,
-  ladder: PlaceholderPanel,
-  "landing-template": PlaceholderPanel,
+  "rail-template": RailTemplatePanel,
+  ladder: LadderPanel,
+  "landing-template": LandingTemplatePanel,
 };
 
 export interface DockviewWorkbenchHandle {
@@ -40,6 +42,15 @@ export interface DockviewWorkbenchHandle {
   openRailTemplateTab: (templateId: string, title: string) => void;
   openLadderTab: (ladderId: string, title: string) => void;
   openLandingTemplateTab: (templateId: string, title: string) => void;
+  updateEntityTabTitle: (
+    component: "rail-template" | "ladder" | "landing-template",
+    entityId: string,
+    title: string,
+  ) => void;
+  closeEntityTabs: (
+    component: "rail-template" | "ladder" | "landing-template",
+    entityIds: string[],
+  ) => void;
 }
 
 function openEntityTab(
@@ -157,26 +168,34 @@ export const DockviewWorkbench = forwardRef<
 
     openRailTemplateTab(templateId: string, title: string) {
       openEntityTab(apiRef.current, "rail-template", templateId, title, {
-        kind: "Rail",
-        id: templateId,
-        name: title,
+        templateId,
       });
     },
 
     openLadderTab(ladderId: string, title: string) {
-      openEntityTab(apiRef.current, "ladder", ladderId, title, {
-        kind: "Ladder",
-        id: ladderId,
-        name: title,
-      });
+      openEntityTab(apiRef.current, "ladder", ladderId, title, { ladderId });
     },
 
     openLandingTemplateTab(templateId: string, title: string) {
       openEntityTab(apiRef.current, "landing-template", templateId, title, {
-        kind: "Landing",
-        id: templateId,
-        name: title,
+        templateId,
       });
+    },
+
+    updateEntityTabTitle(component, entityId, title) {
+      const api = apiRef.current;
+      if (!api) return;
+      const panel = api.panels.find((p) => p.id === `${component}-${entityId}`);
+      if (panel) panel.setTitle(title);
+    },
+
+    closeEntityTabs(component, entityIds) {
+      const api = apiRef.current;
+      if (!api) return;
+      for (const id of entityIds) {
+        const panel = api.panels.find((p) => p.id === `${component}-${id}`);
+        if (panel) api.removePanel(panel);
+      }
     },
   }));
 

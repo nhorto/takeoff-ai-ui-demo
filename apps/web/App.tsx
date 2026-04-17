@@ -184,6 +184,47 @@ export default function App() {
     );
   }, []);
 
+  // Keep rail/ladder/landing tab titles in sync with rename, and close tabs
+  // for entities that were deleted from the project.
+  useEffect(() => {
+    const syncCollection = <T extends { id: string; name: string }>(
+      component: "rail-template" | "ladder" | "landing-template",
+      current: T[],
+      previous: T[],
+    ) => {
+      const api = dockviewRef.current;
+      if (!api) return;
+      const currentIds = new Set(current.map((x) => x.id));
+      const removed = previous.filter((x) => !currentIds.has(x.id)).map((x) => x.id);
+      if (removed.length > 0) api.closeEntityTabs(component, removed);
+      const prevById = new Map(previous.map((x) => [x.id, x]));
+      for (const item of current) {
+        const prev = prevById.get(item.id);
+        if (prev && prev.name !== item.name) {
+          api.updateEntityTabTitle(component, item.id, item.name);
+        }
+      }
+    };
+    const unsubRails = useWorkbenchStore.subscribe(
+      (s) => s.project.railTemplates,
+      (current, previous) => syncCollection("rail-template", current, previous),
+    );
+    const unsubLadders = useWorkbenchStore.subscribe(
+      (s) => s.project.ladders,
+      (current, previous) => syncCollection("ladder", current, previous),
+    );
+    const unsubLandings = useWorkbenchStore.subscribe(
+      (s) => s.project.landingTemplates,
+      (current, previous) =>
+        syncCollection("landing-template", current, previous),
+    );
+    return () => {
+      unsubRails();
+      unsubLadders();
+      unsubLandings();
+    };
+  }, []);
+
   return (
     <div className="flex min-h-screen flex-col px-4 py-4 text-white md:px-6">
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
