@@ -194,6 +194,16 @@ export function StairsSection({
                               <button
                                 type="button"
                                 onClick={() => panelOpener.openFlight(stair, flight)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && e.shiftKey) {
+                                    e.preventDefault();
+                                    panelOpener.openFlight(
+                                      stair,
+                                      flight,
+                                      "newTab",
+                                    );
+                                  }
+                                }}
                                 className="flex min-w-0 flex-1 items-center gap-2 text-left"
                               >
                                 <span className="truncate font-medium">

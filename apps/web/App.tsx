@@ -259,7 +259,7 @@ export default function App() {
                 onClick={handleOpenPdf}
                 className="rounded-full border border-white/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-white/68 transition hover:border-white/20 hover:bg-white/[0.05]"
               >
-                Open PDF
+                Upload / Attach Drawing
               </button>
               <button
                 type="button"

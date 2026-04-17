@@ -97,6 +97,15 @@ export function LandingsSection({
                           panelOpener.openLandingTemplate(template.id)
                         }
                         onDoubleClick={() => startRename(template)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && e.shiftKey) {
+                            e.preventDefault();
+                            panelOpener.openLandingTemplate(
+                              template.id,
+                              "newTab",
+                            );
+                          }
+                        }}
                         className="min-w-0 flex-1 truncate text-left"
                         title={template.name}
                       >

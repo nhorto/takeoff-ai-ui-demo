@@ -115,6 +115,15 @@ export function RailsSection({
                                   panelOpener.openRailTemplate(template.id)
                                 }
                                 onDoubleClick={() => startRename(template)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && e.shiftKey) {
+                                    e.preventDefault();
+                                    panelOpener.openRailTemplate(
+                                      template.id,
+                                      "newTab",
+                                    );
+                                  }
+                                }}
                                 className="min-w-0 flex-1 truncate text-left"
                                 title={template.name}
                               >

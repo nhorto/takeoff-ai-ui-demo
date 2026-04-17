@@ -82,6 +82,12 @@ export function LaddersSection({
                         type="button"
                         onClick={() => panelOpener.openLadder(ladder.id)}
                         onDoubleClick={() => startRename(ladder)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && e.shiftKey) {
+                            e.preventDefault();
+                            panelOpener.openLadder(ladder.id, "newTab");
+                          }
+                        }}
                         className="min-w-0 flex-1 truncate text-left"
                         title={ladder.name}
                       >
