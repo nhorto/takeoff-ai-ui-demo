@@ -57,20 +57,35 @@ export const standardLadder: PATemplate = {
     {
       key: "sideRailSize",
       label: "Side Rail Size",
+      description: "FB flat bar, C channel, or L angle.",
       type: "dimension",
-      shapeFilter: ["FB"],
+      shapeFilter: ["FB", "C", "L"],
       defaultValue: "FB3X3/8",
       required: true,
       position: 10,
       group: "rails",
     },
     {
+      key: "rungType",
+      label: "Rung Material Type",
+      type: "enum",
+      enumOptions: [
+        { value: "rd", label: "RD round rod" },
+        { value: "rb", label: "RB rebar" },
+        { value: "buyout", label: "Buyout (by vendor)" },
+      ],
+      defaultValue: "rd",
+      required: true,
+      position: 10.5,
+      group: "rails",
+    },
+    {
       key: "rungSize",
       label: "Rung Size",
+      description: "Ignored when rung type is Buyout.",
       type: "dimension",
-      shapeFilter: ["RD"],
+      shapeFilter: ["RD", "RB"],
       defaultValue: "RD3/4",
-      required: true,
       position: 11,
       group: "rails",
     },
@@ -86,14 +101,12 @@ export const standardLadder: PATemplate = {
     },
 
     {
-      key: "bracketType",
-      label: "Mounting Bracket Type",
-      type: "enum",
-      enumOptions: [
-        { value: "wall", label: "Wall-mount standoff" },
-        { value: "floor", label: "Floor-mount base" },
-      ],
-      defaultValue: "wall",
+      key: "bracketMaterial",
+      label: "Bracket Material",
+      description: "PL bent plate or L angle.",
+      type: "dimension",
+      shapeFilter: ["PL", "L"],
+      defaultValue: "PL3/8",
       required: true,
       position: 20,
       group: "brackets",
@@ -123,6 +136,16 @@ export const standardLadder: PATemplate = {
       group: "cage",
     },
     {
+      key: "hoopMaterial",
+      label: "Hoop Material",
+      description: "Flat bar used for the hoop ring.",
+      type: "dimension",
+      shapeFilter: ["FB"],
+      defaultValue: "FB2X1/4",
+      position: 30.5,
+      group: "cage",
+    },
+    {
       key: "hoopSpacing",
       label: "Hoop Spacing",
       type: "length",
@@ -146,11 +169,13 @@ export const standardLadder: PATemplate = {
     const width = v.ladderWidth as number;
     const walkthrough = (v.walkthrough as string) === "walkthrough";
     const railSize = v.sideRailSize as string;
+    const rungType = (v.rungType as string) ?? "rd";
     const rungSize = v.rungSize as string;
     const rungSpacing = v.rungSpacing as number;
-    const bracketType = v.bracketType as "wall" | "floor";
+    const bracketMaterial = (v.bracketMaterial as string) ?? "PL3/8";
     const bracketSpacing = v.bracketSpacing as number;
     const hasCage = (v.cage as string) === "yes";
+    const hoopMaterial = (v.hoopMaterial as string) ?? "FB2X1/4";
     const hoopSpacing = (v.hoopSpacing as number) ?? feet(4);
     const hoopStraps = Math.max(0, (v.hoopStraps as number) ?? 0);
 
@@ -177,47 +202,44 @@ export const standardLadder: PATemplate = {
         comment: "Side Rails",
         holes: numRungs,
       },
-      {
-        shape: "RD",
+    ];
+
+    if (rungType !== "buyout") {
+      items.push({
+        shape: rungType === "rb" ? "RB" : "RD",
         size: rungSize,
         grade: "A36",
         quantity: numRungs,
         length: width + inches(1),
         laborCode: "R",
         comment: "Rungs",
-      },
-    ];
-
-    if (bracketType === "wall") {
-      items.push({
-        shape: "FB",
-        size: "FB3X3/8",
-        grade: "A36",
-        quantity: numBrackets * 2,
-        length: inches(10),
-        laborCode: "C",
-        comment: "Wall Standoff Brackets",
-        holes: 2,
       });
     } else {
       items.push({
-        shape: "PL",
-        size: "PL3/8",
-        grade: "A36",
-        quantity: 2,
-        length: inches(6),
-        width: inches(6),
-        laborCode: "W",
-        comment: "Floor Base Plates",
-        holes: 4,
+        shape: "BO",
+        grade: ".",
+        quantity: numRungs,
+        comment: "Rungs (Buyout)",
       });
     }
+
+    const bracketShape = bracketMaterial.startsWith("L") ? "L" : "PL";
+    items.push({
+      shape: bracketShape,
+      size: bracketMaterial,
+      grade: "A36",
+      quantity: numBrackets * 2,
+      length: inches(10),
+      laborCode: "C",
+      comment: "Brackets",
+      holes: 2,
+    });
 
     if (hasCage) {
       const numHoops = Math.max(1, Math.floor(height / hoopSpacing));
       items.push({
         shape: "FB",
-        size: "FB2X1/4",
+        size: hoopMaterial,
         grade: "A36",
         quantity: numHoops,
         length: feet(8),
@@ -227,7 +249,7 @@ export const standardLadder: PATemplate = {
       if (hoopStraps > 0) {
         items.push({
           shape: "FB",
-          size: "FB2X1/4",
+          size: hoopMaterial,
           grade: "A36",
           quantity: hoopStraps,
           length: height - inches(84),
