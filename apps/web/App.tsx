@@ -290,10 +290,10 @@ export default function App() {
               aiPanelOpen
                 ? sidebarCollapsed
                   ? "md:grid-cols-[48px_minmax(0,1fr)_260px]"
-                  : "md:grid-cols-[280px_minmax(0,1fr)_260px]"
+                  : "md:grid-cols-[304px_minmax(0,1fr)_260px]"
                 : sidebarCollapsed
                   ? "md:grid-cols-[48px_minmax(0,1fr)]"
-                  : "md:grid-cols-[280px_minmax(0,1fr)]"
+                  : "md:grid-cols-[304px_minmax(0,1fr)]"
             }`}
           >
             <WorkbenchSidebar
