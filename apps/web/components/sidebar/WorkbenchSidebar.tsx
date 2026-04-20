@@ -40,8 +40,8 @@ export function WorkbenchSidebar({
   }
 
   return (
-    <aside className="flex min-h-0 border-b border-white/4 bg-white/[0.025] md:border-b-0 md:border-r md:border-r-white/4">
-      <div className="flex w-12 shrink-0 flex-col items-stretch border-r border-white/5 bg-slate-950/35 py-2">
+    <aside className="flex min-h-0 border-b border-slate-300/10 bg-white/[0.025] md:border-b-0 md:border-r md:border-r-slate-300/10">
+      <div className="flex w-12 shrink-0 flex-col items-stretch border-r border-slate-300/12 bg-slate-950/35 py-2">
         <RibbonButton
           active={tab === "welcome" && !collapsed}
           title="Home"
@@ -81,7 +81,7 @@ export function WorkbenchSidebar({
 
       {!collapsed && (
         <div className="flex min-h-0 w-64 flex-col">
-          <div className="flex items-center justify-between border-b border-white/5 px-3 pt-3 pb-2">
+          <div className="flex items-center justify-between border-b border-slate-300/12 px-3 pt-3 pb-2">
             <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
               {TAB_TITLES[tab]}
             </div>

@@ -13,18 +13,17 @@ import {
 } from "dockview-react";
 import "dockview-react/dist/styles/dockview.css";
 import "@/styles/dockview-theme.css";
-import { WelcomePanel } from "@/components/dockview/WelcomePanel";
 import { FlightPanel } from "@/components/dockview/FlightPanel";
 import { PdfPanel } from "@/components/dockview/PdfPanel";
 import { RailTemplatePanel } from "@/components/dockview/RailTemplatePanel";
 import { LadderPanel } from "@/components/dockview/LadderPanel";
 import { LandingTemplatePanel } from "@/components/dockview/LandingTemplatePanel";
+import { WelcomeView } from "@/components/WelcomeView";
 import { loadDockviewLayout, saveDockviewLayout } from "@/lib/storage";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import { usePdfStore } from "@/hooks/usePdfStore";
 
 const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
-  welcome: WelcomePanel,
   flight: FlightPanel,
   pdf: PdfPanel,
   "rail-template": RailTemplatePanel,
@@ -68,21 +67,6 @@ export interface DockviewWorkbenchHandle {
   ) => void;
 }
 
-function createDefaultLayout(
-  api: DockviewApi,
-  params: {
-    onAddStair: () => void;
-    onOpenFlight: (stairId: string, flightId: string) => void;
-  },
-) {
-  api.addPanel({
-    id: "welcome",
-    component: "welcome",
-    title: "Welcome",
-    params,
-  });
-}
-
 export const DockviewWorkbench = forwardRef<
   DockviewWorkbenchHandle,
   {
@@ -95,6 +79,8 @@ export const DockviewWorkbench = forwardRef<
   // A new peek click replaces the current peek; promotion (open-in-new-tab,
   // drag to another group) clears the ref so the tab sticks around.
   const peekPanelIdRef = useRef<string | null>(null);
+  const [panelCount, setPanelCount] = useState(0);
+  const stairs = useWorkbenchStore((s) => s.project.stairs);
   const setSelectedFlight = useWorkbenchStore((s) => s.setSelectedFlight);
 
   const openEntityPanel = useCallback(
@@ -270,6 +256,7 @@ export const DockviewWorkbench = forwardRef<
       apiRef.current = event.api;
 
       event.api.onDidLayoutChange(() => {
+        setPanelCount(event.api.panels.length);
         saveDockviewLayout(event.api.toJSON());
       });
 
@@ -310,18 +297,18 @@ export const DockviewWorkbench = forwardRef<
             if (panel.id.startsWith("pdf-")) {
               event.api.removePanel(panel);
             } else if (panel.id === "welcome") {
-              panel.update({ params: { onAddStair, onOpenFlight } });
+              event.api.removePanel(panel);
             }
           }
-          if (event.api.panels.length > 0) return;
+          setPanelCount(event.api.panels.length);
+          return;
         } catch {
           /* fall through to default */
         }
       }
-
-      createDefaultLayout(event.api, { onAddStair, onOpenFlight });
+      setPanelCount(event.api.panels.length);
     },
-    [onAddStair, onOpenFlight, setSelectedFlight],
+    [setSelectedFlight],
   );
 
   const [isDragging, setIsDragging] = useState(false);
@@ -381,6 +368,15 @@ export const DockviewWorkbench = forwardRef<
         components={components}
         onReady={onReady}
       />
+      {panelCount === 0 && (
+        <div className="absolute inset-0 z-10 overflow-auto">
+          <WelcomeView
+            stairs={stairs}
+            onAddStair={onAddStair}
+            onSelectFlight={(stair, flight) => onOpenFlight(stair.id, flight.id)}
+          />
+        </div>
+      )}
       {isDragging && (
         <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-300/5 backdrop-blur-[1px]">
           <div className="rounded-xl border-2 border-dashed border-cyan-300/50 bg-slate-950/70 px-6 py-4 text-sm text-cyan-100">
