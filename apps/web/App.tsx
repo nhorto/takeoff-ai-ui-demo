@@ -245,7 +245,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col px-4 py-4 text-white md:px-6">
       <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
-        <div className="flex flex-1 flex-col overflow-hidden rounded-[24px] border border-slate-300/12 bg-[linear-gradient(180deg,rgba(10,17,30,0.98),rgba(8,13,24,0.98))] shadow-glow">
+        <div className="flex flex-1 flex-col overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#1e1e1e] shadow-glow">
           <header className="flex items-center justify-between border-b border-slate-300/10 px-5 py-4">
             <div className="flex items-center gap-3 text-sm">
               <div className="font-semibold tracking-[0.16em] text-white">
