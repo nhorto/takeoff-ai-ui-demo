@@ -35,7 +35,7 @@ export function GroupedSections({
         return (
           <section key={group || "_default"}>
             {label && (
-              <div className="mb-3 text-xs font-medium uppercase tracking-[0.18em] text-white/55">
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/52">
                 {label}
               </div>
             )}

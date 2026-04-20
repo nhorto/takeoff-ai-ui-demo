@@ -4,6 +4,7 @@ import {
   type AnnotationColor,
   type AnnotationTool,
 } from "@/hooks/useAnnotationModeStore";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 const TOOLS: { id: AnnotationTool; label: string; title: string }[] = [
   { id: "pointer", label: "Select", title: "Select / move" },
@@ -25,11 +26,12 @@ export function AnnotationToolbar({ pdfId }: { pdfId: string }) {
             type="button"
             onClick={() => setTool(pdfId, t.id)}
             title={t.title}
-            className={`rounded-md border px-2 py-1 transition ${
+            className={cx(
+              "px-2 py-1 text-xs",
               mode.tool === t.id
-                ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100"
-                : "border-white/10 hover:border-white/25 hover:bg-white/[0.06]"
-            }`}
+                ? buttonClass.primary
+                : buttonClass.secondary,
+            )}
           >
             {t.label}
           </button>
@@ -47,14 +49,14 @@ export function AnnotationToolbar({ pdfId }: { pdfId: string }) {
             title={c}
             aria-label={`Color ${c}`}
             className={`h-5 w-5 rounded-full border transition ${
-              mode.color === c ? "border-white ring-2 ring-white/25" : "border-white/25"
+              mode.color === c ? "border-white ring-2 ring-white/25" : "border-white/30 hover:border-white/60"
             }`}
             style={{ background: c }}
           />
         ))}
       </div>
 
-      <div className="ml-auto text-[11px] uppercase tracking-[0.18em] text-white/40">
+      <div className="ml-auto text-[11px] uppercase tracking-[0.16em] text-white/48">
         Delete key removes selection
       </div>
     </div>

@@ -19,7 +19,7 @@ export function GroupedFields({
   const scoped = variables.filter((v) => v.group === group);
   if (scoped.length === 0) {
     return (
-      <div className="text-sm italic text-white/45">
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-5 text-sm text-white/56">
         No {group} fields defined on this template.
       </div>
     );

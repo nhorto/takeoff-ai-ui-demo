@@ -74,8 +74,10 @@ export function FlightPanel({
 
   if (!stair || !flight) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-white/42">
-        Flight not found. It may have been deleted.
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white/58">
+          Flight not found. It may have been deleted.
+        </div>
       </div>
     );
   }

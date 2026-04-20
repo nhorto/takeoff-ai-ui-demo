@@ -82,7 +82,7 @@ function FieldRenderer({
             onChange={(next) => onValueChange(variable.key, next)}
           />
           {typeof value === "number" && (
-            <div className="text-xs text-white/40">
+            <div className="text-xs text-white/48">
               = {safeFormat(value)}
             </div>
           )}

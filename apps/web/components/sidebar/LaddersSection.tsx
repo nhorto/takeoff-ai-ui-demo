@@ -60,7 +60,7 @@ export function LaddersSection({
 
       <div className="flex-1 space-y-0.5 overflow-y-auto px-4 pb-4">
         {filtered.length === 0 ? (
-          <div className="px-2 py-2 text-xs italic text-white/25">
+          <div className="rounded-md border border-white/8 bg-white/[0.03] px-3 py-3 text-sm text-white/52">
             {search ? "No ladders match." : "No ladders yet."}
           </div>
         ) : (

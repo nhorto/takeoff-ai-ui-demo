@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/Select";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { FlightRecord } from "@/types/project";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function LandingTab({
   stairId,
@@ -38,7 +39,7 @@ export function LandingTab({
   if (!flight.landing) {
     if (landingTemplates.length === 0) {
       return (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-6 text-center text-sm text-white/55">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-white/58">
           No landing templates yet. Create one from the Landings tab in the
           sidebar.
         </div>
@@ -46,7 +47,7 @@ export function LandingTab({
     }
     return (
       <div className="space-y-3">
-        <div className="text-sm text-white/65">
+        <div className="text-sm text-white/68">
           This flight has no landing. Pick a template to add one — you'll be
           able to override any value locally without changing the template.
         </div>
@@ -74,10 +75,10 @@ export function LandingTab({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
         <div className="min-w-0 text-sm">
-          <div className="text-white/55">Landing template</div>
-          <div className="truncate font-medium text-white/85">
+          <div className="text-white/60">Landing template</div>
+          <div className="truncate font-medium text-white/90">
             {current?.name ?? "(template deleted)"}
           </div>
         </div>
@@ -102,7 +103,7 @@ export function LandingTab({
           <button
             type="button"
             onClick={() => removeLandingFromFlight(stairId, flight.id)}
-            className="rounded-full border border-red-400/25 px-3 py-1.5 text-xs text-red-200/80 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+            className={cx(buttonClass.destructive, "px-3 py-1.5 text-xs")}
           >
             Remove
           </button>

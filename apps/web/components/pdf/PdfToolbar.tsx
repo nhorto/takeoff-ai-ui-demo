@@ -1,4 +1,5 @@
 import { useAnnotationModeStore } from "@/hooks/useAnnotationModeStore";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function PdfToolbar({
   pdfId,
@@ -32,35 +33,36 @@ export function PdfToolbar({
         <button
           type="button"
           onClick={() => setEnabled(pdfId, !enabled)}
-          className={`rounded-md border px-2 py-1 transition ${
+          className={cx(
+            "px-2 py-1 text-xs",
             enabled
-              ? "border-cyan-300/50 bg-cyan-300/10 text-cyan-100"
-              : "border-white/10 hover:border-white/25 hover:bg-white/[0.06]"
-          }`}
+              ? buttonClass.primary
+              : buttonClass.secondary,
+          )}
           title="Toggle annotation mode"
         >
           Annotate
         </button>
         <div className="mx-1 h-4 w-px bg-white/15" />
-        <span className="tabular-nums text-white/55">
+        <span className="tabular-nums text-white/60">
           Page {currentPage} / {pageCount || "?"}
         </span>
         <div className="mx-1 h-4 w-px bg-white/15" />
         <button
           type="button"
           onClick={onZoomOut}
-          className="rounded-md border border-white/10 px-2 py-1 transition hover:border-white/25 hover:bg-white/[0.06]"
+          className={cx(buttonClass.secondary, "px-2 py-1 text-xs")}
           title="Zoom out"
         >
           −
         </button>
-        <span className="min-w-[3.5rem] text-center tabular-nums text-white/60">
+        <span className="min-w-[3.5rem] text-center tabular-nums text-white/64">
           {Math.round(zoom * 100)}%
         </span>
         <button
           type="button"
           onClick={onZoomIn}
-          className="rounded-md border border-white/10 px-2 py-1 transition hover:border-white/25 hover:bg-white/[0.06]"
+          className={cx(buttonClass.secondary, "px-2 py-1 text-xs")}
           title="Zoom in"
         >
           +
@@ -68,7 +70,7 @@ export function PdfToolbar({
         <button
           type="button"
           onClick={onFitWidth}
-          className="ml-1 rounded-md border border-white/10 px-2 py-1 text-[11px] uppercase tracking-wider transition hover:border-white/25 hover:bg-white/[0.06]"
+          className={cx(buttonClass.secondary, "ml-1 px-2 py-1 text-[11px] uppercase tracking-[0.14em]")}
           title="Fit width"
         >
           Fit

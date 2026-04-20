@@ -43,11 +43,11 @@ export function WizardSteps({ activeStep, onStepChange }: WizardStepsProps) {
                 ? "border-signal-cyan bg-cyan-400/10 shadow-glow"
                 : complete
                   ? "border-emerald-400/40 bg-emerald-400/10"
-                  : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/8"
+                  : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.08]"
             }`}
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs uppercase tracking-[0.24em] text-white/45">
+              <span className="text-xs uppercase tracking-[0.2em] text-white/50">
                 Step {step.id + 1}
               </span>
               <span
@@ -63,7 +63,7 @@ export function WizardSteps({ activeStep, onStepChange }: WizardStepsProps) {
               </span>
             </div>
             <div className="text-sm font-semibold text-white">{step.label}</div>
-            <p className="mt-2 text-sm leading-6 text-white/60">{step.summary}</p>
+            <p className="mt-2 text-sm leading-6 text-white/64">{step.summary}</p>
           </button>
         );
       })}

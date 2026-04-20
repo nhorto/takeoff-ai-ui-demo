@@ -8,10 +8,10 @@ interface ItemsTableProps {
 
 export function ItemsTable({ items }: ItemsTableProps) {
   return (
-    <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,17,31,0.72),rgba(7,17,31,0.92))] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-white/10 text-sm text-white/80">
-          <thead className="bg-white/5 text-left text-xs uppercase tracking-[0.22em] text-white/45">
+    <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,17,31,0.76),rgba(7,17,31,0.96))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="max-h-[320px] overflow-auto">
+        <table className="min-w-full divide-y divide-white/10 text-sm text-white/82">
+          <thead className="sticky top-0 z-10 bg-slate-950/95 text-left text-[11px] uppercase tracking-[0.16em] text-white/50 backdrop-blur">
             <tr>
               <HeaderCell>Shape</HeaderCell>
               <HeaderCell>Size</HeaderCell>
@@ -25,9 +25,12 @@ export function ItemsTable({ items }: ItemsTableProps) {
           </thead>
           <tbody className="divide-y divide-white/6">
             {items.map((item, index) => (
-              <tr key={`${item.shape}-${index}`} className="odd:bg-white/[0.015] hover:bg-cyan-300/[0.06]">
+              <tr
+                key={`${item.shape}-${index}`}
+                className="odd:bg-white/[0.015] hover:bg-cyan-300/[0.05]"
+              >
                 <BodyCell>
-                  <span className="inline-flex min-w-[3rem] justify-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
+                  <span className="inline-flex min-w-[3rem] justify-center rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/78">
                     {item.shape}
                   </span>
                 </BodyCell>
@@ -48,9 +51,9 @@ export function ItemsTable({ items }: ItemsTableProps) {
 }
 
 function HeaderCell({ children }: { children: ReactNode }) {
-  return <th className="px-4 py-4 font-medium">{children}</th>;
+  return <th className="px-4 py-3.5 font-medium">{children}</th>;
 }
 
 function BodyCell({ children }: { children: ReactNode }) {
-  return <td className="px-4 py-4 align-top">{children}</td>;
+  return <td className="px-4 py-3.5 align-top">{children}</td>;
 }

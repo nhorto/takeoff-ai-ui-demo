@@ -90,8 +90,8 @@ export function RailsSection({
                 {TYPE_LABEL[type]}
               </div>
               {items.length === 0 ? (
-                <div className="px-2 py-1 text-xs italic text-white/25">
-                  none
+                <div className="rounded-md border border-white/8 bg-white/[0.03] px-3 py-3 text-sm text-white/50">
+                  No {TYPE_LABEL[type].toLowerCase()} templates yet.
                 </div>
               ) : (
                 <div className="space-y-0.5">

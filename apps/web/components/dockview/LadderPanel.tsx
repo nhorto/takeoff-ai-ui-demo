@@ -11,8 +11,10 @@ export function LadderPanel({
 
   if (!ladder) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-white/42">
-        Ladder not found. It may have been deleted.
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white/58">
+          Ladder not found. It may have been deleted.
+        </div>
       </div>
     );
   }
