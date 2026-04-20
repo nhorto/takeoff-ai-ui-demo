@@ -6,10 +6,16 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/ContextMenu";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/DropdownMenu";
 import { SectionSearch } from "@/components/sidebar/SectionSearch";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { Ladder } from "@/types/project";
 import type { PanelOpener } from "@/components/sidebar/types";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function LaddersSection({
   onAddLadder,
@@ -63,7 +69,7 @@ export function LaddersSection({
             return (
               <ContextMenu key={ladder.id}>
                 <ContextMenuTrigger asChild>
-                  <div className="group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-white/72 hover:bg-white/[0.06]">
+                  <div className="group flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm transition hover:border-white/8 hover:bg-white/[0.05]">
                     {isRenaming ? (
                       <input
                         type="text"
@@ -75,7 +81,7 @@ export function LaddersSection({
                           else if (e.key === "Escape") setRenamingId(null);
                         }}
                         autoFocus
-                        className="min-w-0 flex-1 rounded border border-cyan-300/40 bg-slate-950/65 px-1 py-0.5 text-sm text-white outline-none"
+                        className="min-w-0 flex-1 rounded-md border border-cyan-300/40 bg-slate-950/70 px-2 py-1 text-sm text-white outline-none"
                       />
                     ) : (
                       <button
@@ -88,12 +94,45 @@ export function LaddersSection({
                             panelOpener.openLadder(ladder.id, "newTab");
                           }
                         }}
-                        className="min-w-0 flex-1 truncate text-left"
+                        className="min-w-0 flex-1 truncate text-left text-white/82 transition group-hover:text-white"
                         title={ladder.name}
                       >
                         {ladder.name}
                       </button>
                     )}
+                    <ActionMenu label={`${ladder.name} actions`}>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openLadder(ladder.id)}
+                      >
+                        Open
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openLadder(ladder.id, "newTab")}
+                      >
+                        Open in new tab
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openLadder(ladder.id, "toSide")}
+                      >
+                        Open to side
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onSelect={() => duplicateLadder(ladder.id)}
+                      >
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => startRename(ladder)}>
+                        Rename…
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        destructive
+                        onSelect={() => handleDelete(ladder)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </ActionMenu>
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
@@ -137,9 +176,10 @@ export function LaddersSection({
         <button
           type="button"
           onClick={onAddLadder}
-          className="mt-2 w-full rounded-lg px-2 py-2 text-left text-sm text-cyan-200/85 transition hover:bg-white/[0.06] hover:text-cyan-100"
+          className={cx(buttonClass.sidebarAdd, "mt-3")}
         >
-          + Add Ladder
+          <span className="text-base leading-none">+</span>
+          Add Ladder
         </button>
       </div>
     </div>

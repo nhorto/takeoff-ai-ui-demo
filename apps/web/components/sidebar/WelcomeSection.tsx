@@ -1,5 +1,6 @@
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { AddActions, PanelOpener } from "@/components/sidebar/types";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function WelcomeSection({
   addActions,
@@ -18,10 +19,10 @@ export function WelcomeSection({
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto px-4 pt-4 pb-4">
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
           Quick actions
         </div>
-        <div className="mt-2 grid gap-1.5">
+        <div className="mt-2 grid gap-2">
           <QuickButton label="+ New Stair" onClick={addActions.onAddStair} />
           <QuickButton label="+ New Rail" onClick={addActions.onAddRail} />
           <QuickButton label="+ New Ladder" onClick={addActions.onAddLadder} />
@@ -31,7 +32,7 @@ export function WelcomeSection({
 
       {recentFlights.length > 0 && (
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/35">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50">
             Recent flights
           </div>
           <div className="mt-2 space-y-0.5">
@@ -40,9 +41,9 @@ export function WelcomeSection({
                 key={flight.id}
                 type="button"
                 onClick={() => panelOpener.openFlight(stair, flight)}
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-white/72 transition hover:bg-white/[0.06] hover:text-white"
+                className="flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-left text-sm text-white/78 transition hover:border-white/8 hover:bg-white/[0.05] hover:text-white"
               >
-                <span className="text-white/35">◦</span>
+                <span className="text-white/42">◦</span>
                 <span className="truncate">
                   {stair.name} / Flight {flight.order}
                 </span>
@@ -66,7 +67,7 @@ function QuickButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-left text-sm text-white/75 transition hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+      className={cx(buttonClass.secondary, "w-full justify-start")}
     >
       {label}
     </button>

@@ -1,5 +1,6 @@
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { forwardRef, type ComponentPropsWithoutRef, type ElementRef } from "react";
+import { cx } from "@/components/ui/uiStyles";
 
 export const Select = SelectPrimitive.Root;
 export const SelectValue = SelectPrimitive.Value;
@@ -11,11 +12,14 @@ export const SelectTrigger = forwardRef<
   return (
     <SelectPrimitive.Trigger
       ref={ref}
-      className={`inline-flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-slate-950/75 px-3 py-2.5 text-sm text-white outline-none transition hover:border-white/20 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20 data-[placeholder]:text-white/45 ${className}`}
+      className={cx(
+        "inline-flex w-full items-center justify-between gap-2 rounded-xl border border-white/12 bg-slate-950/78 px-3 py-2.5 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition hover:border-white/18 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20 data-[placeholder]:text-white/45",
+        className,
+      )}
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon className="text-white/45">▾</SelectPrimitive.Icon>
+      <SelectPrimitive.Icon className="text-white/52">▾</SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
 });
@@ -33,7 +37,7 @@ export const SelectContent = forwardRef<
         ref={ref}
         position={position}
         sideOffset={sideOffset}
-        className={`z-50 overflow-hidden rounded-lg border border-white/10 bg-slate-950/95 text-sm text-white shadow-xl shadow-black/40 backdrop-blur data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 ${className}`}
+        className={`z-50 overflow-hidden rounded-lg border border-white/10 bg-slate-950/96 text-sm text-white shadow-xl shadow-black/40 backdrop-blur data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 ${className}`}
         {...props}
       >
         <SelectPrimitive.Viewport className="p-1 min-w-[var(--radix-select-trigger-width)]">

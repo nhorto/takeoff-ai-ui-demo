@@ -5,6 +5,10 @@ import { GroupedSections } from "@/components/ui/GroupedSections";
 import { MaterialsPanel } from "@/components/MaterialsPanel";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { Ladder } from "@/types/project";
+import {
+  editableTitleClass,
+  panelEyebrowClass,
+} from "@/components/ui/uiStyles";
 
 export function LadderEditor({ ladder }: { ladder: Ladder }) {
   const updateValue = useWorkbenchStore((s) => s.updateLadderValue);
@@ -34,14 +38,14 @@ export function LadderEditor({ ladder }: { ladder: Ladder }) {
       <div className="flex-1 overflow-auto">
         <div className="space-y-6 px-6 py-5">
           <header>
-            <div className="text-xs uppercase tracking-[0.18em] text-white/45">
+            <div className={panelEyebrowClass}>
               Ladder
             </div>
             <input
               type="text"
               value={ladder.name}
               onChange={(e) => rename(ladder.id, e.target.value)}
-              className="mt-1 w-full truncate bg-transparent text-xl font-semibold text-white outline-none focus:ring-0"
+              className={editableTitleClass}
             />
           </header>
 

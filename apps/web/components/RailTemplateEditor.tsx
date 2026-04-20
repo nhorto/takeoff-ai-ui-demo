@@ -12,6 +12,10 @@ import {
 import { MaterialsPanel } from "@/components/MaterialsPanel";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { RailTemplate, RailType } from "@/types/project";
+import {
+  editableTitleClass,
+  panelEyebrowClass,
+} from "@/components/ui/uiStyles";
 
 const TYPE_OPTIONS: { value: RailType; label: string }[] = [
   { value: "picket", label: "Picket" },
@@ -71,18 +75,18 @@ export function RailTemplateEditor({ template }: { template: RailTemplate }) {
         <div className="space-y-6 px-6 py-5">
           <header className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/45">
+              <div className={panelEyebrowClass}>
                 Rail template
               </div>
               <input
                 type="text"
                 value={template.name}
                 onChange={(e) => rename(template.id, e.target.value)}
-                className="mt-1 w-full truncate bg-transparent text-xl font-semibold text-white outline-none focus:ring-0"
+                className={editableTitleClass}
               />
             </div>
             <div className="shrink-0">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/45">
+              <div className={panelEyebrowClass}>
                 Type
               </div>
               <Select value={template.type} onValueChange={handleTypeChange}>

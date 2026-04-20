@@ -1,4 +1,5 @@
 import type { FlightRecord, StairRecord } from "@/types/project";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function WelcomeView({
   stairs,
@@ -20,12 +21,12 @@ export function WelcomeView({
   return (
     <div className="flex-1 px-6 py-6">
       <div className="mx-auto max-w-2xl pt-10">
-        <div className="text-center text-sm text-white/58">
+        <div className="text-center text-sm text-white/64">
           Your stair assemblies
         </div>
 
         <div className="mt-10">
-          <div className="text-sm text-white/52">Quick actions</div>
+          <div className="text-sm font-medium text-white/66">Quick actions</div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <QuickAction label="New stair" onClick={onAddStair} />
             <QuickAction label="Import from PowerFab" muted />
@@ -34,19 +35,19 @@ export function WelcomeView({
 
         {recentFlights.length > 0 && (
           <div className="mt-10">
-            <div className="text-sm text-white/52">Recent flights</div>
+            <div className="text-sm font-medium text-white/66">Recent flights</div>
             <div className="mt-4 space-y-2">
               {recentFlights.map(({ stair, flight }) => (
                 <button
                   key={flight.id}
                   type="button"
                   onClick={() => onSelectFlight(stair, flight)}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-white/72 transition hover:bg-white/[0.05] hover:text-white"
+                  className="flex w-full items-center gap-3 rounded-md border border-transparent px-3 py-2.5 text-left text-sm text-white/82 transition hover:border-white/8 hover:bg-white/[0.05] hover:text-white"
                 >
-                  <span className="text-white/35">◦</span>
+                  <span className="text-white/42">◦</span>
                   <span>
                     {stair.name} / Flight {flight.order}
-                    <span className="ml-2 text-white/38">
+                    <span className="ml-2 text-white/45">
                       (edited {relativeEditedLabel(flight.updatedAt)})
                     </span>
                   </span>
@@ -74,13 +75,9 @@ function QuickAction({
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition ${
-        muted
-          ? "border-white/10 bg-white/[0.03] text-white/48"
-          : "border-white/10 bg-white/[0.03] text-white/76 hover:border-white/20 hover:bg-white/[0.06]"
-      } disabled:cursor-default`}
+      className={cx(`flex items-center gap-3 px-4 py-3 text-left`, muted ? buttonClass.secondary : buttonClass.primary, muted && "justify-start text-white/55")}
     >
-      <span>⊞</span>
+      <span className={muted ? "text-white/45" : "text-cyan-100"}>⊞</span>
       <span>{label}</span>
     </button>
   );

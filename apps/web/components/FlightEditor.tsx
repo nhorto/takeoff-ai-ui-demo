@@ -7,6 +7,7 @@ import { LandingTab } from "@/components/FlightTabs/LandingTab";
 import { RailTab } from "@/components/FlightTabs/RailTab";
 import { MaterialsPanel } from "@/components/MaterialsPanel";
 import type { FlightRecord, StairRecord } from "@/types/project";
+import { buttonClass } from "@/components/ui/uiStyles";
 
 export interface EvaluationSlot {
   source: string;
@@ -35,13 +36,13 @@ export function FlightEditor({
         <div className="space-y-5 px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-xl font-semibold text-white">
+              <div className="text-xl font-semibold text-white/96">
                 {stair.name}
-                <span className="ml-2 text-base font-normal text-white/55">
+                <span className="ml-2 text-base font-normal text-white/62">
                   / Flight {flight.order}
                 </span>
               </div>
-              <div className="mt-2 text-sm text-white/55">
+              <div className="mt-2 text-sm text-white/64">
                 {stair.inputMode === "averaged"
                   ? "Averaged mode"
                   : "Per-flight mode"}
@@ -53,7 +54,7 @@ export function FlightEditor({
             <button
               type="button"
               onClick={onDeleteFlight}
-              className="shrink-0 rounded-full border border-red-400/25 px-3 py-1.5 text-sm text-red-200/80 transition hover:border-red-400/50 hover:bg-red-500/10 hover:text-red-100"
+              className={`${buttonClass.destructive} shrink-0`}
             >
               Delete Flight
             </button>

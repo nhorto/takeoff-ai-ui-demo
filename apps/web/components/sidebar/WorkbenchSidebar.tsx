@@ -5,6 +5,7 @@ import { RailsSection } from "@/components/sidebar/RailsSection";
 import { LaddersSection } from "@/components/sidebar/LaddersSection";
 import { LandingsSection } from "@/components/sidebar/LandingsSection";
 import type { AddActions, PanelOpener } from "@/components/sidebar/types";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 type Tab = "welcome" | "stairs" | "rails" | "ladders" | "landings";
 
@@ -36,8 +37,8 @@ export function WorkbenchSidebar({
   }
 
   return (
-    <aside className="flex min-h-0 border-b border-white/10 bg-white/[0.02] xl:border-b-0 xl:border-r">
-      <div className="flex w-11 shrink-0 flex-col items-stretch border-r border-white/5 py-2">
+    <aside className="flex min-h-0 border-b border-white/10 bg-white/[0.025] xl:border-b-0 xl:border-r">
+      <div className="flex w-12 shrink-0 flex-col items-stretch border-r border-white/6 bg-slate-950/35 py-2">
         <RibbonButton
           active={tab === "welcome" && !collapsed}
           title="Home"
@@ -77,15 +78,15 @@ export function WorkbenchSidebar({
 
       {!collapsed && (
         <div className="flex min-h-0 w-64 flex-col">
-          <div className="flex items-center justify-between px-3 pt-3 pb-2">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/55">
+          <div className="flex items-center justify-between border-b border-white/6 px-3 pt-3 pb-2">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/56">
               {TAB_TITLES[tab]}
             </div>
             <button
               type="button"
               onClick={() => setCollapsed(true)}
               title="Collapse sidebar"
-              className="rounded-md px-1.5 py-0.5 text-xs text-white/35 transition hover:bg-white/[0.06] hover:text-white/80"
+              className={cx(buttonClass.icon, "h-7 w-7 text-white/44")}
             >
               ◂
             </button>
@@ -142,12 +143,15 @@ function RibbonButton({
       onClick={onClick}
       title={title}
       aria-label={title}
-      className={`relative flex h-11 items-center justify-center transition ${
-        active ? "text-white" : "text-white/45 hover:text-white/80"
-      }`}
+      className={cx(
+        "relative mx-1.5 my-0.5 flex h-10 items-center justify-center rounded-md border border-transparent transition",
+        active
+          ? "border-white/8 bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          : "text-white/46 hover:border-white/6 hover:bg-white/[0.04] hover:text-white/82",
+      )}
     >
       {active && (
-        <span className="absolute inset-y-1 left-0 w-0.5 rounded-r bg-cyan-300/80" />
+        <span className="absolute inset-y-1 left-[-7px] w-0.5 rounded-r bg-cyan-300/90" />
       )}
       {children}
     </button>

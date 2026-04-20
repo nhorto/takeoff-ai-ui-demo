@@ -8,10 +8,16 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/ContextMenu";
+import { ActionMenu } from "@/components/ui/ActionMenu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/DropdownMenu";
 import { SectionSearch } from "@/components/sidebar/SectionSearch";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
 import type { FlightRecord, StairRecord } from "@/types/project";
 import type { PanelOpener } from "@/components/sidebar/types";
+import { buttonClass, cx } from "@/components/ui/uiStyles";
 
 export function StairsSection({
   onAddStair,
@@ -101,11 +107,11 @@ export function StairsSection({
             <div key={stair.id}>
               <ContextMenu>
                 <ContextMenuTrigger asChild>
-                  <div className="group flex items-center gap-1 rounded-lg px-2 py-2 text-sm text-white/72 hover:bg-white/[0.06]">
+                  <div className="group flex items-center gap-2 rounded-md border border-transparent px-2 py-2 text-sm transition hover:border-white/8 hover:bg-white/[0.05]">
                     <button
                       type="button"
                       onClick={() => toggleExpandedStair(stair.id)}
-                      className="shrink-0 text-white/45 hover:text-white/70"
+                      className="shrink-0 rounded text-white/45 transition hover:text-white/72"
                     >
                       {expanded ? "▾" : "▸"}
                     </button>
@@ -121,23 +127,46 @@ export function StairsSection({
                           else if (e.key === "Escape") setRenamingStairId(null);
                         }}
                         autoFocus
-                        className="min-w-0 flex-1 rounded border border-cyan-300/40 bg-slate-950/65 px-1 py-0.5 text-sm text-white outline-none"
+                        className="min-w-0 flex-1 rounded-md border border-cyan-300/40 bg-slate-950/70 px-2 py-1 text-sm text-white outline-none"
                       />
                     ) : (
                       <button
                         type="button"
                         onClick={() => toggleExpandedStair(stair.id)}
                         onDoubleClick={() => startRename(stair)}
-                        className="min-w-0 flex-1 truncate text-left font-medium"
+                        className="min-w-0 flex-1 truncate text-left font-medium text-white/82 transition group-hover:text-white"
                         title={`${stair.name} (${stair.flights.length} flights)`}
                       >
                         {stair.name}
                       </button>
                     )}
 
-                    <span className="shrink-0 text-xs text-white/35">
+                    <span className="shrink-0 text-xs text-white/42">
                       {stair.flights.length}
                     </span>
+                    <ActionMenu label={`${stair.name} actions`}>
+                      <DropdownMenuItem onSelect={() => handleAddFlight(stair.id)}>
+                        Add flight
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => duplicateStair(stair.id)}>
+                        Duplicate stair
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => startRename(stair)}>
+                        Rename…
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => toggleExpandedStair(stair.id)}
+                      >
+                        {expanded ? "Collapse" : "Expand"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        destructive
+                        onSelect={() => handleDeleteStair(stair.id)}
+                      >
+                        Delete stair
+                      </DropdownMenuItem>
+                    </ActionMenu>
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
@@ -176,17 +205,17 @@ export function StairsSection({
                         <ContextMenu>
                           <ContextMenuTrigger asChild>
                             <div
-                              className={`group flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm transition ${
+                              className={`group flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition ${
                                 active
-                                  ? "bg-white text-slate-950"
-                                  : "text-white/65 hover:bg-white/[0.06] hover:text-white"
+                                  ? "border-white/10 bg-white/[0.1] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                                  : "border-transparent text-white/72 hover:border-white/8 hover:bg-white/[0.05] hover:text-white"
                               }`}
                             >
                               <button
                                 type="button"
                                 onClick={() => toggleExpandedFlight(flight.id)}
                                 className={`shrink-0 text-xs ${
-                                  active ? "text-slate-400" : "text-white/40 hover:text-white/65"
+                                  active ? "text-white/56" : "text-white/40 hover:text-white/68"
                                 }`}
                               >
                                 {flightExp ? "▾" : "▸"}
@@ -210,6 +239,49 @@ export function StairsSection({
                                   Flight {flight.order}
                                 </span>
                               </button>
+                              <ActionMenu label={`Flight ${flight.order} actions`}>
+                                <DropdownMenuItem
+                                  onSelect={() => panelOpener.openFlight(stair, flight)}
+                                >
+                                  Open
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    panelOpener.openFlight(stair, flight, "newTab")
+                                  }
+                                >
+                                  Open in new tab
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    panelOpener.openFlight(stair, flight, "toSide")
+                                  }
+                                >
+                                  Open to side
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    duplicateFlight(stair.id, flight.id)
+                                  }
+                                >
+                                  Duplicate flight
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => toggleExpandedFlight(flight.id)}
+                                >
+                                  {flightExp ? "Collapse" : "Expand"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  destructive
+                                  onSelect={() =>
+                                    handleDeleteFlight(stair.id, flight.id)
+                                  }
+                                >
+                                  Delete flight
+                                </DropdownMenuItem>
+                              </ActionMenu>
                             </div>
                           </ContextMenuTrigger>
                           <ContextMenuContent>
@@ -260,15 +332,15 @@ export function StairsSection({
                             <button
                               type="button"
                               onClick={() => panelOpener.openFlight(stair, flight)}
-                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition ${
+                              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
                                 active
-                                  ? "text-slate-600 hover:bg-slate-100"
-                                  : "text-white/50 hover:bg-white/[0.05] hover:text-white/70"
+                                  ? "text-white/68 hover:bg-white/[0.06]"
+                                  : "text-white/54 hover:bg-white/[0.05] hover:text-white/78"
                               }`}
                             >
-                              <span className={active ? "text-slate-400" : "text-cyan-300/50"}>↳</span>
+                              <span className={active ? "text-white/42" : "text-cyan-300/50"}>↳</span>
                               <span className="font-medium">Stair</span>
-                              <span className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}>
+                              <span className={`truncate ${active ? "text-white/44" : "text-white/34"}`}>
                                 {stairSummary(flight.stairValues)}
                               </span>
                             </button>
@@ -279,21 +351,21 @@ export function StairsSection({
                                 onClick={() =>
                                   panelOpener.openLandingTemplate(flight.landing!.templateId)
                                 }
-                                className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition ${
+                                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
                                   active
-                                    ? "text-slate-600 hover:bg-slate-100"
-                                    : "text-white/50 hover:bg-white/[0.05] hover:text-white/70"
+                                    ? "text-white/68 hover:bg-white/[0.06]"
+                                    : "text-white/54 hover:bg-white/[0.05] hover:text-white/78"
                                 }`}
                               >
-                                <span className={active ? "text-slate-400" : "text-cyan-300/50"}>↳</span>
+                                <span className={active ? "text-white/42" : "text-cyan-300/50"}>↳</span>
                                 <span className="font-medium">Landing</span>
-                                <span className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}>
+                                <span className={`truncate ${active ? "text-white/44" : "text-white/34"}`}>
                                   {landingSummary(flight.landing.values)}
                                 </span>
                               </button>
                             ) : (
                               <div className={`flex items-center gap-2 px-2 py-1 text-xs ${
-                                active ? "text-slate-400" : "text-white/25"
+                                active ? "text-white/40" : "text-white/25"
                               }`}>
                                 <span>↳</span>
                                 <span className="italic">No landing</span>
@@ -308,22 +380,22 @@ export function StairsSection({
                                   onClick={() =>
                                     panelOpener.openRailTemplate(rail.templateId)
                                   }
-                                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition ${
+                                  className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition ${
                                     active
-                                      ? "text-slate-600 hover:bg-slate-100"
-                                      : "text-white/50 hover:bg-white/[0.05] hover:text-white/70"
+                                      ? "text-white/68 hover:bg-white/[0.06]"
+                                      : "text-white/54 hover:bg-white/[0.05] hover:text-white/78"
                                   }`}
                                 >
-                                  <span className={active ? "text-slate-400" : "text-cyan-300/50"}>↳</span>
+                                  <span className={active ? "text-white/42" : "text-cyan-300/50"}>↳</span>
                                   <span className="font-medium">Rail {idx + 1}</span>
-                                  <span className={`truncate ${active ? "text-slate-400" : "text-white/30"}`}>
+                                  <span className={`truncate ${active ? "text-white/44" : "text-white/34"}`}>
                                     {rail.sourceType}
                                   </span>
                                 </button>
                               ))
                             ) : (
                               <div className={`flex items-center gap-2 px-2 py-1 text-xs ${
-                                active ? "text-slate-400" : "text-white/25"
+                                active ? "text-white/40" : "text-white/25"
                               }`}>
                                 <span>↳</span>
                                 <span className="italic">No rails</span>
@@ -343,9 +415,10 @@ export function StairsSection({
         <button
           type="button"
           onClick={onAddStair}
-          className="mt-2 w-full rounded-lg px-2 py-2 text-left text-sm text-cyan-200/85 transition hover:bg-white/[0.06] hover:text-cyan-100"
+          className={cx(buttonClass.sidebarAdd, "mt-3")}
         >
-          + Add Stair
+          <span className="text-base leading-none">+</span>
+          Add Stair
         </button>
       </div>
     </div>

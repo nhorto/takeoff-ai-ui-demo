@@ -60,7 +60,7 @@ export function FeetInchesInput({
 
   return (
     <div className="grid grid-cols-2 items-stretch gap-2">
-      <div className="flex items-stretch rounded-xl border border-white/10 bg-slate-950/75 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
+      <div className="flex items-stretch rounded-xl border border-white/12 bg-slate-950/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
           inputMode="decimal"
@@ -75,9 +75,11 @@ export function FeetInchesInput({
           className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-white outline-none"
           aria-label="Feet"
         />
-        <span className="flex items-center pr-3 text-xs text-white/45">ft</span>
+        <span className="flex items-center pr-3 text-xs font-medium uppercase tracking-[0.12em] text-white/50">
+          ft
+        </span>
       </div>
-      <div className="flex items-stretch rounded-xl border border-white/10 bg-slate-950/75 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
+      <div className="flex items-stretch rounded-xl border border-white/12 bg-slate-950/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
           inputMode="decimal"
@@ -92,7 +94,9 @@ export function FeetInchesInput({
           className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-white outline-none"
           aria-label="Inches"
         />
-        <span className="flex items-center pr-3 text-xs text-white/45">in</span>
+        <span className="flex items-center pr-3 text-xs font-medium uppercase tracking-[0.12em] text-white/50">
+          in
+        </span>
       </div>
     </div>
   );
