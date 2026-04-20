@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { pdfjs, type PDFDocumentProxy } from "@/lib/pdfjs";
+import type { PDFDocumentProxy } from "@/lib/pdfjs";
 import { usePdfStore } from "@/hooks/usePdfStore";
 import { makeDocKey } from "@/hooks/useAnnotationStore";
 import { useAnnotationModeStore } from "@/hooks/useAnnotationModeStore";
@@ -27,7 +27,7 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
   const setZoom = usePdfStore((s) => s.setZoom);
 
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
-  const [pageMetrics, setPageMetrics] = useState<PageMetrics[]>([]);
+  const [pageMetrics, setPageMetrics] = useState<Record<number, PageMetrics>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -39,6 +39,11 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
 
     (async () => {
       try {
+        setLoadError(null);
+        setDoc(null);
+        setPageMetrics({});
+
+        const { pdfjs } = await import("@/lib/pdfjs");
         // pdfjs mutates the buffer — clone so the store copy stays intact
         const buffer = pdf.data.slice(0);
         const task = pdfjs.getDocument({ data: buffer });
@@ -48,16 +53,16 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
           return;
         }
 
-        const metrics: PageMetrics[] = [];
-        for (let i = 1; i <= loadedDoc.numPages; i++) {
-          const page = await loadedDoc.getPage(i);
-          const vp = page.getViewport({ scale: 1 });
-          metrics.push({ width: vp.width, height: vp.height });
-        }
+        // Seed with page 1 only so fit-width and first paint work without
+        // walking the entire document up front.
+        const firstPage = await loadedDoc.getPage(1);
+        const firstViewport = firstPage.getViewport({ scale: 1 });
         if (cancelled) return;
 
         setDoc(loadedDoc);
-        setPageMetrics(metrics);
+        setPageMetrics({
+          1: { width: firstViewport.width, height: firstViewport.height },
+        });
       } catch (err) {
         if (!cancelled) {
           setLoadError(err instanceof Error ? err.message : "Failed to load PDF");
@@ -89,10 +94,24 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
     [pdfId, setZoom],
   );
 
+  const handlePageMetrics = useCallback((pageNumber: number, metrics: PageMetrics) => {
+    setPageMetrics((current) => {
+      const existing = current[pageNumber];
+      if (
+        existing &&
+        existing.width === metrics.width &&
+        existing.height === metrics.height
+      ) {
+        return current;
+      }
+      return { ...current, [pageNumber]: metrics };
+    });
+  }, []);
+
   const handleFitWidth = useCallback(() => {
     const el = scrollRef.current;
-    if (!el || pageMetrics.length === 0) return;
-    const firstWidth = pageMetrics[0].width;
+    if (!el) return;
+    const firstWidth = pageMetrics[1]?.width;
     if (!firstWidth) return;
     const available = el.clientWidth - 32; // account for padding
     applyZoom(available / firstWidth);
@@ -166,7 +185,8 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
               doc={doc}
               pageNumber={pageNumber}
               zoom={pdf.zoom}
-              metrics={pageMetrics[pageNumber - 1]}
+              metrics={pageMetrics[pageNumber] ?? pageMetrics[1] ?? DEFAULT_PAGE_METRICS}
+              onMetrics={handlePageMetrics}
               onVisible={handlePageVisible}
               pdfId={pdfId}
               docKey={docKey}
@@ -177,3 +197,8 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
     </div>
   );
 }
+
+const DEFAULT_PAGE_METRICS: PageMetrics = {
+  width: 612,
+  height: 792,
+};

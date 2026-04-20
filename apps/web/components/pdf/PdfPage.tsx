@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { RenderTask } from "pdfjs-dist";
 import type { PDFDocumentProxy } from "@/lib/pdfjs";
-import { AnnotationOverlay } from "@/components/pdf/AnnotationOverlay";
+import { useAnnotationModeStore } from "@/hooks/useAnnotationModeStore";
 
 interface PageMetrics {
   width: number;
   height: number;
 }
+
+const LazyAnnotationOverlay = lazy(async () => {
+  const mod = await import("@/components/pdf/AnnotationOverlay");
+  return { default: mod.AnnotationOverlay };
+});
 
 export function PdfPage({
   doc,
@@ -14,6 +19,7 @@ export function PdfPage({
   zoom,
   onVisible,
   metrics,
+  onMetrics,
   pdfId,
   docKey,
 }: {
@@ -22,6 +28,7 @@ export function PdfPage({
   zoom: number;
   onVisible: (pageNumber: number) => void;
   metrics: PageMetrics;
+  onMetrics: (pageNumber: number, metrics: PageMetrics) => void;
   pdfId: string;
   docKey: string;
 }) {
@@ -29,6 +36,7 @@ export function PdfPage({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const renderTaskRef = useRef<RenderTask | null>(null);
+  const annotationEnabled = useAnnotationModeStore((s) => s.getMode(pdfId).enabled);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -67,6 +75,12 @@ export function PdfPage({
       const page = await doc.getPage(pageNumber);
       if (cancelled) return;
 
+      const baseViewport = page.getViewport({ scale: 1 });
+      onMetrics(pageNumber, {
+        width: baseViewport.width,
+        height: baseViewport.height,
+      });
+
       const canvas = canvasRef.current;
       if (!canvas) return;
 
@@ -96,7 +110,7 @@ export function PdfPage({
         renderTaskRef.current.cancel();
       }
     };
-  }, [doc, pageNumber, zoom, isVisible]);
+  }, [doc, pageNumber, zoom, isVisible, onMetrics]);
 
   const width = metrics.width * zoom;
   const height = metrics.height * zoom;
@@ -109,13 +123,17 @@ export function PdfPage({
       style={{ width, height, background: "white" }}
     >
       <canvas ref={canvasRef} className="block" />
-      <AnnotationOverlay
-        pdfId={pdfId}
-        docKey={docKey}
-        pageNumber={pageNumber}
-        metrics={metrics}
-        zoom={zoom}
-      />
+      {annotationEnabled ? (
+        <Suspense fallback={null}>
+          <LazyAnnotationOverlay
+            pdfId={pdfId}
+            docKey={docKey}
+            pageNumber={pageNumber}
+            metrics={metrics}
+            zoom={zoom}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
