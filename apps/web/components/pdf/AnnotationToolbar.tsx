@@ -18,7 +18,7 @@ export function AnnotationToolbar({ pdfId }: { pdfId: string }) {
   const setColor = useAnnotationModeStore((s) => s.setColor);
 
   return (
-    <div className="flex items-center gap-3 border-b border-white/10 bg-slate-950/40 px-3 py-1.5 text-xs text-white/70">
+    <div className="flex items-center gap-3 border-b border-white/[0.05] bg-[#2d2d30] px-3 py-1.5 text-xs text-white/70">
       <div className="flex items-center gap-1">
         {TOOLS.map((t) => (
           <button

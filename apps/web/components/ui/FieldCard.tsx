@@ -32,4 +32,4 @@ export function FieldCard({
 }
 
 export const fieldInputClass =
-  "w-full rounded-xl border border-white/12 bg-slate-950/78 px-4 py-3 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20";
+  "w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20";

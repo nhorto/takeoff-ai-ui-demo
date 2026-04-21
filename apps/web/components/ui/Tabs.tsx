@@ -28,7 +28,7 @@ export const TabsTrigger = forwardRef<
     <TabsPrimitive.Trigger
       ref={ref}
       className={cx(
-        "inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-white/58 transition outline-none hover:bg-white/[0.04] hover:text-white/82 focus-visible:ring-2 focus-visible:ring-cyan-300/30 data-[state=active]:border-white/10 data-[state=active]:bg-slate-950/75 data-[state=active]:text-white data-[state=active]:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+        "inline-flex items-center gap-1 rounded-md px-3 py-2 text-xs font-medium uppercase tracking-[0.12em] text-white/58 transition outline-none hover:bg-white/[0.04] hover:text-white/82 focus-visible:ring-2 focus-visible:ring-cyan-300/30 data-[state=active]:border-white/[0.08] data-[state=active]:bg-black/30 data-[state=active]:text-white data-[state=active]:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
         className,
       )}
       {...props}

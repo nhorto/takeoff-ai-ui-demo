@@ -443,7 +443,7 @@ export const DockviewWorkbench = forwardRef<
         )}
         {isDragging && (
           <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-300/5 backdrop-blur-[1px]">
-            <div className="rounded-xl border-2 border-dashed border-cyan-300/50 bg-slate-950/70 px-6 py-4 text-sm text-cyan-100">
+            <div className="rounded-xl border-2 border-dashed border-cyan-300/50 bg-black/40 px-6 py-4 text-sm text-cyan-100">
               Drop PDF to open
             </div>
           </div>

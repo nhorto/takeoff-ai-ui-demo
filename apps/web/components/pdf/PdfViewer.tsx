@@ -152,7 +152,7 @@ export function PdfViewer({ pdfId }: { pdfId: string }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-slate-900/40">
+    <div className="flex h-full flex-col bg-[#1e1e1e]">
       <PdfToolbar
         pdfId={pdfId}
         fileName={pdf.fileName}

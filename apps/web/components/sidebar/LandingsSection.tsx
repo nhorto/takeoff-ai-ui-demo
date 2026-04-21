@@ -94,7 +94,7 @@ export function LandingsSection({
                           else if (e.key === "Escape") setRenamingId(null);
                         }}
                         autoFocus
-                        className="min-w-0 flex-1 rounded-md border border-cyan-300/40 bg-slate-950/70 px-2 py-1 text-sm text-white outline-none"
+                        className="min-w-0 flex-1 rounded-md border border-cyan-300/40 bg-black/30 px-2 py-1 text-sm text-white outline-none"
                       />
                     ) : (
                       <button

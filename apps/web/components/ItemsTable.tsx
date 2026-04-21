@@ -8,10 +8,10 @@ interface ItemsTableProps {
 
 export function ItemsTable({ items }: ItemsTableProps) {
   return (
-    <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,17,31,0.76),rgba(7,17,31,0.96))] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="overflow-hidden rounded-[14px] border border-white/[0.08] bg-[#1f1f1f] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
       <div className="max-h-[320px] overflow-auto">
-        <table className="min-w-full divide-y divide-white/10 text-sm text-white/82">
-          <thead className="sticky top-0 z-10 bg-slate-950/95 text-left text-[11px] uppercase tracking-[0.16em] text-white/50 backdrop-blur">
+        <table className="min-w-full divide-y divide-white/[0.06] text-sm text-white/82">
+          <thead className="sticky top-0 z-10 bg-[#252526] text-left text-[11px] uppercase tracking-[0.16em] text-white/50 backdrop-blur">
             <tr>
               <HeaderCell>Shape</HeaderCell>
               <HeaderCell>Size</HeaderCell>

@@ -15,7 +15,7 @@ export function MaterialsPanel({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-t border-white/10 bg-[linear-gradient(180deg,rgba(2,6,13,0.55),rgba(2,6,13,0.72))]">
+    <div className="border-t border-white/[0.06] bg-[#1c1c1c]">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

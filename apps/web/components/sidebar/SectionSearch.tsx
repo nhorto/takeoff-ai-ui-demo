@@ -18,7 +18,7 @@ export function SectionSearch({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-white/12 bg-slate-950/72 py-2.5 pl-9 pr-9 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
+          className="w-full rounded-md border border-white/10 bg-black/25 py-2.5 pl-9 pr-9 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/15"
         />
         {value && (
           <button

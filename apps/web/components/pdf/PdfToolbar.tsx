@@ -24,7 +24,7 @@ export function PdfToolbar({
   const setEnabled = useAnnotationModeStore((s) => s.setEnabled);
 
   return (
-    <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/60 px-3 py-2 text-xs text-white/70">
+    <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#252526] px-3 py-2 text-xs text-white/70">
       <div className="truncate font-medium text-white/85" title={fileName}>
         {fileName}
       </div>

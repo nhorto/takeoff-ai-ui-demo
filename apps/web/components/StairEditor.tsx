@@ -141,7 +141,7 @@ export function StairEditor({
                       setEditingName(false);
                     }
                   }}
-                  className="w-full rounded-md border border-cyan-300/40 bg-slate-950/70 px-3 py-2 text-xl font-semibold text-white outline-none"
+                  className="w-full rounded-md border border-cyan-300/40 bg-black/30 px-3 py-2 text-xl font-semibold text-white outline-none"
                 />
               ) : (
                 <button

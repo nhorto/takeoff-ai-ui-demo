@@ -60,7 +60,7 @@ export function FeetInchesInput({
 
   return (
     <div className="grid grid-cols-2 items-stretch gap-2">
-      <div className="flex items-stretch rounded-xl border border-white/12 bg-slate-950/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
+      <div className="flex items-stretch rounded-lg border border-white/10 bg-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
           inputMode="decimal"
@@ -79,7 +79,7 @@ export function FeetInchesInput({
           ft
         </span>
       </div>
-      <div className="flex items-stretch rounded-xl border border-white/12 bg-slate-950/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
+      <div className="flex items-stretch rounded-lg border border-white/10 bg-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition hover:border-white/18 focus-within:border-cyan-300/50 focus-within:ring-2 focus-within:ring-cyan-300/20">
         <input
           type="text"
           inputMode="decimal"

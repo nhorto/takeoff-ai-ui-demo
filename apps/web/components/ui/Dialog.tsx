@@ -15,7 +15,7 @@ export const DialogOverlay = forwardRef<
     <DialogPrimitive.Overlay
       ref={ref}
       className={cx(
-        "fixed inset-0 z-50 bg-slate-950/78 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+        "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
         className,
       )}
       {...props}
@@ -34,7 +34,7 @@ export const DialogContent = forwardRef<
         <DialogPrimitive.Content
           ref={ref}
           className={cx(
-            "relative left-1/2 top-1/2 z-50 flex w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,17,30,0.985),rgba(8,13,24,0.985))] p-6 text-white shadow-2xl shadow-black/50 outline-none sm:max-h-[min(85vh,760px)] sm:p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
+            "relative left-1/2 top-1/2 z-50 flex w-full max-w-md -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[14px] border border-white/[0.08] bg-[#252526] p-6 text-white shadow-2xl shadow-black/50 outline-none sm:max-h-[min(85vh,760px)] sm:p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0",
             className,
           )}
           {...props}

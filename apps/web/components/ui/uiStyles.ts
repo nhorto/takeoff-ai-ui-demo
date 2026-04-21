@@ -21,7 +21,7 @@ export const panelEyebrowClass =
   "text-[11px] font-semibold uppercase tracking-[0.16em] text-white/50";
 
 export const editableTitleClass =
-  "mt-1 w-full rounded-md border border-transparent bg-white/[0.03] px-3 py-2 text-xl font-semibold text-white outline-none transition hover:border-white/10 hover:bg-white/[0.05] focus:border-cyan-300/45 focus:bg-slate-950/70 focus:ring-2 focus:ring-cyan-300/18";
+  "mt-1 w-full rounded-md border border-transparent bg-white/[0.03] px-3 py-2 text-xl font-semibold text-white outline-none transition hover:border-white/10 hover:bg-white/[0.05] focus:border-cyan-300/45 focus:bg-black/30 focus:ring-2 focus:ring-cyan-300/18";
 
 export const fieldInputSurfaceClass =
-  "w-full rounded-xl border border-white/12 bg-slate-950/78 px-4 py-3 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20";
+  "w-full rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] outline-none transition placeholder:text-white/32 hover:border-white/18 focus:border-cyan-300/50 focus:ring-2 focus:ring-cyan-300/20";

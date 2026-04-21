@@ -6,7 +6,7 @@ export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
 
 const contentClass =
-  "z-50 min-w-[168px] overflow-hidden rounded-lg border border-white/10 bg-slate-950/96 p-1 text-sm text-white/88 shadow-xl shadow-black/40 backdrop-blur data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0";
+  "z-50 min-w-[168px] overflow-hidden rounded-lg border border-white/[0.08] bg-[#2d2d30] p-1 text-sm text-white/88 shadow-xl shadow-black/40 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0";
 
 const itemClass =
   "relative flex cursor-pointer select-none items-center rounded-md px-2.5 py-1.5 text-sm outline-none transition hover:bg-white/[0.08] focus:bg-white/[0.08] data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[destructive]:text-red-300 data-[destructive]:hover:bg-red-500/15 data-[destructive]:focus:bg-red-500/15";
