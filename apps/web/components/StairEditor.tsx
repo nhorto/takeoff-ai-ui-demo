@@ -30,6 +30,7 @@ export function StairEditor({
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(stair.name);
+  const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
@@ -95,9 +96,14 @@ export function StairEditor({
     setLastSelectedId(null);
   }
 
+  function exitSelectMode() {
+    setSelectMode(false);
+    clearSelection();
+  }
+
   function bulkDuplicate(ids: string[]) {
     ids.forEach((id) => onDuplicateFlight(id));
-    clearSelection();
+    exitSelectMode();
   }
 
   function bulkDelete(ids: string[]) {
@@ -107,7 +113,7 @@ export function StairEditor({
     );
     if (!ok) return;
     ids.forEach((id) => onDeleteFlight(id));
-    clearSelection();
+    exitSelectMode();
   }
 
   const flightCount = stair.flights.length;
@@ -167,20 +173,37 @@ export function StairEditor({
           </div>
 
           <section>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">
                 Flights
               </div>
-              <button
-                type="button"
-                onClick={onAddFlight}
-                className={buttonClass.secondary}
-              >
-                + Add Flight
-              </button>
+              <div className="flex items-center gap-2">
+                {flightCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectMode) exitSelectMode();
+                      else setSelectMode(true);
+                    }}
+                    className={cx(
+                      buttonClass.secondary,
+                      selectMode && "border-cyan-300/40 bg-cyan-300/[0.08] text-white",
+                    )}
+                  >
+                    {selectMode ? "Done" : "Select"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onAddFlight}
+                  className={buttonClass.secondary}
+                >
+                  + Add Flight
+                </button>
+              </div>
             </div>
 
-            {selectedCount > 0 && (
+            {selectMode && (
               <div className="mb-2 flex items-center gap-3 rounded-md border border-cyan-300/20 bg-cyan-400/[0.06] px-3 py-2 text-sm">
                 <span className="font-medium text-white/88">
                   {selectedCount} selected
@@ -188,24 +211,26 @@ export function StairEditor({
                 <span className="text-white/30">·</span>
                 <button
                   type="button"
+                  disabled={selectedCount === 0}
                   onClick={() => bulkDuplicate(Array.from(selectedIds))}
-                  className="rounded px-2 py-1 text-xs text-white/72 transition hover:bg-white/[0.08] hover:text-white/92"
+                  className="rounded px-2 py-1 text-xs text-white/72 transition hover:bg-white/[0.08] hover:text-white/92 disabled:pointer-events-none disabled:opacity-40"
                 >
                   Duplicate
                 </button>
                 <button
                   type="button"
+                  disabled={selectedCount === 0}
                   onClick={() => bulkDelete(Array.from(selectedIds))}
-                  className="rounded px-2 py-1 text-xs text-red-300/80 transition hover:bg-red-500/[0.1] hover:text-red-200"
+                  className="rounded px-2 py-1 text-xs text-red-300/80 transition hover:bg-red-500/[0.1] hover:text-red-200 disabled:pointer-events-none disabled:opacity-40"
                 >
                   Delete
                 </button>
                 <button
                   type="button"
-                  onClick={clearSelection}
+                  onClick={exitSelectMode}
                   className="ml-auto rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/80"
                 >
-                  Clear
+                  Cancel
                 </button>
               </div>
             )}
@@ -220,6 +245,7 @@ export function StairEditor({
                   <FlightRow
                     key={flight.id}
                     flight={flight}
+                    selectMode={selectMode}
                     selected={selectedIds.has(flight.id)}
                     onOpen={(mode) => onOpenFlight(flight.id, mode)}
                     onToggle={() => toggleOne(flight.id)}
@@ -227,15 +253,17 @@ export function StairEditor({
                     onDuplicate={() => onDuplicateFlight(flight.id)}
                     onDelete={() => onDeleteFlight(flight.id)}
                     onBulkDuplicate={() => {
-                      const ids = selectedIds.has(flight.id)
-                        ? Array.from(selectedIds)
-                        : [flight.id];
+                      const ids =
+                        selectMode && selectedIds.has(flight.id)
+                          ? Array.from(selectedIds)
+                          : [flight.id];
                       bulkDuplicate(ids);
                     }}
                     onBulkDelete={() => {
-                      const ids = selectedIds.has(flight.id)
-                        ? Array.from(selectedIds)
-                        : [flight.id];
+                      const ids =
+                        selectMode && selectedIds.has(flight.id)
+                          ? Array.from(selectedIds)
+                          : [flight.id];
                       bulkDelete(ids);
                     }}
                     selectionCount={selectedCount}
@@ -253,6 +281,7 @@ export function StairEditor({
 
 function FlightRow({
   flight,
+  selectMode,
   selected,
   onOpen,
   onToggle,
@@ -265,6 +294,7 @@ function FlightRow({
   isInSelection,
 }: {
   flight: FlightRecord;
+  selectMode: boolean;
   selected: boolean;
   onOpen: (mode?: OpenMode) => void;
   onToggle: () => void;
@@ -276,10 +306,13 @@ function FlightRow({
   selectionCount: number;
   isInSelection: boolean;
 }) {
-  const bulkMode = selectionCount > 1 && isInSelection;
+  const bulkMode = selectMode && selectionCount > 1 && isInSelection;
 
-  function handleCheckboxClick(e: React.MouseEvent) {
-    e.stopPropagation();
+  function handleRowClick(e: React.MouseEvent) {
+    if (!selectMode) {
+      onOpen();
+      return;
+    }
     if (e.shiftKey) onShiftToggle();
     else onToggle();
   }
@@ -288,43 +321,62 @@ function FlightRow({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          role="button"
+          tabIndex={0}
+          onClick={handleRowClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleRowClick(e as unknown as React.MouseEvent);
+            }
+          }}
           className={cx(
-            "group flex items-center gap-3 rounded-md border px-3 py-2.5 transition",
-            selected
+            "group flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 transition outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/30",
+            selectMode && selected
               ? "border-cyan-300/30 bg-cyan-400/[0.06]"
               : "border-white/[0.06] bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.05]",
           )}
         >
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={() => {}}
-            onClick={handleCheckboxClick}
-            aria-label={`Select Flight ${flight.order}`}
-            className="h-4 w-4 shrink-0 cursor-pointer rounded border-white/20 bg-white/[0.04] accent-cyan-400"
-          />
-          <button
-            type="button"
-            onClick={() => onOpen()}
-            className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
-          >
-            <span className="font-medium text-white/88">Flight {flight.order}</span>
+          {selectMode && (
+            <input
+              type="checkbox"
+              checked={selected}
+              readOnly
+              tabIndex={-1}
+              aria-label={`Select Flight ${flight.order}`}
+              className="h-4 w-4 shrink-0 cursor-pointer rounded border-white/20 bg-white/[0.04] accent-cyan-400"
+            />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left">
+            <span className="font-medium text-white/88">
+              Flight {flight.order}
+            </span>
             <FlightChips flight={flight} />
-          </button>
-          <button
-            type="button"
-            onClick={onDuplicate}
-            className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="rounded px-2 py-1 text-xs text-red-300/70 transition hover:bg-red-500/[0.08] hover:text-red-200"
-          >
-            Delete
-          </button>
+          </div>
+          {!selectMode && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+                className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
+              >
+                Duplicate
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded px-2 py-1 text-xs text-red-300/70 transition hover:bg-red-500/[0.08] hover:text-red-200"
+              >
+                Delete
+              </button>
+            </>
+          )}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
