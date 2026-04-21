@@ -168,7 +168,7 @@ export function StairsSection({
                         Duplicate stair
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => startRename(stair)}>
-                        Rename…
+                        Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() => toggleExpandedStair(stair.id)}
@@ -207,7 +207,7 @@ export function StairsSection({
                     Duplicate stair
                   </ContextMenuItem>
                   <ContextMenuItem onSelect={() => startRename(stair)}>
-                    Rename…
+                    Rename
                   </ContextMenuItem>
                   <ContextMenuItem
                     onSelect={() => toggleExpandedStair(stair.id)}

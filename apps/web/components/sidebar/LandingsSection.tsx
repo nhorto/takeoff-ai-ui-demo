@@ -147,7 +147,7 @@ export function LandingsSection({
                         Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => startRename(template)}>
-                        Rename…
+                        Rename
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -188,7 +188,7 @@ export function LandingsSection({
                     Duplicate
                   </ContextMenuItem>
                   <ContextMenuItem onSelect={() => startRename(template)}>
-                    Rename…
+                    Rename
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem

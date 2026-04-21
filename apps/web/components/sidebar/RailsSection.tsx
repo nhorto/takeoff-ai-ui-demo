@@ -173,7 +173,7 @@ export function RailsSection({
                               <DropdownMenuItem
                                 onSelect={() => startRename(template)}
                               >
-                                Rename…
+                                Rename
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -214,7 +214,7 @@ export function RailsSection({
                             Duplicate
                           </ContextMenuItem>
                           <ContextMenuItem onSelect={() => startRename(template)}>
-                            Rename…
+                            Rename
                           </ContextMenuItem>
                           <ContextMenuSeparator />
                           <ContextMenuItem

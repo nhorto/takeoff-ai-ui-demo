@@ -123,7 +123,7 @@ export function LaddersSection({
                         Duplicate
                       </DropdownMenuItem>
                       <DropdownMenuItem onSelect={() => startRename(ladder)}>
-                        Rename…
+                        Rename
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -158,7 +158,7 @@ export function LaddersSection({
                     Duplicate
                   </ContextMenuItem>
                   <ContextMenuItem onSelect={() => startRename(ladder)}>
-                    Rename…
+                    Rename
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem
