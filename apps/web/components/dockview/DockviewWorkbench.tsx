@@ -20,6 +20,7 @@ import { RailTemplatePanel } from "@/components/dockview/RailTemplatePanel";
 import { LadderPanel } from "@/components/dockview/LadderPanel";
 import { LandingTemplatePanel } from "@/components/dockview/LandingTemplatePanel";
 import { StairPanel } from "@/components/dockview/StairPanel";
+import { WelcomeDashboardPanel } from "@/components/dockview/WelcomeDashboardPanel";
 import {
   DockviewActionsContext,
   type DockviewActions,
@@ -36,6 +37,7 @@ const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
   ladder: LadderPanel,
   "landing-template": LandingTemplatePanel,
   stair: StairPanel,
+  "welcome-dashboard": WelcomeDashboardPanel,
 };
 
 export type OpenMode = "peek" | "newTab" | "toSide";
@@ -51,6 +53,7 @@ export interface DockviewWorkbenchHandle {
   closeFlightTabs: (flightIds: string[]) => void;
   updateFlightTabTitle: (flightId: string, title: string) => void;
   openStairTab: (stairId: string, title: string, mode?: OpenMode) => void;
+  openWelcomeDashboard: (mode?: OpenMode) => void;
   closeStairTabs: (stairIds: string[]) => void;
   updateStairTabTitle: (stairId: string, title: string) => void;
   openPdfTab: (pdfId: string, title: string) => void;
@@ -190,6 +193,10 @@ export const DockviewWorkbench = forwardRef<
 
     openStairTab(stairId, title, mode = "peek") {
       openEntityPanel("stair", stairId, title, { stairId }, mode);
+    },
+
+    openWelcomeDashboard(mode = "peek") {
+      openEntityPanel("welcome-dashboard", "home", "Home", {}, mode);
     },
 
     closeStairTabs(stairIds) {

@@ -177,6 +177,9 @@ export default function App() {
             mode,
           );
       },
+      openWelcome: (mode: OpenMode = "peek") => {
+        dockviewRef.current?.openWelcomeDashboard(mode);
+      },
     }),
     [ensureFlightTab, ensureStairTab],
   );

@@ -14,6 +14,7 @@ export interface PanelOpener {
   openRailTemplate: (templateId: string, mode?: OpenMode) => void;
   openLadder: (ladderId: string, mode?: OpenMode) => void;
   openLandingTemplate: (templateId: string, mode?: OpenMode) => void;
+  openWelcome: (mode?: OpenMode) => void;
 }
 
 export interface AddActions {

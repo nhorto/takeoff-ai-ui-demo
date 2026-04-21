@@ -31,6 +31,9 @@ export function WorkbenchSidebar({
   const [tab, setTab] = useState<Tab>("stairs");
 
   function handleRibbonClick(next: Tab) {
+    if (next === "welcome") {
+      panelOpener.openWelcome();
+    }
     if (next === tab && !collapsed) {
       onCollapsedChange(true);
       return;
