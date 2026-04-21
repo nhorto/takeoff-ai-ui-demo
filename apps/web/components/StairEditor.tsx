@@ -148,12 +148,10 @@ function FlightRow({
       <button
         type="button"
         onClick={() => onOpen()}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
       >
         <span className="font-medium text-white/88">Flight {flight.order}</span>
-        <span className="truncate text-xs text-white/48">
-          {flightSummary(flight)}
-        </span>
+        <FlightChips flight={flight} />
       </button>
       <button
         type="button"
@@ -173,16 +171,45 @@ function FlightRow({
   );
 }
 
-function flightSummary(flight: FlightRecord): string {
-  const parts: string[] = [];
+const TREAD_TYPE_LABEL: Record<string, string> = {
+  pan: "Pan",
+  "checker-plate": "Checker",
+  grating: "Grating",
+};
+
+function FlightChips({ flight }: { flight: FlightRecord }) {
   const v = flight.stairValues;
-  if (v.numTreads != null) parts.push(`${v.numTreads}T`);
-  if (v.numRisers != null) parts.push(`${v.numRisers}R`);
-  if (typeof v.stairWidth === "number") parts.push(formatFeetInches(v.stairWidth));
-  if (flight.landing) parts.push("+ landing");
+  const chips: string[] = [];
+  if (v.numTreads != null) chips.push(`${v.numTreads}T`);
+  if (v.numRisers != null) chips.push(`${v.numRisers}R`);
+  if (typeof v.stairWidth === "number")
+    chips.push(`${formatFeetInches(v.stairWidth)} W`);
+  if (typeof v.riserHeight === "number")
+    chips.push(`${formatFeetInches(v.riserHeight)} RH`);
+  if (typeof v.treadDepth === "number")
+    chips.push(`${formatFeetInches(v.treadDepth)} TD`);
+  if (typeof v.stringerSize === "string") chips.push(v.stringerSize);
+  if (typeof v.treadType === "string" && TREAD_TYPE_LABEL[v.treadType])
+    chips.push(TREAD_TYPE_LABEL[v.treadType]);
+  if (flight.landing) chips.push("Landing");
   if (flight.rails.length > 0)
-    parts.push(
-      `${flight.rails.length} rail${flight.rails.length === 1 ? "" : "s"}`,
+    chips.push(
+      `${flight.rails.length} Rail${flight.rails.length === 1 ? "" : "s"}`,
     );
-  return parts.length > 0 ? parts.join(" · ") : "no data";
+
+  if (chips.length === 0) {
+    return <span className="text-xs italic text-white/40">no data yet</span>;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {chips.map((c) => (
+        <span
+          key={c}
+          className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-white/70"
+        >
+          {c}
+        </span>
+      ))}
+    </div>
+  );
 }
