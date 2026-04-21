@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatFeetInches } from "@shared/engine";
 import type { FlightRecord, StairRecord } from "@/types/project";
 import type { OpenMode } from "@/components/dockview/DockviewWorkbench";
 import { buttonClass, cx } from "@/components/ui/uiStyles";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/ContextMenu";
 
 export function StairEditor({
   stair,
@@ -23,10 +30,29 @@ export function StairEditor({
 }) {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(stair.name);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editingName) setNameDraft(stair.name);
   }, [stair.name, editingName]);
+
+  const validIds = useMemo(
+    () => new Set(stair.flights.map((f) => f.id)),
+    [stair.flights],
+  );
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [validIds]);
 
   function commitRename() {
     const trimmed = nameDraft.trim();
@@ -34,7 +60,58 @@ export function StairEditor({
     setEditingName(false);
   }
 
+  function toggleOne(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    setLastSelectedId(id);
+  }
+
+  function selectRange(id: string) {
+    if (!lastSelectedId) {
+      toggleOne(id);
+      return;
+    }
+    const ids = stair.flights.map((f) => f.id);
+    const a = ids.indexOf(lastSelectedId);
+    const b = ids.indexOf(id);
+    if (a === -1 || b === -1) {
+      toggleOne(id);
+      return;
+    }
+    const [start, end] = a < b ? [a, b] : [b, a];
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (let i = start; i <= end; i++) next.add(ids[i]);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setLastSelectedId(null);
+  }
+
+  function bulkDuplicate(ids: string[]) {
+    ids.forEach((id) => onDuplicateFlight(id));
+    clearSelection();
+  }
+
+  function bulkDelete(ids: string[]) {
+    if (ids.length === 0) return;
+    const ok = window.confirm(
+      `Delete ${ids.length} flight${ids.length === 1 ? "" : "s"}? This cannot be undone.`,
+    );
+    if (!ok) return;
+    ids.forEach((id) => onDeleteFlight(id));
+    clearSelection();
+  }
+
   const flightCount = stair.flights.length;
+  const selectedCount = selectedIds.size;
   const summaryBits = [
     stair.inputMode === "averaged" ? "Averaged mode" : "Per-flight mode",
     stair.totalRisers ? `${stair.totalRisers} total risers` : null,
@@ -103,6 +180,36 @@ export function StairEditor({
               </button>
             </div>
 
+            {selectedCount > 0 && (
+              <div className="mb-2 flex items-center gap-3 rounded-md border border-cyan-300/20 bg-cyan-400/[0.06] px-3 py-2 text-sm">
+                <span className="font-medium text-white/88">
+                  {selectedCount} selected
+                </span>
+                <span className="text-white/30">·</span>
+                <button
+                  type="button"
+                  onClick={() => bulkDuplicate(Array.from(selectedIds))}
+                  className="rounded px-2 py-1 text-xs text-white/72 transition hover:bg-white/[0.08] hover:text-white/92"
+                >
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => bulkDelete(Array.from(selectedIds))}
+                  className="rounded px-2 py-1 text-xs text-red-300/80 transition hover:bg-red-500/[0.1] hover:text-red-200"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="ml-auto rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/80"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+
             {flightCount === 0 ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-white/56">
                 No flights yet. Click “Add Flight” to create one.
@@ -113,9 +220,26 @@ export function StairEditor({
                   <FlightRow
                     key={flight.id}
                     flight={flight}
+                    selected={selectedIds.has(flight.id)}
                     onOpen={(mode) => onOpenFlight(flight.id, mode)}
+                    onToggle={() => toggleOne(flight.id)}
+                    onShiftToggle={() => selectRange(flight.id)}
                     onDuplicate={() => onDuplicateFlight(flight.id)}
                     onDelete={() => onDeleteFlight(flight.id)}
+                    onBulkDuplicate={() => {
+                      const ids = selectedIds.has(flight.id)
+                        ? Array.from(selectedIds)
+                        : [flight.id];
+                      bulkDuplicate(ids);
+                    }}
+                    onBulkDelete={() => {
+                      const ids = selectedIds.has(flight.id)
+                        ? Array.from(selectedIds)
+                        : [flight.id];
+                      bulkDelete(ids);
+                    }}
+                    selectionCount={selectedCount}
+                    isInSelection={selectedIds.has(flight.id)}
                   />
                 ))}
               </div>
@@ -129,45 +253,97 @@ export function StairEditor({
 
 function FlightRow({
   flight,
+  selected,
   onOpen,
+  onToggle,
+  onShiftToggle,
   onDuplicate,
   onDelete,
+  onBulkDuplicate,
+  onBulkDelete,
+  selectionCount,
+  isInSelection,
 }: {
   flight: FlightRecord;
+  selected: boolean;
   onOpen: (mode?: OpenMode) => void;
+  onToggle: () => void;
+  onShiftToggle: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onBulkDuplicate: () => void;
+  onBulkDelete: () => void;
+  selectionCount: number;
+  isInSelection: boolean;
 }) {
+  const bulkMode = selectionCount > 1 && isInSelection;
+
+  function handleCheckboxClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (e.shiftKey) onShiftToggle();
+    else onToggle();
+  }
+
   return (
-    <div
-      className={cx(
-        "group flex items-center gap-3 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition",
-        "hover:border-white/14 hover:bg-white/[0.05]",
-      )}
-    >
-      <button
-        type="button"
-        onClick={() => onOpen()}
-        className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
-      >
-        <span className="font-medium text-white/88">Flight {flight.order}</span>
-        <FlightChips flight={flight} />
-      </button>
-      <button
-        type="button"
-        onClick={onDuplicate}
-        className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
-      >
-        Duplicate
-      </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="rounded px-2 py-1 text-xs text-red-300/70 transition hover:bg-red-500/[0.08] hover:text-red-200"
-      >
-        Delete
-      </button>
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={cx(
+            "group flex items-center gap-3 rounded-md border px-3 py-2.5 transition",
+            selected
+              ? "border-cyan-300/30 bg-cyan-400/[0.06]"
+              : "border-white/[0.06] bg-white/[0.02] hover:border-white/14 hover:bg-white/[0.05]",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => {}}
+            onClick={handleCheckboxClick}
+            aria-label={`Select Flight ${flight.order}`}
+            className="h-4 w-4 shrink-0 cursor-pointer rounded border-white/20 bg-white/[0.04] accent-cyan-400"
+          />
+          <button
+            type="button"
+            onClick={() => onOpen()}
+            className="flex min-w-0 flex-1 flex-col items-start gap-1.5 text-left"
+          >
+            <span className="font-medium text-white/88">Flight {flight.order}</span>
+            <FlightChips flight={flight} />
+          </button>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded px-2 py-1 text-xs text-red-300/70 transition hover:bg-red-500/[0.08] hover:text-red-200"
+          >
+            Delete
+          </button>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onSelect={() => onOpen()}>Open</ContextMenuItem>
+        <ContextMenuItem onSelect={() => onOpen("newTab")}>
+          Open in new tab
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => onOpen("toSide")}>
+          Open to side
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onSelect={onBulkDuplicate}>
+          {bulkMode ? `Duplicate ${selectionCount} flights` : "Duplicate"}
+        </ContextMenuItem>
+        <ContextMenuItem destructive onSelect={onBulkDelete}>
+          {bulkMode ? `Delete ${selectionCount} flights` : "Delete"}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 
