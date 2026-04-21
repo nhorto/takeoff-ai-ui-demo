@@ -157,14 +157,6 @@ function FlightRow({
       </button>
       <button
         type="button"
-        onClick={() => onOpen("newTab")}
-        className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
-        title="Open in new tab"
-      >
-        Open
-      </button>
-      <button
-        type="button"
         onClick={onDuplicate}
         className="rounded px-2 py-1 text-xs text-white/52 transition hover:bg-white/[0.06] hover:text-white/88"
       >
