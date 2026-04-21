@@ -111,7 +111,8 @@ export function StairsSection({
                     <button
                       type="button"
                       onClick={() => toggleExpandedStair(stair.id)}
-                      className="shrink-0 rounded text-white/45 transition hover:text-white/72"
+                      aria-label={expanded ? "Collapse stair" : "Expand stair"}
+                      className="-ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-white/50 transition hover:bg-white/[0.06] hover:text-white/82"
                     >
                       {expanded ? "▾" : "▸"}
                     </button>
@@ -244,8 +245,9 @@ export function StairsSection({
                               <button
                                 type="button"
                                 onClick={() => toggleExpandedFlight(flight.id)}
-                                className={`shrink-0 text-xs ${
-                                  active ? "text-white/56" : "text-white/40 hover:text-white/68"
+                                aria-label={flightExp ? "Collapse flight" : "Expand flight"}
+                                className={`-ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs transition hover:bg-white/[0.06] ${
+                                  active ? "text-white/56" : "text-white/42 hover:text-white/72"
                                 }`}
                               >
                                 {flightExp ? "▾" : "▸"}
