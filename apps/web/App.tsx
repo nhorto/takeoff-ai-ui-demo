@@ -16,7 +16,10 @@ import type { FlightRecord, RailType, StairRecord } from "@/types/project";
 
 export default function App() {
   const dockviewRef = useRef<DockviewWorkbenchHandle>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 900,
+  );
+  const [userToggledSidebar, setUserToggledSidebar] = useState(false);
   const [addStairOpen, setAddStairOpen] = useState(false);
   const [addRailOpen, setAddRailOpen] = useState(false);
   const [addLadderOpen, setAddLadderOpen] = useState(false);
@@ -36,6 +39,23 @@ export default function App() {
     (sum, s) => sum + s.flights.length,
     0,
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 899px)");
+    const apply = () => {
+      if (userToggledSidebar) return;
+      setSidebarCollapsed(mq.matches);
+    };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [userToggledSidebar]);
+
+  const handleSidebarCollapsedChange = useCallback((next: boolean) => {
+    setUserToggledSidebar(true);
+    setSidebarCollapsed(next);
+  }, []);
 
   const ensureFlightTab = useCallback(
     (stair: StairRecord, flight: FlightRecord, mode: OpenMode = "peek") => {
@@ -265,7 +285,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col px-4 py-4 text-white md:px-6">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
+      <div className="flex w-full flex-1 flex-col">
         <div className="flex flex-1 flex-col overflow-hidden rounded-[18px] border border-white/[0.06] bg-[#1e1e1e] shadow-glow">
           <header className="flex items-center justify-between border-b border-slate-300/10 px-5 py-4">
             <div className="flex items-center gap-3 text-sm">
@@ -321,7 +341,7 @@ export default function App() {
               addActions={addActions}
               panelOpener={panelOpener}
               collapsed={sidebarCollapsed}
-              onCollapsedChange={setSidebarCollapsed}
+              onCollapsedChange={handleSidebarCollapsedChange}
             />
 
             <section className="flex min-w-0 flex-col">
