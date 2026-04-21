@@ -10,6 +10,7 @@ export type OpenMode = "peek" | "newTab" | "toSide";
  */
 export interface PanelOpener {
   openFlight: (stair: StairRecord, flight: FlightRecord, mode?: OpenMode) => void;
+  openStair: (stairId: string, mode?: OpenMode) => void;
   openRailTemplate: (templateId: string, mode?: OpenMode) => void;
   openLadder: (ladderId: string, mode?: OpenMode) => void;
   openLandingTemplate: (templateId: string, mode?: OpenMode) => void;

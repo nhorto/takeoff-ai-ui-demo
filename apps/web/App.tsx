@@ -45,6 +45,17 @@ export default function App() {
     [],
   );
 
+  const ensureStairTab = useCallback(
+    (stairId: string, mode: OpenMode = "peek") => {
+      const stair = useWorkbenchStore
+        .getState()
+        .project.stairs.find((s) => s.id === stairId);
+      if (!stair) return;
+      dockviewRef.current?.openStairTab(stair.id, stair.name, mode);
+    },
+    [],
+  );
+
   const handleAddStair = useCallback(
     (config: AddStairConfig) => {
       const { stair, firstFlight } = storeAddStair(config);
@@ -116,6 +127,7 @@ export default function App() {
   const panelOpener = useMemo<PanelOpener>(
     () => ({
       openFlight: ensureFlightTab,
+      openStair: ensureStairTab,
       openRailTemplate: (templateId: string, mode: OpenMode = "peek") => {
         const template = useWorkbenchStore
           .getState()
@@ -146,7 +158,7 @@ export default function App() {
           );
       },
     }),
-    [ensureFlightTab],
+    [ensureFlightTab, ensureStairTab],
   );
 
   const addActions = useMemo(
@@ -160,7 +172,7 @@ export default function App() {
   );
 
   // Push stair/flight changes into open dockview tabs: retitle on rename or
-  // reorder, close tabs whose underlying flight was deleted.
+  // reorder, close tabs whose underlying entity was deleted.
   useEffect(() => {
     return useWorkbenchStore.subscribe(
       (state) => state.project.stairs,
@@ -169,12 +181,18 @@ export default function App() {
         if (!api) return;
 
         const currentFlightIds = new Set<string>();
-        for (const s of stairs) for (const f of s.flights) currentFlightIds.add(f.id);
+        const currentStairIds = new Set<string>();
+        for (const s of stairs) {
+          currentStairIds.add(s.id);
+          for (const f of s.flights) currentFlightIds.add(f.id);
+        }
 
         const removedFlightIds: string[] = [];
+        const removedStairIds: string[] = [];
         const prevByStair = new Map(prevStairs.map((s) => [s.id, s]));
 
         for (const prev of prevStairs) {
+          if (!currentStairIds.has(prev.id)) removedStairIds.push(prev.id);
           for (const prevFlight of prev.flights) {
             if (!currentFlightIds.has(prevFlight.id)) {
               removedFlightIds.push(prevFlight.id);
@@ -182,12 +200,15 @@ export default function App() {
           }
         }
         if (removedFlightIds.length > 0) api.closeFlightTabs(removedFlightIds);
+        if (removedStairIds.length > 0) api.closeStairTabs(removedStairIds);
 
         for (const stair of stairs) {
           const prev = prevByStair.get(stair.id);
+          const nameChanged = prev && prev.name !== stair.name;
+          if (nameChanged) api.updateStairTabTitle(stair.id, stair.name);
+
           for (const flight of stair.flights) {
             const prevFlight = prev?.flights.find((f) => f.id === flight.id);
-            const nameChanged = prev && prev.name !== stair.name;
             const orderChanged = prevFlight && prevFlight.order !== flight.order;
             if (nameChanged || orderChanged) {
               api.updateFlightTabTitle(

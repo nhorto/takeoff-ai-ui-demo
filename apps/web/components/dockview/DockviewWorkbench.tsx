@@ -1,6 +1,7 @@
 import {
   useCallback,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
   forwardRef,
@@ -18,6 +19,11 @@ import { PdfPanel } from "@/components/dockview/PdfPanel";
 import { RailTemplatePanel } from "@/components/dockview/RailTemplatePanel";
 import { LadderPanel } from "@/components/dockview/LadderPanel";
 import { LandingTemplatePanel } from "@/components/dockview/LandingTemplatePanel";
+import { StairPanel } from "@/components/dockview/StairPanel";
+import {
+  DockviewActionsContext,
+  type DockviewActions,
+} from "@/components/dockview/DockviewActionsContext";
 import { WelcomeView } from "@/components/WelcomeView";
 import { loadDockviewLayout, saveDockviewLayout } from "@/lib/storage";
 import { useWorkbenchStore } from "@/hooks/useWorkbenchStore";
@@ -29,6 +35,7 @@ const components: Record<string, React.FC<IDockviewPanelProps<any>>> = {
   "rail-template": RailTemplatePanel,
   ladder: LadderPanel,
   "landing-template": LandingTemplatePanel,
+  stair: StairPanel,
 };
 
 export type OpenMode = "peek" | "newTab" | "toSide";
@@ -43,6 +50,9 @@ export interface DockviewWorkbenchHandle {
   closeFlightTab: (flightId: string) => void;
   closeFlightTabs: (flightIds: string[]) => void;
   updateFlightTabTitle: (flightId: string, title: string) => void;
+  openStairTab: (stairId: string, title: string, mode?: OpenMode) => void;
+  closeStairTabs: (stairIds: string[]) => void;
+  updateStairTabTitle: (stairId: string, title: string) => void;
   openPdfTab: (pdfId: string, title: string) => void;
   openPdfFile: (file: File) => Promise<void>;
   openRailTemplateTab: (
@@ -175,6 +185,28 @@ export const DockviewWorkbench = forwardRef<
       const api = apiRef.current;
       if (!api) return;
       const panel = api.panels.find((p) => p.id === `flight-${flightId}`);
+      if (panel) panel.setTitle(title);
+    },
+
+    openStairTab(stairId, title, mode = "peek") {
+      openEntityPanel("stair", stairId, title, { stairId }, mode);
+    },
+
+    closeStairTabs(stairIds) {
+      const api = apiRef.current;
+      if (!api) return;
+      for (const sId of stairIds) {
+        const panelId = `stair-${sId}`;
+        const panel = api.panels.find((p) => p.id === panelId);
+        if (panel) api.removePanel(panel);
+        if (peekPanelIdRef.current === panelId) peekPanelIdRef.current = null;
+      }
+    },
+
+    updateStairTabTitle(stairId, title) {
+      const api = apiRef.current;
+      if (!api) return;
+      const panel = api.panels.find((p) => p.id === `stair-${stairId}`);
       if (panel) panel.setTitle(title);
     },
 
@@ -311,6 +343,35 @@ export const DockviewWorkbench = forwardRef<
     [setSelectedFlight],
   );
 
+  const dockviewActions = useMemo<DockviewActions>(
+    () => ({
+      openFlight: (stairId, flightId, mode = "peek") => {
+        const stair = useWorkbenchStore
+          .getState()
+          .project.stairs.find((s) => s.id === stairId);
+        const flight = stair?.flights.find((f) => f.id === flightId);
+        if (!stair || !flight) return;
+        const title = `${stair.name} / Flight ${flight.order}`;
+        openEntityPanel(
+          "flight",
+          flightId,
+          title,
+          { stairId, flightId },
+          mode,
+        );
+        setSelectedFlight(stairId, flightId);
+      },
+      openStair: (stairId, mode = "peek") => {
+        const stair = useWorkbenchStore
+          .getState()
+          .project.stairs.find((s) => s.id === stairId);
+        if (!stair) return;
+        openEntityPanel("stair", stairId, stair.name, { stairId }, mode);
+      },
+    }),
+    [openEntityPanel, setSelectedFlight],
+  );
+
   const [isDragging, setIsDragging] = useState(false);
   const dragDepthRef = useRef(0);
 
@@ -356,34 +417,38 @@ export const DockviewWorkbench = forwardRef<
   }, []);
 
   return (
-    <div
-      className="relative h-full w-full"
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
-      <DockviewReact
-        className="dockview-theme-takeoff"
-        components={components}
-        onReady={onReady}
-      />
-      {panelCount === 0 && (
-        <div className="absolute inset-0 z-10 overflow-auto">
-          <WelcomeView
-            stairs={stairs}
-            onAddStair={onAddStair}
-            onSelectFlight={(stair, flight) => onOpenFlight(stair.id, flight.id)}
-          />
-        </div>
-      )}
-      {isDragging && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-300/5 backdrop-blur-[1px]">
-          <div className="rounded-xl border-2 border-dashed border-cyan-300/50 bg-slate-950/70 px-6 py-4 text-sm text-cyan-100">
-            Drop PDF to open
+    <DockviewActionsContext.Provider value={dockviewActions}>
+      <div
+        className="relative h-full w-full"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        <DockviewReact
+          className="dockview-theme-takeoff"
+          components={components}
+          onReady={onReady}
+        />
+        {panelCount === 0 && (
+          <div className="absolute inset-0 z-10 overflow-auto">
+            <WelcomeView
+              stairs={stairs}
+              onAddStair={onAddStair}
+              onSelectFlight={(stair, flight) =>
+                onOpenFlight(stair.id, flight.id)
+              }
+            />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+        {isDragging && (
+          <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-300/5 backdrop-blur-[1px]">
+            <div className="rounded-xl border-2 border-dashed border-cyan-300/50 bg-slate-950/70 px-6 py-4 text-sm text-cyan-100">
+              Drop PDF to open
+            </div>
+          </div>
+        )}
+      </div>
+    </DockviewActionsContext.Provider>
   );
 });

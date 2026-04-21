@@ -132,7 +132,7 @@ export function StairsSection({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => toggleExpandedStair(stair.id)}
+                        onClick={() => panelOpener.openStair(stair.id)}
                         onDoubleClick={() => startRename(stair)}
                         className="min-w-0 flex-1 truncate text-left font-medium text-white/82 transition group-hover:text-white"
                         title={`${stair.name} (${stair.flights.length} flights)`}
@@ -145,6 +145,22 @@ export function StairsSection({
                       {stair.flights.length}
                     </span>
                     <ActionMenu label={`${stair.name} actions`}>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openStair(stair.id)}
+                      >
+                        Open
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openStair(stair.id, "newTab")}
+                      >
+                        Open in new tab
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => panelOpener.openStair(stair.id, "toSide")}
+                      >
+                        Open to side
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onSelect={() => handleAddFlight(stair.id)}>
                         Add flight
                       </DropdownMenuItem>
@@ -170,6 +186,20 @@ export function StairsSection({
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
+                  <ContextMenuItem onSelect={() => panelOpener.openStair(stair.id)}>
+                    Open
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onSelect={() => panelOpener.openStair(stair.id, "newTab")}
+                  >
+                    Open in new tab
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onSelect={() => panelOpener.openStair(stair.id, "toSide")}
+                  >
+                    Open to side
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
                   <ContextMenuItem onSelect={() => handleAddFlight(stair.id)}>
                     Add flight
                   </ContextMenuItem>
